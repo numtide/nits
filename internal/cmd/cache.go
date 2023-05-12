@@ -1,0 +1,45 @@
+package cmd
+
+import (
+	"context"
+	"github.com/brianmcgee/kilgrave/pkg/cache"
+	"github.com/juju/errors"
+)
+
+type cacheCmd struct {
+	StoreDir      string `env:"NITS_CACHE_STORE_DIR" default:"/nix/store"`
+	WantMassQuery bool   `env:"NITS_CACHE_WANT_MASS_QUERY" default:"true"`
+	Priority      int    `env:"NITS_CACHE_PRIORITY" default:"1"`
+}
+
+func (sc *cacheCmd) toOptions() ([]cache.Option, error) {
+	c := Cli.Cache
+	return []cache.Option{
+		cache.NatsUrl(Cli.NatsUrl),
+		cache.InfoConfig(c.StoreDir, c.WantMassQuery, c.Priority),
+	}, nil
+}
+
+func (sc *cacheCmd) Run() error {
+	return runCmd(func(ctx context.Context) error {
+		// process options
+		options, err := sc.toOptions()
+		if err != nil {
+			return err
+		}
+
+		// create server
+		s, err := cache.NewCache(logger, options...)
+		if err != nil {
+			return errors.Annotate(err, "failed to create server")
+		}
+
+		// initialise
+		if err := s.Init(); err != nil {
+			return errors.Annotate(err, "failed to initialise server")
+		}
+
+		// run main loop
+		return s.Run(ctx)
+	})
+}
