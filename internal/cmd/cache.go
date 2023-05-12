@@ -4,12 +4,14 @@ import (
 	"context"
 	"github.com/brianmcgee/kilgrave/pkg/cache"
 	"github.com/juju/errors"
+	"os"
 )
 
 type cacheCmd struct {
-	StoreDir      string `env:"NITS_CACHE_STORE_DIR" default:"/nix/store"`
-	WantMassQuery bool   `env:"NITS_CACHE_WANT_MASS_QUERY" default:"true"`
-	Priority      int    `env:"NITS_CACHE_PRIORITY" default:"1"`
+	StoreDir       string   `env:"NITS_CACHE_STORE_DIR" default:"/nix/store"`
+	WantMassQuery  bool     `env:"NITS_CACHE_WANT_MASS_QUERY" default:"true"`
+	Priority       int      `env:"NITS_CACHE_PRIORITY" default:"1"`
+	PrivateKeyFile *os.File `env:"NITS_CACHE_PRIVATE_KEY_FILE" default:"./key.sec"`
 }
 
 func (sc *cacheCmd) toOptions() ([]cache.Option, error) {
@@ -17,6 +19,7 @@ func (sc *cacheCmd) toOptions() ([]cache.Option, error) {
 	return []cache.Option{
 		cache.NatsUrl(Cli.NatsUrl),
 		cache.InfoConfig(c.StoreDir, c.WantMassQuery, c.Priority),
+		cache.PrivateKeyFile(c.PrivateKeyFile),
 	}, nil
 }
 

@@ -5,8 +5,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
+	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 	"go.uber.org/zap"
+	"io"
 	"net/http"
+	"os"
 )
 
 const (
@@ -24,13 +27,34 @@ var (
 type Option func(opts *Options) error
 
 type Options struct {
-	NatsUrl string
-	Info    Info
+	NatsUrl   string
+	Info      Info
+	Name      string
+	SecretKey signature.SecretKey
 }
 
 func NatsUrl(url string) Option {
 	return func(opts *Options) error {
 		opts.NatsUrl = url
+		return nil
+	}
+}
+
+func PrivateKeyFile(file *os.File) Option {
+	return func(opts *Options) error {
+		bytes, err := io.ReadAll(file)
+		if err != nil {
+			return errors.Annotate(err, "failed to read private key file")
+		}
+
+		key, err := signature.LoadSecretKey(string(bytes))
+		if err != nil {
+			return errors.Annotate(err, "failed to load private key")
+		}
+
+		opts.Name = key.ToPublicKey().Name
+		opts.SecretKey = key
+
 		return nil
 	}
 }
@@ -59,9 +83,8 @@ type Cache struct {
 
 	log *zap.Logger
 
-	conn *nats.Conn
-	js   nats.JetStreamContext
-
+	conn  *nats.Conn
+	js    nats.JetStreamContext
 	store nats.ObjectStore
 
 	router *chi.Mux
@@ -76,6 +99,7 @@ func (s *Cache) Init() (err error) {
 			s.log.Error("init error", zap.Error(err))
 		}
 	}()
+
 	if err = s.connectNats(); err != nil {
 		return err
 	}
