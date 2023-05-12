@@ -1,4 +1,4 @@
-module github.com/brianmcgee/kilgrave
+module github.com/numtide/nits
 
 go 1.20
 

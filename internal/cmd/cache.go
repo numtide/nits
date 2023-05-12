@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/brianmcgee/kilgrave/pkg/cache"
 	"github.com/juju/errors"
+	"github.com/numtide/nits/pkg/cache"
 )
 
 type cacheCmd struct {
