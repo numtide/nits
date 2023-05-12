@@ -26,21 +26,13 @@
   };
 
   outputs = inputs @ {flake-parts, ...}:
-    (
-      flake-parts.lib.evalFlakeModule
-      {
-        inherit inputs;
-      }
-      {
-        imports = [./nix];
-        systems = [
-          "x86_64-linux"
-          "x86_64-darwin"
-          "aarch64-linux"
-          "aarch64-darwin"
-        ];
-      }
-    )
-    .config
-    .flake;
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      imports = [./nix];
+      systems = [
+        "x86_64-linux"
+        "x86_64-darwin"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+    };
 }
