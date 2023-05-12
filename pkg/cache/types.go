@@ -12,7 +12,7 @@ type Info struct {
 }
 
 func (i Info) Write(w io.Writer) (err error) {
-	var massQuery = 0
+	massQuery := 0
 	if i.WantMassQuery {
 		massQuery = 1
 	}

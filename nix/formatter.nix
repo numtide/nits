@@ -14,7 +14,7 @@
 
       programs = {
         alejandra.enable = true;
-        gofmt.enable = true;
+        gofumpt.enable = true;
         prettier.enable = true;
       };
 

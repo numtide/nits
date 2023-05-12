@@ -2,27 +2,26 @@ package cache
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"os"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 	"go.uber.org/zap"
-	"io"
-	"net/http"
-	"os"
 )
 
 const (
 	DefaultNatsURL = "ns://127.0.0.1:4222"
 )
 
-var (
-	DefaultCacheInfo = Info{
-		StoreDir:      "/nix/store",
-		WantMassQuery: true,
-		Priority:      1,
-	}
-)
+var DefaultCacheInfo = Info{
+	StoreDir:      "/nix/store",
+	WantMassQuery: true,
+	Priority:      1,
+}
 
 type Option func(opts *Options) error
 
