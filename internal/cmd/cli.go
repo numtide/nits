@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/log"
-	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/ethereum/go-ethereum/log"
+	"go.uber.org/zap"
 )
 
 var logger *zap.Logger

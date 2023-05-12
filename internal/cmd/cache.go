@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"context"
+	"os"
+
 	"github.com/brianmcgee/kilgrave/pkg/cache"
 	"github.com/juju/errors"
-	"os"
 )
 
 type cacheCmd struct {

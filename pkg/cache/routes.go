@@ -2,16 +2,18 @@ package cache
 
 import (
 	"bytes"
+	"io"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo"
 	"go.uber.org/zap"
-	"io"
+
 	"moul.io/chizap"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -111,7 +113,7 @@ func (s *Cache) getNarInfo() http.HandlerFunc {
 
 		info, err := narinfo.Parse(obj)
 
-		var sign = true
+		sign := true
 		for _, sig := range info.Signatures {
 			if sig.Name == s.Options.Name {
 				// no need to sign
