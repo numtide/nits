@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+const (
+	RouteCatchAll  = "/*"
+	RouteCacheInfo = "/nix-cache-info"
+)
+
 func (s *Cache) createRouter() {
 	router := chi.NewRouter()
 
@@ -24,20 +29,18 @@ func (s *Cache) createRouter() {
 		WithUserAgent: true,
 	}))
 
-	router.Get("/nix-cache-info", func(w http.ResponseWriter, r *http.Request) {
-		if err := s.Options.Info.Write(w); err != nil {
-			s.log.Error("failed to write cache info response", zap.Error(err))
-		}
-	})
+	router.Get(RouteCacheInfo, s.getNixCacheInfo)
+	router.Put(RouteCatchAll, s.put())
+	router.Head(RouteCatchAll, s.get(false))
+	router.Get(RouteCatchAll, s.get(true))
 
-	router.Head("/*", s.get(false))
-	router.Put("/*", s.put())
-	router.Get("/*", s.get(true))
-
-	//router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	//	_, _ = w.Write([]byte("welcome"))
-	//})
 	s.router = router
+}
+
+func (s *Cache) getNixCacheInfo(w http.ResponseWriter, r *http.Request) {
+	if err := s.Options.Info.Write(w); err != nil {
+		s.log.Error("failed to write cache info response", zap.Error(err))
+	}
 }
 
 func (s *Cache) put() http.HandlerFunc {
