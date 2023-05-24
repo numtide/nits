@@ -1,28 +1,14 @@
-{
-  inputs,
-  lib,
-  ...
-}: {
-  perSystem = {
-    system,
-    self',
-    pkgs,
-    ...
-  }: {
-    config.process-compose.configs = {
-      dev-services.processes = let
-        config = ./nats.conf;
-      in {
-        nats.command = "${lib.getExe pkgs.nats-server} -c ${config}";
-      };
-    };
+{inputs, ...}: {
+  imports = [
+    ./cache.nix
+    ./nats.nix
+  ];
 
+  perSystem = {self', ...}: {
     config.devshells.default = {
-      commands = let
-        category = "development";
-      in [
+      commands = [
         {
-          inherit category;
+          category = "development";
           help = "run local dev services";
           package = self'.packages.dev-services;
         }

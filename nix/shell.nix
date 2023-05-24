@@ -36,12 +36,6 @@
             pkgs.delve
             pkgs.golangci-lint
 
-            # nats
-            pkgs.nsc
-            pkgs.nkeys
-            pkgs.natscli
-            pkgs.nats-top
-
             pkgs.statix
           ]
           # platform dependent CGO dependencies

@@ -17,8 +17,14 @@ type cacheCmd struct {
 
 func (sc *cacheCmd) toOptions() ([]cache.Option, error) {
 	c := Cli.Cache
+
+	nats, err := natsConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	return []cache.Option{
-		cache.NatsUrl(Cli.NatsUrl),
+		cache.NatsConfig(nats),
 		cache.InfoConfig(c.StoreDir, c.WantMassQuery, c.Priority),
 		cache.PrivateKeyFile(c.PrivateKeyFile),
 	}, nil
