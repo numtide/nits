@@ -19,7 +19,10 @@ type logOptions struct {
 
 var Cli struct {
 	Logging logOptions `embed:"" prefix:"log-"`
-	NatsUrl string     `name:"nats-url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
+
+	NatsUrl  string `name:"nats-url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
+	NatsJwt  string `name:"nats-jwt" env:"NATS_JWT"`
+	NatsSeed string `name:"nats-seed" env:"NATS_SEED"`
 
 	Cache cacheCmd `cmd:"" help:"Run a binary cache." default:"1"`
 }

@@ -26,15 +26,20 @@ var DefaultCacheInfo = Info{
 type Option func(opts *Options) error
 
 type Options struct {
-	NatsUrl   string
-	Info      Info
 	Name      string
+	Info      Info
 	SecretKey signature.SecretKey
+
+	NatsUrl  string
+	NatsJwt  string
+	NatsSeed string
 }
 
-func NatsUrl(url string) Option {
+func NatsConfig(url string, jwt string, seed string) Option {
 	return func(opts *Options) error {
 		opts.NatsUrl = url
+		opts.NatsJwt = jwt
+		opts.NatsSeed = seed
 		return nil
 	}
 }
@@ -129,7 +134,10 @@ func (s *Cache) Run(ctx context.Context) (err error) {
 func (s *Cache) connectNats() error {
 	var err error
 
-	conn, err := nats.Connect(s.Options.NatsUrl)
+	conn, err := nats.Connect(
+		s.Options.NatsUrl,
+		nats.UserJWTAndSeed(s.Options.NatsJwt, s.Options.NatsSeed),
+	)
 	if err != nil {
 		return errors.Annotate(err, "failed to connect to NATS")
 	}
@@ -142,6 +150,9 @@ func (s *Cache) connectNats() error {
 	store, err := js.CreateObjectStore(&nats.ObjectStoreConfig{
 		Bucket: "nix-cache",
 	})
+	if err != nil {
+		return errors.Annotate(err, "failed to create nix-cache")
+	}
 
 	s.js = js
 	s.conn = conn
