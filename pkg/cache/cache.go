@@ -6,15 +6,13 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/numtide/nits/pkg/config"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 	"go.uber.org/zap"
-)
-
-const (
-	DefaultNatsURL = "ns://127.0.0.1:4222"
 )
 
 var DefaultCacheInfo = Info{
@@ -30,16 +28,15 @@ type Options struct {
 	Info      Info
 	SecretKey signature.SecretKey
 
-	NatsUrl  string
-	NatsJwt  string
-	NatsSeed string
+	NatsConfig *config.Nats
 }
 
-func NatsConfig(url string, jwt string, seed string) Option {
+func NatsConfig(config *config.Nats) Option {
 	return func(opts *Options) error {
-		opts.NatsUrl = url
-		opts.NatsJwt = jwt
-		opts.NatsSeed = seed
+		if config == nil {
+			return errors.New("config cannot be nil")
+		}
+		opts.NatsConfig = config
 		return nil
 	}
 }
@@ -77,8 +74,8 @@ func InfoConfig(storeDir string, wantMassQuery bool, priority int) Option {
 
 func GetDefaultOptions() Options {
 	return Options{
-		NatsUrl: DefaultNatsURL,
-		Info:    DefaultCacheInfo,
+		NatsConfig: config.DefaultNatsConfig,
+		Info:       DefaultCacheInfo,
 	}
 }
 
@@ -134,10 +131,8 @@ func (s *Cache) Run(ctx context.Context) (err error) {
 func (s *Cache) connectNats() error {
 	var err error
 
-	conn, err := nats.Connect(
-		s.Options.NatsUrl,
-		nats.UserJWTAndSeed(s.Options.NatsJwt, s.Options.NatsSeed),
-	)
+	c := s.Options.NatsConfig
+	conn, err := nats.Connect(c.Url, nats.UserJWTAndSeed(c.Jwt, c.Seed))
 	if err != nil {
 		return errors.Annotate(err, "failed to connect to NATS")
 	}

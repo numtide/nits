@@ -34,28 +34,37 @@
   in {
     config.process-compose.configs = {
       dev-services.processes = {
-        nats.command = ''
-          # start the server
-          ${lib.getExe pkgs.nats-server} -c $NATS_HOME/nats.conf -sd $NATS_HOME &
-
-          # push latest account and user permissions
-          nsc push --all
-
-          wait  # wait for server to exit
-        '';
+        nats-server = {
+          working_dir = "$NATS_HOME";
+          command = ''${lib.getExe pkgs.nats-server} -c ./nats.conf -sd ./'';
+          readiness_probe = {
+            http_get = {
+              host = "127.0.0.1";
+              port = 8222;
+              path = "/healthz";
+            };
+            initial_delay_seconds = 2;
+          };
+        };
+        nats-permissions = {
+          command = "nsc push --all";
+          depends_on = {
+            nats-server.condition = "process_healthy";
+          };
+        };
       };
     };
 
     config.devshells.default = {
       devshell.startup = {
-        setup-nsc.text = ''
+        setup-nats.text = ''
           set -euo pipefail
 
           # we only setup the data dir if it doesn't exist
           # to refresh simply delete the directory and run `direnv reload`
-          [ -d $PRJ_DATA_DIR ] && exit 0
+          [ -d $NSC_HOME ] && exit 0
 
-          mkdir -p $NATS_HOME $NSC_HOME
+          mkdir -p $NSC_HOME
 
           # initialise nsc state
           nsc init -n numtide --dir $NSC_HOME
@@ -64,6 +73,7 @@
             --account-jwt-server-url nats://localhost:4222
 
           # setup server config
+          mkdir -p $NATS_HOME
           cp ${config} "$NATS_HOME/nats.conf"
           nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
 
@@ -107,13 +117,8 @@
       ];
 
       commands = let
-        category = "development";
+        category = "nats";
       in [
-        {
-          inherit category;
-          help = "run local dev services";
-          package = self'.packages.dev-services;
-        }
         {
           inherit category;
           name = "nsc";

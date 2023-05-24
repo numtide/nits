@@ -2,9 +2,14 @@ package cmd
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/juju/errors"
+	"github.com/nats-io/nkeys"
+	"github.com/numtide/nits/pkg/config"
 
 	"github.com/ethereum/go-ethereum/log"
 	"go.uber.org/zap"
@@ -20,20 +25,64 @@ type logOptions struct {
 var Cli struct {
 	Logging logOptions `embed:"" prefix:"log-"`
 
-	NatsUrl  string `name:"nats-url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
-	NatsJwt  string `name:"nats-jwt" env:"NATS_JWT"`
-	NatsSeed string `name:"nats-seed" env:"NATS_SEED"`
+	NatsUrl             string   `name:"nats-url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
+	NatsJwt             string   `name:"nats-jwt" env:"NATS_JWT"`
+	NatsSeed            string   `name:"nats-seed" env:"NATS_SEED"`
+	NatsCredentialsFile *os.File `name:"nats-credentials-file" env:"NATS_CREDENTIALS_FILE"`
 
 	Cache cacheCmd `cmd:"" help:"Run a binary cache." default:"1"`
 }
 
+func natsConfig() (*config.Nats, error) {
+	c := &config.Nats{
+		Url:  Cli.NatsUrl,
+		Jwt:  Cli.NatsJwt,
+		Seed: Cli.NatsSeed,
+	}
+
+	if Cli.NatsCredentialsFile != nil {
+		bytes, err := io.ReadAll(Cli.NatsCredentialsFile)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to read nats credentials file")
+		}
+
+		jwt, err := nkeys.ParseDecoratedJWT(bytes)
+		if err != nil {
+			return nil, err
+		}
+
+		keyPair, err := nkeys.ParseDecoratedNKey(bytes)
+		if err != nil {
+			return nil, err
+		}
+
+		seed, err := keyPair.Seed()
+		if err != nil {
+			return nil, err
+		}
+
+		c.Jwt = jwt
+		c.Seed = string(seed)
+	}
+
+	if c.Jwt == "" {
+		return nil, errors.New("nats jwt cannot be empty")
+	}
+
+	if c.Seed == "" {
+		return nil, errors.New("nats seed cannot be empty")
+	}
+
+	return c, nil
+}
+
 func buildLogger(opts logOptions) error {
 	// configure logging
-	var config zap.Config
+	var c zap.Config
 	if opts.Development {
-		config = zap.NewDevelopmentConfig()
+		c = zap.NewDevelopmentConfig()
 	} else {
-		config = zap.NewProductionConfig()
+		c = zap.NewProductionConfig()
 	}
 
 	// set log level
@@ -41,17 +90,17 @@ func buildLogger(opts logOptions) error {
 
 	switch {
 	case l == "debug":
-		config.Level.SetLevel(zap.DebugLevel)
+		c.Level.SetLevel(zap.DebugLevel)
 	case l == "info":
-		config.Level.SetLevel(zap.InfoLevel)
+		c.Level.SetLevel(zap.InfoLevel)
 	case l == "warn":
-		config.Level.SetLevel(zap.WarnLevel)
+		c.Level.SetLevel(zap.WarnLevel)
 	case l == "error":
-		config.Level.SetLevel(zap.ErrorLevel)
+		c.Level.SetLevel(zap.ErrorLevel)
 	}
 
 	var err error
-	logger, err = config.Build()
+	logger, err = c.Build()
 	return err
 }
 
