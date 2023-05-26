@@ -84,9 +84,11 @@ type Cache struct {
 
 	log *zap.Logger
 
-	conn  *nats.Conn
-	js    nats.JetStreamContext
-	store nats.ObjectStore
+	conn *nats.Conn
+	js   nats.JetStreamContext
+
+	nar     nats.ObjectStore
+	narInfo nats.KeyValue
 
 	router *chi.Mux
 }
@@ -142,16 +144,24 @@ func (s *Cache) connectNats() error {
 		return errors.Annotate(err, "failed to create a JetStream context")
 	}
 
-	store, err := js.CreateObjectStore(&nats.ObjectStoreConfig{
-		Bucket: "nix-cache",
+	nar, err := js.CreateObjectStore(&nats.ObjectStoreConfig{
+		Bucket: "nar",
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to create nix-cache")
+		return errors.Annotate(err, "failed to create nar store")
+	}
+
+	narInfo, err := js.CreateKeyValue(&nats.KeyValueConfig{
+		Bucket: "nar-info",
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to create nar info store")
 	}
 
 	s.js = js
 	s.conn = conn
-	s.store = store
+	s.nar = nar
+	s.narInfo = narInfo
 
 	return nil
 }
