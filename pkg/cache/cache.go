@@ -84,35 +84,38 @@ type Cache struct {
 
 	log *zap.Logger
 
-	conn  *nats.Conn
-	js    nats.JetStreamContext
-	store nats.ObjectStore
+	conn *nats.Conn
+	js   nats.JetStreamContext
+
+	nar           nats.ObjectStore
+	narInfo       nats.KeyValue
+	narInfoAccess nats.KeyValue
 
 	router *chi.Mux
 }
 
-func (s *Cache) Init() (err error) {
-	s.log.Info("init")
+func (c *Cache) Init() (err error) {
+	c.log.Info("init")
 	defer func() {
 		if err == nil {
-			s.log.Info("init complete")
+			c.log.Info("init complete")
 		} else {
-			s.log.Error("init error", zap.Error(err))
+			c.log.Error("init error", zap.Error(err))
 		}
 	}()
 
-	if err = s.connectNats(); err != nil {
+	if err = c.connectNats(); err != nil {
 		return err
 	}
 
-	s.createRouter()
+	c.createRouter()
 	return nil
 }
 
-func (s *Cache) Run(ctx context.Context) (err error) {
+func (c *Cache) Run(ctx context.Context) (err error) {
 	server := http.Server{
 		Addr:    "localhost:3000",
-		Handler: s.router,
+		Handler: c.router,
 	}
 
 	go func() {
@@ -128,11 +131,11 @@ func (s *Cache) Run(ctx context.Context) (err error) {
 	return err
 }
 
-func (s *Cache) connectNats() error {
+func (c *Cache) connectNats() error {
 	var err error
 
-	c := s.Options.NatsConfig
-	conn, err := nats.Connect(c.Url, nats.UserJWTAndSeed(c.Jwt, c.Seed))
+	nc := c.Options.NatsConfig
+	conn, err := nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
 	if err != nil {
 		return errors.Annotate(err, "failed to connect to NATS")
 	}
@@ -142,16 +145,33 @@ func (s *Cache) connectNats() error {
 		return errors.Annotate(err, "failed to create a JetStream context")
 	}
 
-	store, err := js.CreateObjectStore(&nats.ObjectStoreConfig{
-		Bucket: "nix-cache",
+	nar, err := js.CreateObjectStore(&nats.ObjectStoreConfig{
+		Bucket: "nar",
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to create nix-cache")
+		return errors.Annotate(err, "failed to create nar store")
 	}
 
-	s.js = js
-	s.conn = conn
-	s.store = store
+	narInfo, err := js.CreateKeyValue(&nats.KeyValueConfig{
+		Bucket: "nar-info",
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to create nar info store")
+	}
+
+	narInfoAccess, err := js.CreateKeyValue(&nats.KeyValueConfig{
+		Bucket: "nar-info-access",
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to create nar info access store")
+	}
+
+	c.js = js
+	c.conn = conn
+
+	c.nar = nar
+	c.narInfo = narInfo
+	c.narInfoAccess = narInfoAccess
 
 	return nil
 }

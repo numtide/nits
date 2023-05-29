@@ -8,8 +8,10 @@ require (
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/juju/errors v1.0.0
 	github.com/nats-io/nats.go v1.25.0
+	github.com/nats-io/nkeys v0.4.4
 	github.com/nix-community/go-nix v0.0.0-20230226174119-1f9567c0a1e5
 	go.uber.org/zap v1.24.0
+	golang.org/x/sync v0.1.0
 	moul.io/chizap v1.0.3
 )
 
@@ -23,7 +25,6 @@ require (
 	github.com/multiformats/go-multihash v0.2.1 // indirect
 	github.com/multiformats/go-varint v0.0.6 // indirect
 	github.com/nats-io/nats-server/v2 v2.9.16 // indirect
-	github.com/nats-io/nkeys v0.4.4 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect

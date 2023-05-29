@@ -30,7 +30,7 @@ var Cli struct {
 	NatsSeed            string   `name:"nats-seed" env:"NATS_SEED"`
 	NatsCredentialsFile *os.File `name:"nats-credentials-file" env:"NATS_CREDENTIALS_FILE"`
 
-	Cache cacheCmd `cmd:"" help:"Run a binary cache." default:"1"`
+	Cache cacheCmd `cmd:"" help:"Binary cache."`
 }
 
 func natsConfig() (*config.Nats, error) {
