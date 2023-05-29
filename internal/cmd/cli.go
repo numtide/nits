@@ -28,16 +28,19 @@ var Cli struct {
 	NatsUrl             string   `name:"nats-url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
 	NatsJwt             string   `name:"nats-jwt" env:"NATS_JWT"`
 	NatsSeed            string   `name:"nats-seed" env:"NATS_SEED"`
+	NatsHostKeyFile     *os.File `nmae:"nats-host-key-file" env:"NATS_HOST_KEY_FILE"`
 	NatsCredentialsFile *os.File `name:"nats-credentials-file" env:"NATS_CREDENTIALS_FILE"`
 
 	Cache cacheCmd `cmd:"" help:"Binary cache."`
+	Agent agentCmd `cmd:"" help:"Run an agent"`
 }
 
 func natsConfig() (*config.Nats, error) {
 	c := &config.Nats{
-		Url:  Cli.NatsUrl,
-		Jwt:  Cli.NatsJwt,
-		Seed: Cli.NatsSeed,
+		Url:         Cli.NatsUrl,
+		Jwt:         Cli.NatsJwt,
+		Seed:        Cli.NatsSeed,
+		HostKeyFile: Cli.NatsHostKeyFile,
 	}
 
 	if Cli.NatsCredentialsFile != nil {
@@ -69,8 +72,8 @@ func natsConfig() (*config.Nats, error) {
 		return nil, errors.New("nats jwt cannot be empty")
 	}
 
-	if c.Seed == "" {
-		return nil, errors.New("nats seed cannot be empty")
+	if c.Seed == "" && c.HostKeyFile == nil {
+		return nil, errors.New("one of nats seed or nats host key must be set")
 	}
 
 	return c, nil

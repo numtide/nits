@@ -13,7 +13,7 @@ type cacheCmd struct {
 	StoreDir       string   `env:"NITS_CACHE_STORE_DIR" default:"/nix/store"`
 	WantMassQuery  bool     `env:"NITS_CACHE_WANT_MASS_QUERY" default:"true"`
 	Priority       int      `env:"NITS_CACHE_PRIORITY" default:"1"`
-	PrivateKeyFile *os.File `env:"NITS_CACHE_PRIVATE_KEY_FILE" default:"./key.sec"`
+	PrivateKeyFile *os.File `env:"NITS_CACHE_PRIVATE_KEY_FILE"`
 
 	Run cacheRunCmd `cmd:"" help:"Run a binary cache."`
 	GC  cacheGcCmd  `cmd:"" help:"Garbage collect the binary cache."`
