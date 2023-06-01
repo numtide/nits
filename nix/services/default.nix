@@ -1,5 +1,6 @@
 {inputs, ...}: {
   imports = [
+    ./agents.nix
     ./cache.nix
     ./nats.nix
   ];

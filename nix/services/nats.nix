@@ -57,39 +57,54 @@
 
     config.devshells.default = {
       devshell.startup = {
-        setup-nats.text = ''
-          set -euo pipefail
+        setup-nats = {
+          deps = ["setup-agent-vms" "setup-cache"];
+          text = ''
+            set -euo pipefail
 
-          # we only setup the data dir if it doesn't exist
-          # to refresh simply delete the directory and run `direnv reload`
-          [ -d $NSC_HOME ] && exit 0
+            # we only setup the data dir if it doesn't exist
+            # to refresh simply delete the directory and run `direnv reload`
+            [ -d $NSC_HOME ] && exit 0
 
-          mkdir -p $NSC_HOME
+            mkdir -p $NSC_HOME
 
-          # initialise nsc state
-          nsc init -n numtide --dir $NSC_HOME
-          nsc edit operator \
-            --service-url nats://localhost:4222 \
-            --account-jwt-server-url nats://localhost:4222
+            # initialise nsc state
+            nsc init -n numtide --dir $NSC_HOME
+            nsc edit operator \
+              --service-url nats://localhost:4222 \
+              --account-jwt-server-url nats://localhost:4222
 
-          # setup server config
-          mkdir -p $NATS_HOME
-          cp ${config} "$NATS_HOME/nats.conf"
-          nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
+            # setup server config
+            mkdir -p $NATS_HOME
+            cp ${config} "$NATS_HOME/nats.conf"
+            nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
 
-          # enable jetstream for numtide account, no limits
-          nsc edit account -n numtide \
-            --js-mem-storage -1 \
-            --js-disk-storage -1 \
-            --js-streams -1 \
-            --js-consumer -1
+            # enable jetstream for numtide account, no limits
+            nsc edit account -n numtide \
+              --js-mem-storage -1 \
+              --js-disk-storage -1 \
+              --js-streams -1 \
+              --js-consumer -1
 
-          # generate some users
-          nsc add user -a numtide -n cache
+            # generate a user for the cache
+            nsc add user -a numtide -n cache
+            nsc export keys --user cache --dir "$CACHE_DATA_DIR"
+            rm $CACHE_DATA_DIR/O*.nk
+            rm $CACHE_DATA_DIR/A*.nk
+            mv $(ls $CACHE_DATA_DIR/U*.nk | head) "$CACHE_DATA_DIR/user.seed"
 
-          # generate some cli contexts
-          nsc generate context -a numtide -u cache --context cache
-        '';
+            nsc describe user -n cache -R > "$CACHE_DATA_DIR/user.jwt"
+            nsc generate context -a numtide -u cache --context cache
+
+            # generate users for the agent vms
+            for AGENT_DIR in $VM_DATA_DIR/*; do
+               NKEY=$(${self'.packages.nits}/bin/nits agent nkey "$AGENT_DIR/ssh_host_ed25519_key")
+               BASENAME=$(basename $AGENT_DIR)
+               nsc add user -a numtide -k $NKEY -n $BASENAME
+               nsc describe user -n $BASENAME -R > $AGENT_DIR/user.jwt
+            done
+          '';
+        };
       };
 
       env = [

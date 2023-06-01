@@ -3,14 +3,15 @@ package cache
 import (
 	"bytes"
 	"context"
+	"strings"
+	"sync/atomic"
+	"time"
+
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"strings"
-	"sync/atomic"
-	"time"
 )
 
 func (c *Cache) GarbageCollect(ctx context.Context, cutOff time.Time) (err error) {
@@ -64,7 +65,6 @@ func (c *Cache) GarbageCollect(ctx context.Context, cutOff time.Time) (err error
 			}
 
 			g.Go(func() error {
-
 				l := l.With(zap.String("key", key))
 				l.Debug("checking access log")
 

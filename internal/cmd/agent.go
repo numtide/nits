@@ -2,17 +2,21 @@ package cmd
 
 import (
 	"context"
-	"github.com/juju/errors"
-	"github.com/numtide/nits/pkg/agent"
+	"fmt"
 	"os"
+
+	"github.com/numtide/nits/pkg/agent"
+	"github.com/numtide/nits/pkg/util"
 )
 
 type agentCmd struct {
-	HostKeyFile *os.File `name:"" env:"NITS_AGENT_HOST_KEY_FILE" default:"./key"`
+	Run  agentRunCmd  `cmd:"" help:"Run an agent." default:"1"`
+	Nkey agentNkeyCmd `cmd:"" help:"Get an nkey for a ed25519 key"`
 }
 
-func (a *agentCmd) toOptions() ([]agent.Option, error) {
+type agentRunCmd struct{}
 
+func (a *agentRunCmd) toOptions() ([]agent.Option, error) {
 	nats, err := natsConfig()
 	if err != nil {
 		return nil, err
@@ -23,10 +27,10 @@ func (a *agentCmd) toOptions() ([]agent.Option, error) {
 	}, nil
 }
 
-func (a *agentCmd) Run() error {
+func (a *agentRunCmd) Run() error {
 	return runCmd(func(ctx context.Context) error {
 		// process options
-		options, err := Cli.Agent.toOptions()
+		options, err := Cli.Agent.Run.toOptions()
 		if err != nil {
 			return err
 		}
@@ -34,15 +38,34 @@ func (a *agentCmd) Run() error {
 		// create server
 		s, err := agent.NewAgent(logger, options...)
 		if err != nil {
-			return errors.Annotate(err, "failed to create server")
+			return err
 		}
 
 		// initialise
 		if err := s.Init(); err != nil {
-			return errors.Annotate(err, "failed to initialise server")
+			return err
 		}
 
 		// run main loop
 		return s.Run(ctx)
 	})
+}
+
+type agentNkeyCmd struct {
+	KeyFile *os.File `arg:""`
+}
+
+func (a *agentNkeyCmd) Run() error {
+	signer, err := util.NewSigner(Cli.Agent.Nkey.KeyFile)
+	if err != nil {
+		return err
+	}
+
+	pub, err := util.PublicKeyForSigner(signer)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(pub)
+	return nil
 }

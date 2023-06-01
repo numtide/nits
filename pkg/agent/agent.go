@@ -3,14 +3,16 @@ package agent
 import (
 	"context"
 	"crypto/rand"
+	"io"
+	"os"
+
+	"github.com/numtide/nits/pkg/util"
+
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nkeys"
 	"github.com/numtide/nits/pkg/config"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
-	"io"
-	"os"
 )
 
 type Option func(opts *Options) error
@@ -66,7 +68,7 @@ type Agent struct {
 
 func (a *Agent) Init() error {
 	if err := a.connectNats(); err != nil {
-		return errors.Annotate(err, "failed to initialise nats")
+		return err
 	}
 
 	return nil
@@ -77,7 +79,6 @@ func (a *Agent) Run(ctx context.Context) error {
 }
 
 func (a *Agent) connectNats() error {
-
 	nc := a.Options.NatsConfig
 
 	var natsOpts []nats.Option
@@ -85,28 +86,15 @@ func (a *Agent) connectNats() error {
 		natsOpts = append(natsOpts, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
 	}
 
+	var publicKey string
 	if nc.HostKeyFile != nil {
-		b, err := io.ReadAll(nc.HostKeyFile)
-		if err != nil {
-			return errors.Annotate(err, "failed to read host key file")
-		}
 
-		signer, err := ssh.ParsePrivateKey(b)
-		if err != nil {
-			return errors.Annotate(err, "failed to parse host key file")
-		}
-
-		key := signer.PublicKey()
-
-		marshalled := key.Marshal()
-		seed := marshalled[len(marshalled)-32:]
-
-		encoded, err := nkeys.Encode(nkeys.PrefixByteUser, seed)
+		signer, err := util.NewSigner(nc.HostKeyFile)
 		if err != nil {
 			return err
 		}
 
-		publicKey := string(encoded)
+		publicKey, err = util.PublicKeyForSigner(signer)
 		a.log.Info("loaded host key file", zap.String("publicKey", publicKey))
 
 		natsOpts = append(natsOpts, nats.UserJWT(
@@ -123,7 +111,7 @@ func (a *Agent) connectNats() error {
 
 	conn, err := nats.Connect(nc.Url, natsOpts...)
 	if err != nil {
-		return errors.Annotate(err, "failed to connect to nats")
+		return errors.Annotatef(err, "nkey = %s", publicKey)
 	}
 
 	js, err := conn.JetStream()

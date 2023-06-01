@@ -14,5 +14,6 @@ type Nats struct {
 	Url         string
 	Jwt         string
 	Seed        string
+	JwtFile     *os.File
 	HostKeyFile *os.File
 }

@@ -1,7 +1,12 @@
-{
+{inputs, ...}: {
+  imports = [
+    inputs.flake-parts.flakeModules.easyOverlay
+  ];
+
   perSystem = {
     lib,
     pkgs,
+    self',
     ...
   }: {
     packages = rec {
@@ -26,5 +31,7 @@
 
       default = nits;
     };
+
+    overlayAttrs = self'.packages;
   };
 }

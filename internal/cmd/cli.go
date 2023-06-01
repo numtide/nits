@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	"github.com/juju/errors"
-	"github.com/nats-io/nkeys"
 	"github.com/numtide/nits/pkg/config"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -25,11 +24,12 @@ type logOptions struct {
 var Cli struct {
 	Logging logOptions `embed:"" prefix:"log-"`
 
-	NatsUrl             string   `name:"nats-url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
-	NatsJwt             string   `name:"nats-jwt" env:"NATS_JWT"`
-	NatsSeed            string   `name:"nats-seed" env:"NATS_SEED"`
-	NatsHostKeyFile     *os.File `nmae:"nats-host-key-file" env:"NATS_HOST_KEY_FILE"`
-	NatsCredentialsFile *os.File `name:"nats-credentials-file" env:"NATS_CREDENTIALS_FILE"`
+	NatsUrl         string   `name:"nats-url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
+	NatsJwt         string   `name:"nats-jwt" env:"NATS_JWT"`
+	NatsJwtFile     *os.File `name:"nats-jwt-file" env:"NATS_JWT_FILE"`
+	NatsSeed        string   `name:"nats-seed" env:"NATS_SEED"`
+	NatsSeedFile    *os.File `name:"nats-seed-file" env:"NATS_SEED_FILE"`
+	NatsHostKeyFile *os.File `name:"nats-host-key-file" env:"NATS_HOST_KEY_FILE"`
 
 	Cache cacheCmd `cmd:"" help:"Binary cache."`
 	Agent agentCmd `cmd:"" help:"Run an agent"`
@@ -43,33 +43,20 @@ func natsConfig() (*config.Nats, error) {
 		HostKeyFile: Cli.NatsHostKeyFile,
 	}
 
-	if Cli.NatsCredentialsFile != nil {
-		bytes, err := io.ReadAll(Cli.NatsCredentialsFile)
+	if c.Seed == "" && Cli.NatsSeedFile != nil {
+		b, err := io.ReadAll(Cli.NatsSeedFile)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to read nats credentials file")
+			return nil, errors.Annotate(err, "failed to read nats seed file")
 		}
-
-		jwt, err := nkeys.ParseDecoratedJWT(bytes)
-		if err != nil {
-			return nil, err
-		}
-
-		keyPair, err := nkeys.ParseDecoratedNKey(bytes)
-		if err != nil {
-			return nil, err
-		}
-
-		seed, err := keyPair.Seed()
-		if err != nil {
-			return nil, err
-		}
-
-		c.Jwt = jwt
-		c.Seed = string(seed)
+		c.Seed = string(b)
 	}
 
-	if c.Jwt == "" {
-		return nil, errors.New("nats jwt cannot be empty")
+	if c.Jwt == "" && Cli.NatsJwtFile != nil {
+		b, err := io.ReadAll(Cli.NatsJwtFile)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to read nats jwt file")
+		}
+		c.Jwt = string(b)
 	}
 
 	if c.Seed == "" && c.HostKeyFile == nil {

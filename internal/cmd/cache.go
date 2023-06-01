@@ -19,8 +19,7 @@ type cacheCmd struct {
 	GC  cacheGcCmd  `cmd:"" help:"Garbage collect the binary cache."`
 }
 
-type cacheRunCmd struct {
-}
+type cacheRunCmd struct{}
 
 type cacheGcCmd struct {
 	TimeWindow time.Duration `env:"NITS_CACHE_GC_TIME_WINDOW" default:"15120h"` // 90 days

@@ -11,7 +11,9 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    srvos.url = "github:numtide/srvos";
+    # Use the version of nixpkgs that has been tested to work with SrvOS
+    nixpkgs.follows = "srvos/nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-root.url = "github:srid/flake-root";
     treefmt-nix = {
