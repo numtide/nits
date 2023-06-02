@@ -1,9 +1,12 @@
 {
   perSystem = {self', ...}: {
     config.devshells.default = {
-        env = [
-            { name = "CACHE_DATA_DIR"; eval = "$PRJ_DATA_DIR/cache"; }
-        ];
+      env = [
+        {
+          name = "CACHE_DATA_DIR";
+          eval = "$PRJ_DATA_DIR/cache";
+        }
+      ];
       devshell.startup = {
         setup-cache.text = ''
           [ -d $CACHE_DATA_DIR ] && exit 0

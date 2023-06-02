@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"crypto/rand"
+	log "github.com/inconshreveable/log15"
 	"io"
 	"os"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/config"
-	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -60,10 +60,12 @@ func GetDefaultOptions() Options {
 type Agent struct {
 	Options Options
 
-	log *zap.Logger
+	log log.Logger
 
 	conn *nats.Conn
 	js   nats.JetStreamContext
+
+	watcher nats.KeyWatcher
 }
 
 func (a *Agent) Init() error {
@@ -75,7 +77,27 @@ func (a *Agent) Init() error {
 }
 
 func (a *Agent) Run(ctx context.Context) error {
-	return nil
+	a.log.Info("listening for closures")
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case update, ok := <-a.watcher.Updates():
+			if !ok {
+				// update channel was closed
+				return nil
+			}
+			if update == nil {
+				// no value currently
+				continue
+			}
+			if update.Operation() != nats.KeyValuePut {
+				a.log.Warn("unexpected op type received", "op", update.Operation())
+				continue
+			}
+			a.log.Info("Closure update received", "closure", string(update.Value()))
+		}
+	}
 }
 
 func (a *Agent) connectNats() error {
@@ -95,7 +117,7 @@ func (a *Agent) connectNats() error {
 		}
 
 		publicKey, err = util.PublicKeyForSigner(signer)
-		a.log.Info("loaded host key file", zap.String("publicKey", publicKey))
+		a.log.Info("loaded host key file", "publicKey", publicKey)
 
 		natsOpts = append(natsOpts, nats.UserJWT(
 			func() (string, error) {
@@ -119,13 +141,24 @@ func (a *Agent) connectNats() error {
 		return errors.Annotate(err, "failed to create a jet stream context")
 	}
 
+	closures, err := js.CreateKeyValue(&nats.KeyValueConfig{
+		Bucket: "closures",
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to create closures kv store")
+	}
+
+	// watch for changes based on our public key
+	watcher, err := closures.Watch(publicKey)
+
 	a.conn = conn
 	a.js = js
+	a.watcher = watcher
 
 	return nil
 }
 
-func NewAgent(log *zap.Logger, options ...Option) (*Agent, error) {
+func NewAgent(options ...Option) (*Agent, error) {
 	// process options
 	opts := GetDefaultOptions()
 	for _, opt := range options {
@@ -136,6 +169,6 @@ func NewAgent(log *zap.Logger, options ...Option) (*Agent, error) {
 
 	return &Agent{
 		Options: opts,
-		log:     log,
+		log:     log.New(),
 	}, nil
 }

@@ -35,7 +35,6 @@ in {
 
       environment = {
         NATS_URL = cfg.nats.url;
-        LOG_DEVELOPMENT = "true";
       };
 
       serviceConfig = with lib; {

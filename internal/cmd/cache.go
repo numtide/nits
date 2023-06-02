@@ -49,7 +49,7 @@ func (sc *cacheRunCmd) Run() error {
 		}
 
 		// create server
-		s, err := cache.NewCache(logger, options...)
+		s, err := cache.NewCache(options...)
 		if err != nil {
 			return errors.Annotate(err, "failed to create server")
 		}
@@ -73,7 +73,7 @@ func (sc *cacheGcCmd) Run() error {
 		}
 
 		// create server
-		s, err := cache.NewCache(logger, options...)
+		s, err := cache.NewCache(options...)
 		if err != nil {
 			return errors.Annotate(err, "failed to create server")
 		}

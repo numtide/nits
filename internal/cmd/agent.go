@@ -36,7 +36,7 @@ func (a *agentRunCmd) Run() error {
 		}
 
 		// create server
-		s, err := agent.NewAgent(logger, options...)
+		s, err := agent.NewAgent(options...)
 		if err != nil {
 			return err
 		}

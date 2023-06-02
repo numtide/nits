@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"go.uber.org/zap/zapcore"
+	log "github.com/inconshreveable/log15"
 	"io"
 	"os"
 	"os/signal"
@@ -10,16 +10,10 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/config"
-
-	"github.com/ethereum/go-ethereum/log"
-	"go.uber.org/zap"
 )
 
-var logger *zap.Logger
-
 type logOptions struct {
-	Level       string `enum:"debug,info,warn,error" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
-	Development bool   `env:"LOG_DEVELOPMENT" default:"false" help:"Configure development style log output."`
+	Level string `enum:"debug,info,warn,error" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
 }
 
 var Cli struct {
@@ -67,56 +61,7 @@ func natsConfig() (*config.Nats, error) {
 	return c, nil
 }
 
-func buildLogger(opts logOptions) error {
-	// configure logging
-
-	c := zap.Config{
-		Encoding:    "json",
-		Level:       zap.NewAtomicLevelAt(zapcore.InfoLevel),
-		OutputPaths: []string{"stdout"},
-		EncoderConfig: zapcore.EncoderConfig{
-			MessageKey:   "message",
-			LevelKey:     "level",
-			EncodeLevel:  zapcore.CapitalLevelEncoder,
-			TimeKey:      "time",
-			EncodeTime:   zapcore.ISO8601TimeEncoder,
-			CallerKey:    "caller",
-			EncodeCaller: zapcore.ShortCallerEncoder,
-		},
-	}
-
-	if opts.Development {
-		c.Encoding = "console"
-	}
-
-	// set log level
-	l := opts.Level
-
-	switch {
-	case l == "debug":
-		c.Level.SetLevel(zap.DebugLevel)
-	case l == "info":
-		c.Level.SetLevel(zap.InfoLevel)
-	case l == "warn":
-		c.Level.SetLevel(zap.WarnLevel)
-	case l == "error":
-		c.Level.SetLevel(zap.ErrorLevel)
-	}
-
-	var err error
-	logger, err = c.Build()
-	return err
-}
-
 func runCmd(main func(ctx context.Context) error) (err error) {
-	if err = buildLogger(Cli.Logging); err != nil {
-		return err
-	}
-
-	defer func(Logger *zap.Logger) {
-		_ = Logger.Sync()
-	}(logger)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

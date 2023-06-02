@@ -41,6 +41,10 @@
           boot.loader.grub.devices = lib.mkForce ["/dev/sda"];
           fileSystems."/".device = lib.mkDefault "/dev/sda";
 
+          environment.systemPackages = [
+            pkgs.sysz
+          ];
+
           virtualisation = {
             graphics = false;
             diskImage = "$VM_DATA_DIR/${hostname}/disk.qcow2";

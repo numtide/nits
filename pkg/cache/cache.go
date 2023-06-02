@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	log "github.com/inconshreveable/log15"
 	"io"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
-	"go.uber.org/zap"
 )
 
 var DefaultCacheInfo = Info{
@@ -82,7 +82,7 @@ func GetDefaultOptions() Options {
 type Cache struct {
 	Options Options
 
-	log *zap.Logger
+	log log.Logger
 
 	conn *nats.Conn
 	js   nats.JetStreamContext
@@ -100,7 +100,7 @@ func (c *Cache) Init() (err error) {
 		if err == nil {
 			c.log.Info("init complete")
 		} else {
-			c.log.Error("init error", zap.Error(err))
+			c.log.Error("init error", "error", err)
 		}
 	}()
 
@@ -176,7 +176,7 @@ func (c *Cache) connectNats() error {
 	return nil
 }
 
-func NewCache(log *zap.Logger, options ...Option) (*Cache, error) {
+func NewCache(options ...Option) (*Cache, error) {
 	// process options
 	opts := GetDefaultOptions()
 	for _, opt := range options {
@@ -187,6 +187,6 @@ func NewCache(log *zap.Logger, options ...Option) (*Cache, error) {
 
 	return &Cache{
 		Options: opts,
-		log:     log,
+		log:     log.New(),
 	}, nil
 }
