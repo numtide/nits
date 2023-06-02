@@ -15,6 +15,16 @@ type logOptions struct {
 	Level string `enum:"debug,info,warn,error" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
 }
 
+func (lo *logOptions) toLogger() log.Logger {
+	l := log.New()
+	level, err := log.LvlFromString(lo.Level)
+	if err != nil {
+		panic(err)
+	}
+	l.SetHandler(log.LvlFilterHandler(level, log.StreamHandler(os.Stderr, log.LogfmtFormat())))
+	return l
+}
+
 type natsOptions struct {
 	Url         string   `name:"url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
 	Jwt         string   `name:"jwt" env:"NATS_JWT"`
@@ -63,16 +73,19 @@ var Cli struct {
 	Agent agentCmd `cmd:"" help:"Run an agent"`
 }
 
-func runCmd(main func(ctx context.Context) error) (err error) {
+func runCmd(main func(logger log.Logger, ctx context.Context) error) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	l := Cli.Logging.toLogger()
+
 	go func() {
-		log.Debug("listening for termination signals")
+		l.Debug("listening for termination signals")
 		c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 		cancel()
 	}()
-	return main(ctx)
+
+	return main(l, ctx)
 }

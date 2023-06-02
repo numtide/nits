@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	log "github.com/inconshreveable/log15"
 	"os"
 
 	"github.com/numtide/nits/pkg/agent"
@@ -28,7 +29,7 @@ func (a *agentRunCmd) toOptions() ([]agent.Option, error) {
 }
 
 func (a *agentRunCmd) Run() error {
-	return runCmd(func(ctx context.Context) error {
+	return runCmd(func(logger log.Logger, ctx context.Context) error {
 		// process options
 		options, err := Cli.Agent.Run.toOptions()
 		if err != nil {
@@ -36,7 +37,7 @@ func (a *agentRunCmd) Run() error {
 		}
 
 		// create server
-		s, err := agent.NewAgent(options...)
+		s, err := agent.NewAgent(logger, options...)
 		if err != nil {
 			return err
 		}

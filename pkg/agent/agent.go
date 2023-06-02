@@ -60,7 +60,7 @@ func GetDefaultOptions() Options {
 type Agent struct {
 	Options Options
 
-	log log.Logger
+	logger log.Logger
 
 	conn *nats.Conn
 	js   nats.JetStreamContext
@@ -77,7 +77,7 @@ func (a *Agent) Init() error {
 }
 
 func (a *Agent) Run(ctx context.Context) error {
-	a.log.Info("listening for closures")
+	a.logger.Info("listening for closures")
 	for {
 		select {
 		case <-ctx.Done():
@@ -92,10 +92,10 @@ func (a *Agent) Run(ctx context.Context) error {
 				continue
 			}
 			if update.Operation() != nats.KeyValuePut {
-				a.log.Warn("unexpected op type received", "op", update.Operation())
+				a.logger.Warn("unexpected op type received", "op", update.Operation())
 				continue
 			}
-			a.log.Info("Closure update received", "closure", string(update.Value()))
+			a.logger.Info("Closure update received", "closure", string(update.Value()))
 		}
 	}
 }
@@ -117,7 +117,7 @@ func (a *Agent) connectNats() error {
 		}
 
 		publicKey, err = util.PublicKeyForSigner(signer)
-		a.log.Info("loaded host key file", "publicKey", publicKey)
+		a.logger.Info("loaded host key file", "publicKey", publicKey)
 
 		natsOpts = append(natsOpts, nats.UserJWT(
 			func() (string, error) {
@@ -158,7 +158,7 @@ func (a *Agent) connectNats() error {
 	return nil
 }
 
-func NewAgent(options ...Option) (*Agent, error) {
+func NewAgent(logger log.Logger, options ...Option) (*Agent, error) {
 	// process options
 	opts := GetDefaultOptions()
 	for _, opt := range options {
@@ -169,6 +169,6 @@ func NewAgent(options ...Option) (*Agent, error) {
 
 	return &Agent{
 		Options: opts,
-		log:     log.New(),
+		logger:  logger,
 	}, nil
 }

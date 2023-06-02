@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	log "github.com/inconshreveable/log15"
 	"os"
 	"time"
 
@@ -41,7 +42,7 @@ func (sc *cacheCmd) toOptions() ([]cache.Option, error) {
 }
 
 func (sc *cacheRunCmd) Run() error {
-	return runCmd(func(ctx context.Context) error {
+	return runCmd(func(logger log.Logger, ctx context.Context) error {
 		// process options
 		options, err := Cli.Cache.toOptions()
 		if err != nil {
@@ -49,7 +50,7 @@ func (sc *cacheRunCmd) Run() error {
 		}
 
 		// create server
-		s, err := cache.NewCache(options...)
+		s, err := cache.NewCache(logger, options...)
 		if err != nil {
 			return errors.Annotate(err, "failed to create server")
 		}
@@ -65,7 +66,7 @@ func (sc *cacheRunCmd) Run() error {
 }
 
 func (sc *cacheGcCmd) Run() error {
-	return runCmd(func(ctx context.Context) error {
+	return runCmd(func(logger log.Logger, ctx context.Context) error {
 		// process options
 		options, err := Cli.Cache.toOptions()
 		if err != nil {
@@ -73,7 +74,7 @@ func (sc *cacheGcCmd) Run() error {
 		}
 
 		// create server
-		s, err := cache.NewCache(options...)
+		s, err := cache.NewCache(logger, options...)
 		if err != nil {
 			return errors.Annotate(err, "failed to create server")
 		}

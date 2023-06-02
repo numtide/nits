@@ -176,7 +176,7 @@ func (c *Cache) connectNats() error {
 	return nil
 }
 
-func NewCache(options ...Option) (*Cache, error) {
+func NewCache(logger log.Logger, options ...Option) (*Cache, error) {
 	// process options
 	opts := GetDefaultOptions()
 	for _, opt := range options {
@@ -187,6 +187,6 @@ func NewCache(options ...Option) (*Cache, error) {
 
 	return &Cache{
 		Options: opts,
-		log:     log.New(),
+		log:     logger,
 	}, nil
 }
