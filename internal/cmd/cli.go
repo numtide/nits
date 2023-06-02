@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"go.uber.org/zap/zapcore"
 	"io"
 	"os"
 	"os/signal"
@@ -68,11 +69,24 @@ func natsConfig() (*config.Nats, error) {
 
 func buildLogger(opts logOptions) error {
 	// configure logging
-	var c zap.Config
+
+	c := zap.Config{
+		Encoding:    "json",
+		Level:       zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		OutputPaths: []string{"stdout"},
+		EncoderConfig: zapcore.EncoderConfig{
+			MessageKey:   "message",
+			LevelKey:     "level",
+			EncodeLevel:  zapcore.CapitalLevelEncoder,
+			TimeKey:      "time",
+			EncodeTime:   zapcore.ISO8601TimeEncoder,
+			CallerKey:    "caller",
+			EncodeCaller: zapcore.ShortCallerEncoder,
+		},
+	}
+
 	if opts.Development {
-		c = zap.NewDevelopmentConfig()
-	} else {
-		c = zap.NewProductionConfig()
+		c.Encoding = "console"
 	}
 
 	// set log level
