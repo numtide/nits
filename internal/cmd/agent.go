@@ -17,7 +17,7 @@ type agentCmd struct {
 type agentRunCmd struct{}
 
 func (a *agentRunCmd) toOptions() ([]agent.Option, error) {
-	nats, err := natsConfig()
+	nats, err := Cli.Nats.toNatsConfig()
 	if err != nil {
 		return nil, err
 	}

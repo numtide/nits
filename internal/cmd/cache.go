@@ -28,7 +28,7 @@ type cacheGcCmd struct {
 func (sc *cacheCmd) toOptions() ([]cache.Option, error) {
 	c := Cli.Cache
 
-	nats, err := natsConfig()
+	nats, err := Cli.Nats.toNatsConfig()
 	if err != nil {
 		return nil, err
 	}
