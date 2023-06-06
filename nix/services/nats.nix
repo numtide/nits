@@ -79,6 +79,9 @@
             cp ${config} "$NATS_HOME/nats.conf"
             nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
 
+            # generate a sys context
+            nsc generate context -a SYS -u sys --context sys
+
             # enable jetstream for numtide account, no limits
             nsc edit account -n numtide \
               --js-mem-storage -1 \
