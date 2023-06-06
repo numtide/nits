@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/alecthomas/kong"
-	"github.com/numtide/nits/internal/cmd"
+	"github.com/numtide/nits/internal/cmd/cache"
 )
 
 func main() {
-	ctx := kong.Parse(&cmd.Cli)
+	ctx := kong.Parse(&cache.Cmd)
 	ctx.FatalIfErrorf(ctx.Run())
 }

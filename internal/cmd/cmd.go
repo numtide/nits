@@ -12,11 +12,11 @@ import (
 	"github.com/numtide/nits/pkg/config"
 )
 
-type logOptions struct {
+type LogOptions struct {
 	Level string `enum:"debug,info,warn,error" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
 }
 
-func (lo *logOptions) toLogger() log.Logger {
+func (lo *LogOptions) ToLogger() log.Logger {
 	l := log.New()
 	level, err := log.LvlFromString(lo.Level)
 	if err != nil {
@@ -26,7 +26,7 @@ func (lo *logOptions) toLogger() log.Logger {
 	return l
 }
 
-type natsOptions struct {
+type NatsOptions struct {
 	Url         string   `name:"url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
 	Jwt         string   `name:"jwt" env:"NATS_JWT"`
 	JwtFile     *os.File `name:"jwt-file" env:"NATS_JWT_FILE"`
@@ -35,7 +35,7 @@ type natsOptions struct {
 	HostKeyFile *os.File `name:"host-key-file" env:"NATS_HOST_KEY_FILE"`
 }
 
-func (n *natsOptions) toNatsConfig() (*config.Nats, error) {
+func (n *NatsOptions) ToNatsConfig() (*config.Nats, error) {
 	c := &config.Nats{
 		Url:         n.Url,
 		Jwt:         n.Jwt,
@@ -66,27 +66,17 @@ func (n *natsOptions) toNatsConfig() (*config.Nats, error) {
 	return c, nil
 }
 
-var Cli struct {
-	Logging logOptions  `embed:"" prefix:"log-"`
-	Nats    natsOptions `embed:"" prefix:"nats-"`
-
-	Cache cacheCmd `cmd:"" help:"Binary cache."`
-	Agent agentCmd `cmd:"" help:"Run an agent"`
-}
-
-func runCmd(main func(logger log.Logger, ctx context.Context) error) (err error) {
+func Run(logger log.Logger, main func(ctx context.Context) error) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	l := Cli.Logging.toLogger()
-
 	go func() {
-		l.Debug("listening for termination signals")
+		logger.Debug("listening for termination signals")
 		c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 		cancel()
 	}()
 
-	return main(l, ctx)
+	return main(ctx)
 }

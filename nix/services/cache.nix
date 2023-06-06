@@ -26,7 +26,7 @@
             "NATS_JWT_FILE=$CACHE_DATA_DIR/user.jwt"
             "NITS_CACHE_PRIVATE_KEY_FILE=$PRJ_DATA_DIR/cache/key.sec"
           ];
-          command = "${self'.packages.nits}/bin/nits cache run";
+          command = "${self'.packages.nits}/bin/cache run";
           depends_on = {
             nats-server.condition = "process_healthy";
             nats-permissions.condition = "process_completed";
