@@ -33,7 +33,7 @@
     };
   in {
     config.process-compose.configs = {
-      dev-services.processes = {
+      dev.processes = {
         nats-server = {
           working_dir = "$NATS_HOME";
           command = ''${lib.getExe pkgs.nats-server} -c ./nats.conf -sd ./'';

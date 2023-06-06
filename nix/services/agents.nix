@@ -36,6 +36,8 @@
             "nixpkgs=${pkgs.path}"
           ];
 
+          nix.settings.experimental-features = "nix-command flakes";
+
           networking.hostName = hostname;
           system.stateVersion = config.system.nixos.version;
           boot.loader.grub.devices = lib.mkForce ["/dev/sda"];
@@ -75,8 +77,7 @@
 
               chmod 600 /etc/ssh/ssh_host_ed25519_key
               chmod 644 /etc/ssh/ssh_host_ed25519_key.pub
-            '';
-          };
+            '';          };
 
           users.users.root.initialPassword = password;
 
@@ -107,7 +108,10 @@ in {
   in
     builtins.listToAttrs configs;
 
-  perSystem = {pkgs, ...}: {
+  perSystem = {pkgs, config, ...}: let
+    cfg = config.dev.agents;
+  in {
+
     config.devshells.default = {
       env = [
         {
@@ -134,7 +138,7 @@ in {
     };
 
     config.process-compose.configs = {
-      dev-services.processes = let
+      dev.processes = let
         mkAgentProcess = id: {
           command = "nix run .#nixosConfigurations.agent-host-${builtins.toString id}.config.system.build.vm";
           depends_on = {

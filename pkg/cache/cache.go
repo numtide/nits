@@ -2,10 +2,11 @@ package cache
 
 import (
 	"context"
-	log "github.com/inconshreveable/log15"
 	"io"
 	"net/http"
 	"os"
+
+	log "github.com/inconshreveable/log15"
 
 	"github.com/numtide/nits/pkg/config"
 

@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"context"
-	log "github.com/inconshreveable/log15"
 	"os"
 	"time"
+
+	log "github.com/inconshreveable/log15"
 
 	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/cache"

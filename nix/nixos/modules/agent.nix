@@ -10,17 +10,26 @@ in {
     nats = {
       url = mkOption {
         type = types.str;
-        description = "NATS server url.";
+        example = "nats://localhost:4222";
+        description = mdDoc "NATS server url.";
       };
       jwtFile = mkOption {
         type = types.path;
-        description = "Path to a file containing a NATS JWT token.";
+        example = "/mnt/shared/user.jwt";
+        description = mdDoc "Path to a file containing a NATS JWT token.";
       };
       hostKeyFile = mkOption {
         type = types.path;
-        description = "Path to an ed25519 host key file";
         default = "/etc/ssh/ssh_host_ed25519_key";
+        example = "/etc/ssh/ssh_host_ed25519_key";
+        description = mdDoc "Path to an ed25519 host key file";
       };
+    };
+    logLevel = mkOption {
+      type = types.enum ["debug" "info" "warn" "error"];
+      default = "info";
+      example = "debug";
+      description = mdDoc "Selects the logging level.";
     };
   };
 
@@ -30,50 +39,27 @@ in {
       wantedBy = ["sysinit.target"];
 
       description = "Nits Agent";
-
       startLimitIntervalSec = 0;
+
+      path = [
+        pkgs.nix
+        pkgs.nixos-rebuild
+      ];
 
       environment = {
         NATS_URL = cfg.nats.url;
-        LOG_LEVEL = "debug";
+        NATS_HOST_KEY_FILE = cfg.nats.hostKeyFile;
+        NATS_JWT_FILE = cfg.nats.jwtFile;
+        LOG_LEVEL = cfg.logLevel;
       };
 
       serviceConfig = with lib; {
         Restart = mkDefault "on-failure";
         RestartSec = 1;
 
-        User = "nits-agent";
+        User = "root";
         StateDirectory = "nits-agent";
-        ExecStart = "${pkgs.nits}/bin/nits agent --nats-host-key-file %d/host_key --nats-jwt-file %d/jwt";
-
-        LoadCredential = [
-          "jwt:${cfg.nats.jwtFile}"
-          "host_key:${cfg.nats.hostKeyFile}"
-        ];
-
-        # https://www.freedesktop.org/software/systemd/man/systemd.exec.html#DynamicUser=
-        # Enabling dynamic user implies other options which cannot be changed:
-        #   * RemoveIPC = true
-        #   * PrivateTmp = true
-        #   * NoNewPrivileges = "strict"
-        #   * RestrictSUIDSGID = true
-        #   * ProtectSystem = "strict"
-        #   * ProtectHome = "read-only"
-        DynamicUser = mkDefault true;
-
-        ProtectClock = mkDefault true;
-        ProtectProc = mkDefault "noaccess";
-        ProtectKernelLogs = mkDefault true;
-        ProtectKernelModules = mkDefault true;
-        ProtectKernelTunables = mkDefault true;
-        ProtectControlGroups = mkDefault true;
-        ProtectHostname = mkDefault true;
-        PrivateDevices = mkDefault true;
-        RestrictRealtime = mkDefault true;
-        RestrictNamespaces = mkDefault true;
-        LockPersonality = mkDefault true;
-        MemoryDenyWriteExecute = mkDefault true;
-        SystemCallFilter = mkDefault ["@system-service" "~@privileged"];
+        ExecStart = "${pkgs.nits}/bin/nits agent";
       };
     };
   };

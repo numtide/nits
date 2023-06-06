@@ -17,7 +17,7 @@
     };
 
     config.process-compose.configs = {
-      dev-services.processes = {
+      dev.processes = {
         cache = {
           environment = [
             "LOG_LEVEL=info"

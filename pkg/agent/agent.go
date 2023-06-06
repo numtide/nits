@@ -3,9 +3,11 @@ package agent
 import (
 	"context"
 	"crypto/rand"
-	log "github.com/inconshreveable/log15"
 	"io"
 	"os"
+	"os/exec"
+
+	log "github.com/inconshreveable/log15"
 
 	"github.com/numtide/nits/pkg/util"
 
@@ -69,6 +71,17 @@ type Agent struct {
 }
 
 func (a *Agent) Init() error {
+	// test we can use nix
+	cmd := exec.Command("nix", "run", "nixpkgs#hello")
+
+	out, err := cmd.Output()
+	_, _ = os.Stderr.Write(out)
+
+	if err != nil {
+		return err
+	}
+
+	// connect to nats server
 	if err := a.connectNats(); err != nil {
 		return err
 	}
@@ -149,7 +162,7 @@ func (a *Agent) connectNats() error {
 	}
 
 	// watch for changes based on our public key
-	watcher, err := closures.Watch(publicKey)
+	watcher, err := closures.Watch(publicKey, nats.IncludeHistory())
 
 	a.conn = conn
 	a.js = js

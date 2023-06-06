@@ -11,7 +11,7 @@
         {
           category = "development";
           help = "run local dev services";
-          package = self'.packages.dev-services;
+          package = self'.packages.dev;
         }
       ];
     };

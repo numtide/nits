@@ -3,8 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	log "github.com/inconshreveable/log15"
 	"os"
+
+	log "github.com/inconshreveable/log15"
 
 	"github.com/numtide/nits/pkg/agent"
 	"github.com/numtide/nits/pkg/util"

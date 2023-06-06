@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"context"
-	log "github.com/inconshreveable/log15"
-	"github.com/juju/errors"
-	"github.com/numtide/nits/pkg/config"
 	"io"
 	"os"
 	"os/signal"
 	"syscall"
+
+	log "github.com/inconshreveable/log15"
+	"github.com/juju/errors"
+	"github.com/numtide/nits/pkg/config"
 )
 
 type logOptions struct {
