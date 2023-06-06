@@ -89,6 +89,16 @@
               --js-streams -1 \
               --js-consumer -1
 
+            # generate a user for the guvnor
+            nsc add user -a numtide -n guvnor
+            nsc export keys --user guvnor --dir "$GUVNOR_DATA_DIR"
+            rm $GUVNOR_DATA_DIR/O*.nk
+            rm $GUVNOR_DATA_DIR/A*.nk
+            mv $(ls $GUVNOR_DATA_DIR/U*.nk | head) "$GUVNOR_DATA_DIR/user.seed"
+
+            nsc describe user -n guvnor -R > "$GUVNOR_DATA_DIR/user.jwt"
+            nsc generate context -a numtide -u guvnor --context guvnor
+
             # generate a user for the cache
             nsc add user -a numtide -n cache
             nsc export keys --user cache --dir "$CACHE_DATA_DIR"

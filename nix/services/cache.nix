@@ -21,7 +21,6 @@
         cache = {
           environment = [
             "LOG_LEVEL=info"
-            "LOG_DEVELOPMENT=true"
             "NATS_SEED_FILE=$CACHE_DATA_DIR/user.seed"
             "NATS_JWT_FILE=$CACHE_DATA_DIR/user.jwt"
             "NITS_CACHE_PRIVATE_KEY_FILE=$PRJ_DATA_DIR/cache/key.sec"

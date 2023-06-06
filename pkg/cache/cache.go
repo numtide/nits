@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"github.com/numtide/nits/pkg/state"
 	"io"
 	"net/http"
 	"os"
@@ -146,23 +147,17 @@ func (c *Cache) connectNats() error {
 		return errors.Annotate(err, "failed to create a JetStream context")
 	}
 
-	nar, err := js.CreateObjectStore(&nats.ObjectStoreConfig{
-		Bucket: "nar",
-	})
+	nar, err := state.Nar(js)
 	if err != nil {
-		return errors.Annotate(err, "failed to create nar store")
+		return errors.Annotate(err, "failed to get nar object store")
 	}
 
-	narInfo, err := js.CreateKeyValue(&nats.KeyValueConfig{
-		Bucket: "nar-info",
-	})
+	narInfo, err := state.NarInfo(js)
 	if err != nil {
-		return errors.Annotate(err, "failed to create nar info store")
+		return errors.Annotate(err, "failed to create nar info kv store")
 	}
 
-	narInfoAccess, err := js.CreateKeyValue(&nats.KeyValueConfig{
-		Bucket: "nar-info-access",
-	})
+	narInfoAccess, err := state.NarInfoAccess(js)
 	if err != nil {
 		return errors.Annotate(err, "failed to create nar info access store")
 	}
