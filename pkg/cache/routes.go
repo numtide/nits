@@ -2,6 +2,8 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
+	log "github.com/inconshreveable/log15"
 	"io"
 	"net/http"
 	"strconv"
@@ -30,12 +32,9 @@ func (c *Cache) createRouter() {
 
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
-	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(60 * time.Second))
-	//router.Use(chizap.New(c.log, &chizap.Opts{
-	//	WithReferer:   true,
-	//	WithUserAgent: true,
-	//}))
+	router.Use(requestLogger(c.log))
+	router.Use(middleware.Recoverer)
 
 	router.Get(RouteCacheInfo, c.getNixCacheInfo)
 
@@ -47,6 +46,39 @@ func (c *Cache) createRouter() {
 	router.Put(RouteNar, c.putNar())
 
 	c.router = router
+}
+
+func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+
+			startedAt := time.Now()
+			reqId := middleware.GetReqID(r.Context())
+
+			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+			defer func() {
+				var entries = []interface{}{
+					"status", ww.Status(),
+					"elapsed", time.Since(startedAt),
+					"from", r.RemoteAddr,
+					"reqId", reqId,
+				}
+
+				switch r.Method {
+				case http.MethodHead, http.MethodGet:
+					entries = append(entries, "bytes", ww.BytesWritten())
+				case http.MethodPost, http.MethodPut, http.MethodPatch:
+					entries = append(entries, "bytes", r.ContentLength)
+				}
+
+				logger.Info(fmt.Sprintf("%s %s", r.Method, r.RequestURI), entries...)
+			}()
+
+			next.ServeHTTP(ww, r)
+		}
+		return http.HandlerFunc(fn)
+	}
 }
 
 func (c *Cache) getNixCacheInfo(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +100,8 @@ func (c *Cache) putNar() http.HandlerFunc {
 			w.WriteHeader(500)
 			_, _ = w.Write(nil)
 		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -130,6 +164,8 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 			w.WriteHeader(500)
 			_, _ = w.Write(nil)
 		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
