@@ -36,7 +36,8 @@ func (c *Cache) createRouter() {
 
 	router.Get(RouteCacheInfo, c.getNixCacheInfo)
 
-	router.Get(RouteNarInfo, c.getNarInfo())
+	router.Head(RouteNarInfo, c.getNarInfo(false))
+	router.Get(RouteNarInfo, c.getNarInfo(true))
 	router.Put(RouteNarInfo, c.putNarInfo())
 
 	router.Head(RouteNar, c.getNar(false))
@@ -131,6 +132,7 @@ func (c *Cache) getNar(body bool) http.HandlerFunc {
 		h.Set(ContentLength, strconv.FormatUint(info.Size, 10))
 
 		if !body {
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
@@ -190,7 +192,7 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 	}
 }
 
-func (c *Cache) getNarInfo() http.HandlerFunc {
+func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
 		entry, err := c.narInfo.Get(hash)
@@ -214,6 +216,11 @@ func (c *Cache) getNarInfo() http.HandlerFunc {
 		h := w.Header()
 		h.Set(ContentType, ContentTypeNarInfo)
 		h.Set(ContentLength, strconv.FormatInt(int64(len(entry.Value())), 10))
+
+		if !body {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 
 		_, err = w.Write(entry.Value())
 		if err != nil {
