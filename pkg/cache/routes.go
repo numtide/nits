@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"bytes"
 	"fmt"
 	log "github.com/inconshreveable/log15"
 	"io"
@@ -16,7 +15,6 @@ import (
 )
 
 const (
-	RouteCatchAll  = "/*"
 	RouteNar       = "/nar/{hash:[a-z0-9]+}.nar.{compression:*}"
 	RouteNarInfo   = "/{hash:[a-z0-9]+}.narinfo"
 	RouteCacheInfo = "/nix-cache-info"
@@ -147,50 +145,14 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
 
-		value, err := io.ReadAll(r.Body)
+		var err error
+		var info *narinfo.NarInfo
+
+		info, err = narinfo.Parse(r.Body)
 		if err != nil {
-			w.WriteHeader(500)
-			_, _ = w.Write(nil)
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Could not parse nar info"))
 		}
-		_, err = c.narInfo.Put(hash, value)
-		if err != nil {
-			w.WriteHeader(500)
-			_, _ = w.Write(nil)
-		}
-
-		// record access
-		_, err = c.narInfoAccess.Put(hash, nil)
-		if err != nil {
-			w.WriteHeader(500)
-			_, _ = w.Write(nil)
-		}
-
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
-func (c *Cache) getNarInfo() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		hash := chi.URLParam(r, "hash")
-		obj, err := c.narInfo.Get(hash)
-
-		if err == nats.ErrKeyNotFound {
-			w.WriteHeader(404)
-			return
-		}
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-
-		// record access
-		_, err = c.narInfoAccess.Put(hash, nil)
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-
-		info, err := narinfo.Parse(bytes.NewReader(obj.Value()))
 
 		sign := true
 		for _, sig := range info.Signatures {
@@ -211,23 +173,49 @@ func (c *Cache) getNarInfo() http.HandlerFunc {
 			info.Signatures = append(info.Signatures, sig)
 		}
 
-		res := []byte(info.String())
+		_, err = c.narInfo.Put(hash, []byte(info.String()))
+		if err != nil {
+			w.WriteHeader(500)
+			_, _ = w.Write(nil)
+		}
 
-		if sign {
-			// update store
-			_, err = c.narInfo.Put(hash, res)
-			if err != nil {
-				c.log.Error("failed to put updated nar info into NATS", "error", err)
-				w.WriteHeader(500)
-				return
-			}
+		// record access
+		_, err = c.narInfoAccess.Put(hash, nil)
+		if err != nil {
+			w.WriteHeader(500)
+			_, _ = w.Write(nil)
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (c *Cache) getNarInfo() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hash := chi.URLParam(r, "hash")
+		entry, err := c.narInfo.Get(hash)
+
+		if err == nats.ErrKeyNotFound {
+			w.WriteHeader(404)
+			return
+		}
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+
+		// record access
+		_, err = c.narInfoAccess.Put(hash, nil)
+		if err != nil {
+			w.WriteHeader(500)
+			return
 		}
 
 		h := w.Header()
 		h.Set(ContentType, ContentTypeNarInfo)
-		h.Set(ContentLength, strconv.FormatInt(int64(len(res)), 10))
+		h.Set(ContentLength, strconv.FormatInt(int64(len(entry.Value())), 10))
 
-		_, err = w.Write(res)
+		_, err = w.Write(entry.Value())
 		if err != nil {
 			c.log.Error("failed to write response", "error", err)
 		}
