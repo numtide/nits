@@ -22,6 +22,7 @@
         ({
           config,
           pkgs,
+          lib,
           modulesPath,
           ...
         }: let
@@ -32,11 +33,12 @@
             self.nixosModules.agent
           ];
 
-          nix.nixPath = [
-            "nixpkgs=${pkgs.path}"
-          ];
-
-          nix.settings.experimental-features = "nix-command flakes";
+          nix = {
+            nixPath = [
+              "nixpkgs=${pkgs.path}"
+            ];
+            settings.experimental-features = "nix-command flakes";
+          };
 
           networking.hostName = hostname;
           system.stateVersion = config.system.nixos.version;
@@ -77,7 +79,8 @@
 
               chmod 600 /etc/ssh/ssh_host_ed25519_key
               chmod 644 /etc/ssh/ssh_host_ed25519_key.pub
-            '';          };
+            '';
+          };
 
           users.users.root.initialPassword = password;
 
@@ -108,10 +111,13 @@ in {
   in
     builtins.listToAttrs configs;
 
-  perSystem = {pkgs, config, ...}: let
+  perSystem = {
+    pkgs,
+    config,
+    ...
+  }: let
     cfg = config.dev.agents;
   in {
-
     config.devshells.default = {
       env = [
         {

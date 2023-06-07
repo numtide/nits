@@ -2,8 +2,9 @@ package agent
 
 import (
 	"fmt"
-	"github.com/numtide/nits/pkg/util"
 	"os"
+
+	"github.com/numtide/nits/pkg/util"
 )
 
 type nkeyCmd struct {

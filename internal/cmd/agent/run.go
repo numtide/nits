@@ -2,11 +2,14 @@ package agent
 
 import (
 	"context"
+
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/agent"
 )
 
-type runCmd struct{}
+type runCmd struct {
+	DryRun bool `name:"dry-run" env:"NITS_AGENT_DRY_RUN" default:"false"`
+}
 
 func (a *runCmd) toOptions() ([]agent.Option, error) {
 	nats, err := Cmd.Nats.ToNatsConfig()
@@ -16,6 +19,7 @@ func (a *runCmd) toOptions() ([]agent.Option, error) {
 
 	return []agent.Option{
 		agent.NatsConfig(nats),
+		agent.SwitchDryRun(Cmd.Run.DryRun),
 	}, nil
 }
 

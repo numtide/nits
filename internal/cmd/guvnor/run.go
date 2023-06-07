@@ -2,19 +2,18 @@ package guvnor
 
 import (
 	"context"
+
 	"github.com/juju/errors"
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/guvnor"
 )
 
-type runCmd struct {
-}
+type runCmd struct{}
 
 func (r *runCmd) Run() error {
 	logger := Cmd.Logging.ToLogger()
 
 	return cmd.Run(logger, func(ctx context.Context) error {
-
 		natsConfig, err := Cmd.Nats.ToNatsConfig()
 		if err != nil {
 			return err
@@ -34,5 +33,4 @@ func (r *runCmd) Run() error {
 
 		return srv.Run(ctx)
 	})
-
 }

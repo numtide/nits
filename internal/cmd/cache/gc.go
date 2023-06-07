@@ -2,10 +2,11 @@ package cache
 
 import (
 	"context"
+	"time"
+
 	"github.com/juju/errors"
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/cache"
-	"time"
 )
 
 type gcCmd struct {

@@ -2,11 +2,12 @@ package cache
 
 import (
 	"context"
-	"github.com/numtide/nits/pkg/state"
 	"io"
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/numtide/nits/pkg/state"
 
 	log "github.com/inconshreveable/log15"
 
@@ -177,7 +178,7 @@ func (c *Cache) Run(ctx context.Context) (err error) {
 
 func (c *Cache) connectNats() error {
 	var err error
-	var conn = c.Options.NatsConn
+	conn := c.Options.NatsConn
 
 	if conn == nil {
 		nc := c.Options.NatsConfig

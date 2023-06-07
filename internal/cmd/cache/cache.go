@@ -1,9 +1,10 @@
 package cache
 
 import (
+	"os"
+
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/cache"
-	"os"
 )
 
 var Cmd struct {

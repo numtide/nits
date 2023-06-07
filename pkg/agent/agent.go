@@ -3,7 +3,6 @@ package agent
 import (
 	"context"
 	"crypto/rand"
-	"io"
 	"os"
 	"os/exec"
 
@@ -19,24 +18,6 @@ import (
 
 type Option func(opts *Options) error
 
-func HostKeyFile(file *os.File) Option {
-	return func(opts *Options) error {
-		b, err := io.ReadAll(file)
-		if err != nil {
-			return errors.Annotate(err, "failed to read host key file")
-		}
-
-		signer, err := ssh.ParsePrivateKey(b)
-		if err != nil {
-			return errors.Annotate(err, "failed to parse host key file")
-		}
-
-		opts.signer = signer
-
-		return nil
-	}
-}
-
 func NatsConfig(config *config.Nats) Option {
 	return func(opts *Options) error {
 		if config == nil {
@@ -47,8 +28,16 @@ func NatsConfig(config *config.Nats) Option {
 	}
 }
 
+func SwitchDryRun(dryRun bool) Option {
+	return func(opts *Options) error {
+		opts.DryRun = dryRun
+		return nil
+	}
+}
+
 type Options struct {
 	NatsConfig *config.Nats
+	DryRun     bool
 
 	signer ssh.Signer
 }
@@ -56,6 +45,7 @@ type Options struct {
 func GetDefaultOptions() Options {
 	return Options{
 		NatsConfig: config.DefaultNatsConfig,
+		DryRun:     false,
 	}
 }
 

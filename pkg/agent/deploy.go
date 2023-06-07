@@ -3,16 +3,16 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/cache"
 	"github.com/numtide/nits/pkg/guvnor"
 	"github.com/numtide/nits/pkg/state"
 	"golang.org/x/sync/errgroup"
-	"time"
 )
 
 func (a *Agent) listenForDeployment(ctx context.Context) error {
-
 	kv, err := state.Deployment(a.js)
 	if err != nil {
 		return err
@@ -85,12 +85,12 @@ func (a *Agent) onDeployment(config *guvnor.Deployment) {
 	})
 
 	eg.Go(func() (err error) {
+		defer cancel()
+
 		if err = copyFromBinaryCache(c.ListenAddr(), config.Closure); err != nil {
 			return err
 		}
-
-		cancel()
-		return nil
+		return switchToConfiguration(config, a.Options.DryRun, l)
 	})
 
 	defer func() {

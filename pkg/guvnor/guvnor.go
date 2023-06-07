@@ -3,6 +3,7 @@ package guvnor
 import (
 	"context"
 	"crypto/rand"
+
 	log "github.com/inconshreveable/log15"
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"

@@ -2,11 +2,12 @@ package cache
 
 import (
 	"fmt"
-	log "github.com/inconshreveable/log15"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	log "github.com/inconshreveable/log15"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -50,14 +51,13 @@ func (c *Cache) createRouter() {
 func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-
 			startedAt := time.Now()
 			reqId := middleware.GetReqID(r.Context())
 
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
 			defer func() {
-				var entries = []interface{}{
+				entries := []interface{}{
 					"status", ww.Status(),
 					"elapsed", time.Since(startedAt),
 					"from", r.RemoteAddr,
