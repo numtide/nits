@@ -64,10 +64,9 @@ type Agent struct {
 
 	logger log.Logger
 
+	nkey string
 	conn *nats.Conn
 	js   nats.JetStreamContext
-
-	watcher nats.KeyWatcher
 }
 
 func (a *Agent) Init() error {
@@ -90,27 +89,7 @@ func (a *Agent) Init() error {
 }
 
 func (a *Agent) Run(ctx context.Context) error {
-	a.logger.Info("listening for closures")
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case update, ok := <-a.watcher.Updates():
-			if !ok {
-				// update channel was closed
-				return nil
-			}
-			if update == nil {
-				// no value currently
-				continue
-			}
-			if update.Operation() != nats.KeyValuePut {
-				a.logger.Warn("unexpected op type received", "op", update.Operation())
-				continue
-			}
-			a.logger.Info("Closure update received", "closure", string(update.Value()))
-		}
-	}
+	return a.listenForDeployment(ctx)
 }
 
 func (a *Agent) connectNats() error {
@@ -121,7 +100,6 @@ func (a *Agent) connectNats() error {
 		natsOpts = append(natsOpts, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
 	}
 
-	var publicKey string
 	if nc.HostKeyFile != nil {
 
 		signer, err := util.NewSigner(nc.HostKeyFile)
@@ -129,8 +107,12 @@ func (a *Agent) connectNats() error {
 			return err
 		}
 
-		publicKey, err = util.PublicKeyForSigner(signer)
-		a.logger.Info("loaded host key file", "publicKey", publicKey)
+		nkey, err := util.PublicKeyForSigner(signer)
+		if err != nil {
+			return err
+		}
+
+		a.logger.Info("loaded host key file", "nkey", nkey)
 
 		natsOpts = append(natsOpts, nats.UserJWT(
 			func() (string, error) {
@@ -142,11 +124,13 @@ func (a *Agent) connectNats() error {
 				}
 				return sig.Blob, err
 			}))
+
+		a.nkey = nkey
 	}
 
 	conn, err := nats.Connect(nc.Url, natsOpts...)
 	if err != nil {
-		return errors.Annotatef(err, "nkey = %s", publicKey)
+		return errors.Annotatef(err, "nkey = %s", a.nkey)
 	}
 
 	js, err := conn.JetStream()
@@ -154,19 +138,8 @@ func (a *Agent) connectNats() error {
 		return errors.Annotate(err, "failed to create a jet stream context")
 	}
 
-	closures, err := js.CreateKeyValue(&nats.KeyValueConfig{
-		Bucket: "closures",
-	})
-	if err != nil {
-		return errors.Annotate(err, "failed to create closures kv store")
-	}
-
-	// watch for changes based on our public key
-	watcher, err := closures.Watch(publicKey, nats.IncludeHistory())
-
 	a.conn = conn
 	a.js = js
-	a.watcher = watcher
 
 	return nil
 }

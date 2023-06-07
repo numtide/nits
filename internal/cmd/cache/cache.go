@@ -15,6 +15,8 @@ var Cmd struct {
 	Priority       int      `env:"NITS_CACHE_PRIORITY" default:"1"`
 	PrivateKeyFile *os.File `env:"NITS_CACHE_PRIVATE_KEY_FILE"`
 
+	BindAddress string `env:"NITS_BIND_ADDRESS" default:"localhost:3000"`
+
 	Run runCmd `cmd:"" help:"Run a binary cache."`
 	GC  gcCmd  `cmd:"" help:"Garbage collect the binary cache."`
 }
@@ -26,6 +28,7 @@ func cacheOptions() ([]cache.Option, error) {
 	}
 
 	return []cache.Option{
+		cache.BindAddress(Cmd.BindAddress),
 		cache.NatsConfig(nats),
 		cache.InfoConfig(Cmd.StoreDir, Cmd.WantMassQuery, Cmd.Priority),
 		cache.PrivateKeyFile(Cmd.PrivateKeyFile),
