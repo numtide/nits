@@ -60,6 +60,22 @@ type Agent struct {
 }
 
 func (a *Agent) Init() error {
+	// connect to nats server
+	if err := a.connectNats(); err != nil {
+		return err
+	}
+
+	multiHandler := log.MultiHandler(
+		a.logger.GetHandler(),
+		&util.NatsLogger{
+			Conn:    a.conn,
+			Subject: "nits.logs.agent." + a.nkey,
+		},
+	)
+
+	// mixin nats logging
+	a.logger.SetHandler(multiHandler)
+
 	// test we can use nix
 	cmd := exec.Command("nix", "run", "nixpkgs#hello")
 
@@ -67,11 +83,6 @@ func (a *Agent) Init() error {
 	_, _ = os.Stderr.Write(out)
 
 	if err != nil {
-		return err
-	}
-
-	// connect to nats server
-	if err := a.connectNats(); err != nil {
 		return err
 	}
 
