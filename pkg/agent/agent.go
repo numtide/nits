@@ -3,9 +3,6 @@ package agent
 import (
 	"context"
 	"crypto/rand"
-	"os"
-	"os/exec"
-
 	log "github.com/inconshreveable/log15"
 
 	"github.com/numtide/nits/pkg/util"
@@ -75,16 +72,6 @@ func (a *Agent) Init() error {
 
 	// mixin nats logging
 	a.logger.SetHandler(multiHandler)
-
-	// test we can use nix
-	cmd := exec.Command("nix", "run", "nixpkgs#hello")
-
-	out, err := cmd.Output()
-	_, _ = os.Stderr.Write(out)
-
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

@@ -2,9 +2,10 @@ package util
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/inconshreveable/log15"
 	"github.com/nats-io/nats.go"
-	"time"
 )
 
 type NatsLogger struct {

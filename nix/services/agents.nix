@@ -50,12 +50,9 @@
           boot.loader.grub.devices = lib.mkForce ["/dev/sda"];
           fileSystems."/".device = lib.mkDefault "/dev/sda";
 
-          environment.systemPackages = [
-            pkgs.sysz
-          ];
-
           virtualisation = {
             graphics = false;
+            diskSize = 5120;
             diskImage = "$VM_DATA_DIR/${hostname}/disk.qcow2";
 
             forwardPorts = [

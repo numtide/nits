@@ -42,21 +42,24 @@ type Guvnor struct {
 	js   nats.JetStreamContext
 }
 
-func (g *Guvnor) Init() error {
-	if err := g.connectNats(); err != nil {
+func (g *Guvnor) Init() (err error) {
+	if err = g.connectNats(); err != nil {
 		return err
 	}
 
-	if err := state.InitObjectStores(g.js); err != nil {
+	if err = state.InitObjectStores(g.js); err != nil {
 		return err
 	}
 
-	return state.InitKeyValueStores(g.js)
+	if err = state.InitKeyValueStores(g.js); err != nil {
+		return err
+	}
+
+	return state.InitStreams(g.js)
 }
 
 func (g *Guvnor) Run(ctx context.Context) error {
 	<-ctx.Done()
-
 	return nil
 }
 

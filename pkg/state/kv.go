@@ -11,8 +11,14 @@ var NarInfoAccessConfig = nats.KeyValueConfig{
 }
 
 var DeploymentConfig = nats.KeyValueConfig{
-	Bucket:  "deployment",
-	History: 32,
+	Bucket: "deployment",
+	// TODO max history size is hardcoded to 64 in the go client but there isn't a limit enforced by the server
+	History: 64,
+}
+
+var AgentOutputConfig = nats.KeyValueConfig{
+	Bucket:  "agent-output",
+	History: 64,
 }
 
 func InitKeyValueStores(js nats.JetStreamContext) (err error) {
@@ -27,6 +33,11 @@ func InitKeyValueStores(js nats.JetStreamContext) (err error) {
 	}
 
 	_, err = js.CreateKeyValue(&DeploymentConfig)
+	if err != nil {
+		return err
+	}
+
+	_, err = js.CreateKeyValue(&AgentOutputConfig)
 	return err
 }
 
@@ -40,4 +51,8 @@ func NarInfoAccess(js nats.JetStreamContext) (nats.KeyValue, error) {
 
 func Deployment(js nats.JetStreamContext) (nats.KeyValue, error) {
 	return js.KeyValue(DeploymentConfig.Bucket)
+}
+
+func AgentOutput(js nats.JetStreamContext) (nats.KeyValue, error) {
+	return js.KeyValue(AgentOutputConfig.Bucket)
 }
