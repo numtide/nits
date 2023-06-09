@@ -136,9 +136,9 @@ func (c *Cache) getNar(body bool) http.HandlerFunc {
 			return
 		}
 
-		var written int64
-		chunkSize := int64(info.Opts.ChunkSize)
-		for written, err = io.CopyN(w, obj, chunkSize); written == chunkSize; {
+		written, err := io.CopyN(w, obj, int64(info.Size))
+		if written != int64(info.Size) {
+			log.Error("Bytes copied does not match object size", "expected", info.Size, "written", written)
 		}
 	}
 }
