@@ -3,9 +3,10 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	log "github.com/inconshreveable/log15"
 	"github.com/numtide/nits/pkg/nix"
-	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/cache"

@@ -40,7 +40,7 @@
             settings = {
               experimental-features = "nix-command flakes";
               trusted-public-keys = [
-                (lib.readFile ./cache/key.pub)
+                (lib.readFile ./guvnor/key.pub)
               ];
             };
           };
@@ -151,8 +151,7 @@ in {
         mkAgentProcess = id: {
           command = "nix run .#nixosConfigurations.agent-host-${builtins.toString id}.config.system.build.vm";
           depends_on = {
-            nats-server.condition = "process_healthy";
-            nats-permissions.condition = "process_completed";
+            guvnor.condition = "process_healthy";
           };
         };
         configs =

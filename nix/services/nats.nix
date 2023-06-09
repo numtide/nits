@@ -58,7 +58,7 @@
     config.devshells.default = {
       devshell.startup = {
         setup-nats = {
-          deps = ["setup-agent-vms" "setup-cache"];
+          deps = ["setup-agent-vms" "setup-guvnor"];
           text = ''
             set -euo pipefail
 
@@ -98,16 +98,6 @@
 
             nsc describe user -n guvnor -R > "$GUVNOR_DATA_DIR/user.jwt"
             nsc generate context -a numtide -u guvnor --context guvnor
-
-            # generate a user for the cache
-            nsc add user -a numtide -n cache
-            nsc export keys --user cache --dir "$CACHE_DATA_DIR"
-            rm $CACHE_DATA_DIR/O*.nk
-            rm $CACHE_DATA_DIR/A*.nk
-            mv $(ls $CACHE_DATA_DIR/U*.nk | head) "$CACHE_DATA_DIR/user.seed"
-
-            nsc describe user -n cache -R > "$CACHE_DATA_DIR/user.jwt"
-            nsc generate context -a numtide -u cache --context cache
 
             # generate users for the agent vms
             for AGENT_DIR in $VM_DATA_DIR/*; do

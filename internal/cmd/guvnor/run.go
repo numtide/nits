@@ -19,9 +19,15 @@ func (r *runCmd) Run() error {
 			return err
 		}
 
+		cacheOptions, err := Cmd.Cache.ToCacheOptions()
+		if err != nil {
+			return err
+		}
+
 		srv, err := guvnor.NewGuvnor(
 			logger,
 			guvnor.NatsConfig(natsConfig),
+			guvnor.CacheOptions(cacheOptions),
 		)
 		if err != nil {
 			return errors.Annotate(err, "failed to create server")

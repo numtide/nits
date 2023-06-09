@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 
+	"github.com/numtide/nits/pkg/cache"
+
 	log "github.com/inconshreveable/log15"
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
@@ -17,7 +19,8 @@ type Option func(opts *Options) error
 type InitFn func(srv *Guvnor) error
 
 type Options struct {
-	NatsConfig *config.Nats
+	NatsConfig   *config.Nats
+	CacheOptions []cache.Option
 }
 
 func NatsConfig(config *config.Nats) Option {
@@ -26,6 +29,13 @@ func NatsConfig(config *config.Nats) Option {
 			return errors.New("config cannot be nil")
 		}
 		opts.NatsConfig = config
+		return nil
+	}
+}
+
+func CacheOptions(options []cache.Option) Option {
+	return func(opts *Options) error {
+		opts.CacheOptions = options
 		return nil
 	}
 }
@@ -40,6 +50,8 @@ type Guvnor struct {
 
 	conn *nats.Conn
 	js   nats.JetStreamContext
+
+	cache *cache.Cache
 }
 
 func (g *Guvnor) Init() (err error) {
@@ -55,12 +67,32 @@ func (g *Guvnor) Init() (err error) {
 		return err
 	}
 
-	return state.InitStreams(g.js)
+	if err = state.InitStreams(g.js); err != nil {
+		return err
+	}
+
+	cacheOpts := g.Options.CacheOptions
+	cacheOpts = append(cacheOpts, cache.NatsConnection(g.conn))
+
+	c, err := cache.NewCache(
+		g.logger.New("component", "cache"),
+		cacheOpts...,
+	)
+	if err != nil {
+		return err
+	}
+
+	if err = c.Init(); err != nil {
+		return err
+	}
+
+	g.cache = c
+
+	return nil
 }
 
 func (g *Guvnor) Run(ctx context.Context) error {
-	<-ctx.Done()
-	return nil
+	return g.cache.Run(ctx)
 }
 
 func (g *Guvnor) connectNats() error {

@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"crypto/rand"
+
 	log "github.com/inconshreveable/log15"
 
 	"github.com/numtide/nits/pkg/util"
