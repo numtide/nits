@@ -16,8 +16,8 @@ var DeploymentConfig = nats.KeyValueConfig{
 	History: 64,
 }
 
-var AgentOutputConfig = nats.KeyValueConfig{
-	Bucket:  "agent-output",
+var DeploymentResultConfig = nats.KeyValueConfig{
+	Bucket:  "deployment-result",
 	History: 64,
 }
 
@@ -37,7 +37,7 @@ func InitKeyValueStores(js nats.JetStreamContext) (err error) {
 		return err
 	}
 
-	_, err = js.CreateKeyValue(&AgentOutputConfig)
+	_, err = js.CreateKeyValue(&DeploymentResultConfig)
 	return err
 }
 
@@ -53,6 +53,6 @@ func Deployment(js nats.JetStreamContext) (nats.KeyValue, error) {
 	return js.KeyValue(DeploymentConfig.Bucket)
 }
 
-func AgentOutput(js nats.JetStreamContext) (nats.KeyValue, error) {
-	return js.KeyValue(AgentOutputConfig.Bucket)
+func DeploymentResult(js nats.JetStreamContext) (nats.KeyValue, error) {
+	return js.KeyValue(DeploymentResultConfig.Bucket)
 }

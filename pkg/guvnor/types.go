@@ -57,3 +57,9 @@ type Deployment struct {
 	Action  DeployAction `json:"action"`
 	Closure string       `json:"closure"`
 }
+
+type DeploymentResult struct {
+	Deployment Deployment `json:"deployment"`
+	Success    bool       `json:"success"`
+	Output     string     `json:"output"`
+}

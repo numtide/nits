@@ -100,6 +100,20 @@
               jwtFile = "/mnt/shared/user.jwt";
             };
           };
+
+          systemd.services.hello = {
+            enable = true;
+            after = ["network.target"];
+            wantedBy = ["sysinit.target"];
+            description = "A test service";
+
+            startLimitIntervalSec = 0;
+
+            serviceConfig = {
+                Type = "simple";
+                ExecStart = "${pkgs.hello}/bin/hello";
+            };
+          };
         })
       ];
     };

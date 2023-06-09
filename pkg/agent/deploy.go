@@ -21,7 +21,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 		return err
 	}
 
-	agentOutput, err := state.AgentOutput(a.js)
+	deploymentResult, err := state.DeploymentResult(a.js)
 	if err != nil {
 		return err
 	}
@@ -52,13 +52,13 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 					a.logger.Error("failed to unmarshal deployment update", "error", err)
 					continue
 				}
-				a.onDeployment(&config, agentOutput)
+				a.onDeployment(&config, deploymentResult)
 			}
 		}
 	}
 }
 
-func (a *Agent) onDeployment(config *guvnor.Deployment, agentOutput nats.KeyValue) {
+func (a *Agent) onDeployment(config *guvnor.Deployment, deploymentResult nats.KeyValue) {
 	l := a.logger.New("closure", config.Closure)
 
 	currentSystem, err := nix.CurrentSystemClosure()
@@ -113,26 +113,43 @@ func (a *Agent) onDeployment(config *guvnor.Deployment, agentOutput nats.KeyValu
 
 		defer func() {
 			// todo handle output that is larger than 1 MB and therefore too large for the KV store
-			_, err := agentOutput.Put(a.nkey, output)
+
+			result := guvnor.DeploymentResult{
+				Deployment: *config,
+				Success:    err == nil,
+				Output:     string(output),
+			}
+
+			b, err := json.Marshal(result)
+			if err != nil {
+				l.Error("failed to marshal deployment result to json", "error", err)
+				return
+			}
+
+			_, err = deploymentResult.Put(a.nkey, b)
 			if err != nil {
 				l.Error("failed to write command output to object store", "error", err)
 			}
-
-			l.Info("command output uploaded", "bucket", agentOutput.Bucket(), "name", a.nkey, "size", len(output))
 		}()
 
 		l.Info("copying from binary cache")
-		if stdOut, stdErr, err = nix.CopyFromBinaryCache(c.ListenAddr(), config.Closure); err != nil {
-			output = append(output, stdOut...)
+		stdOut, stdErr, err = nix.CopyFromBinaryCache(c.ListenAddr(), config.Closure)
+		output = append(output, stdOut...)
+		if err != nil {
 			output = append(output, stdErr...)
 			l.Error("failure whilst copying from binary cache")
 			return err
 		}
 
+		// todo check if the agent binary has changed and perform a restart after switching
+
 		l.Info("switching configuration")
-		if stdOut, stdErr, err = nix.SwitchToConfiguration(config, a.Options.DryRun); err != nil {
-			output = append(output, stdOut...)
+		stdOut, stdErr, err = nix.SwitchToConfiguration(config, a.Options.DryRun)
+
+		output = append(output, stdOut...)
+		if err != nil {
 			output = append(output, stdErr...)
+			l.Error("failure whilst switching configuration")
 			return err
 		}
 

@@ -41,6 +41,9 @@ in {
       description = "Nits Agent";
       startLimitIntervalSec = 0;
 
+      # the agent will restart itself after a successful deployment
+      restartIfChanged = false;
+
       path = [
         pkgs.nix
         pkgs.nixos-rebuild
