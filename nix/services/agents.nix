@@ -37,7 +37,12 @@
             nixPath = [
               "nixpkgs=${pkgs.path}"
             ];
-            settings.experimental-features = "nix-command flakes";
+            settings = {
+              experimental-features = "nix-command flakes";
+              trusted-public-keys = [
+                (lib.readFile ./cache/key.pub)
+              ];
+            };
           };
 
           networking.hostName = hostname;
@@ -92,6 +97,7 @@
           };
 
           services.nits.agent = {
+            logLevel = "debug";
             nats = {
               url = "nats://10.0.2.2";
               jwtFile = "/mnt/shared/user.jwt";
