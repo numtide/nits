@@ -68,8 +68,8 @@ func (a *Agent) Init() error {
 	multiHandler := log.MultiHandler(
 		a.logger.GetHandler(),
 		&util.NatsLogger{
-			Conn:    a.conn,
-			Subject: "nits.logs.agent." + a.nkey,
+			Js:      a.js,
+			Subject: "nits.log.agent." + a.nkey,
 		},
 	)
 
