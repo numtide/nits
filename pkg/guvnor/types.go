@@ -12,8 +12,8 @@ const (
 	DeployActionDryActivate
 )
 
-func (a DeployAction) String() string {
-	switch a {
+func (a *DeployAction) String() string {
+	switch *a {
 	case DeployActionSwitch:
 		return "switch"
 	case DeployActionBoot:
@@ -40,7 +40,7 @@ func ToDeployAction(s string) DeployAction {
 	return DeployActionUnknown
 }
 
-func (a DeployAction) MarshalJSON() ([]byte, error) {
+func (a *DeployAction) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.String())
 }
 
