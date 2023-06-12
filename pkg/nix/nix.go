@@ -18,7 +18,7 @@ func CurrentSystemClosure() (string, error) {
 	return os.Readlink("/run/current-system")
 }
 
-func CopyToBinaryCache(cacheAddr net.Addr, path string) (stdOut []byte, stdErr []byte, err error) {
+func CopyToBinaryCache(cacheAddr net.Addr, path string) ([]byte, error) {
 	args := []string{
 		"copy",
 		"-v",
@@ -27,16 +27,10 @@ func CopyToBinaryCache(cacheAddr net.Addr, path string) (stdOut []byte, stdErr [
 		path,
 	}
 	cmd := exec.Command("nix", args...)
-
-	stdOut, err = cmd.Output()
-	if exitError, ok := err.(*exec.ExitError); ok {
-		stdErr = exitError.Stderr
-	}
-
-	return
+	return cmd.CombinedOutput()
 }
 
-func CopyFromBinaryCache(cacheAddr net.Addr, path string) (stdOut []byte, stdErr []byte, err error) {
+func CopyFromBinaryCache(cacheAddr net.Addr, path string) ([]byte, error) {
 	args := []string{
 		"copy",
 		"-v",
@@ -46,32 +40,21 @@ func CopyFromBinaryCache(cacheAddr net.Addr, path string) (stdOut []byte, stdErr
 		path,
 	}
 	cmd := exec.Command("nix", args...)
-
-	stdOut, err = cmd.Output()
-	if exitError, ok := err.(*exec.ExitError); ok {
-		stdErr = exitError.Stderr
-	}
-
-	return
+	return cmd.CombinedOutput()
 }
 
-func SwitchToConfiguration(config *guvnor.Deployment, dryRun bool) (stdOut []byte, stdErr []byte, err error) {
+func SwitchToConfiguration(config *guvnor.Deployment, dryRun bool) (output []byte, err error) {
 	binPath := config.Closure + "/bin/switch-to-configuration"
 	_, err = os.Stat(binPath)
 	if err != nil {
-		return nil, nil, ErrorMalformedClosure
+		return nil, ErrorMalformedClosure
 	}
 
 	cmd := exec.Command(binPath, config.Action.String())
 
 	if dryRun {
-		return []byte(fmt.Sprintf("dry-run: %s", cmd.String())), nil, nil
+		return []byte(fmt.Sprintf("dry-run: %s", cmd.String())), nil
 	}
 
-	stdOut, err = cmd.Output()
-	if exitError, ok := err.(*exec.ExitError); ok {
-		stdErr = exitError.Stderr
-	}
-
-	return
+	return cmd.CombinedOutput()
 }

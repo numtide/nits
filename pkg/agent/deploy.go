@@ -58,15 +58,15 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 	}
 }
 
-func (a *Agent) onDeployment(config *guvnor.Deployment, deploymentResult nats.KeyValue) {
-	l := a.logger.New("closure", config.Closure)
+func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.KeyValue) {
+	l := a.logger.New("action", deployment.Action, "closure", deployment.Closure)
 
 	currentSystem, err := nix.CurrentSystemClosure()
 	if err != nil {
 		l.Error("failed to retrieve current system closure", "error", err)
 	}
 
-	if currentSystem == config.Closure {
+	if currentSystem == deployment.Closure {
 		l.Info("current system matches deployment closure", "system", currentSystem)
 		return
 	}
@@ -74,6 +74,15 @@ func (a *Agent) onDeployment(config *guvnor.Deployment, deploymentResult nats.Ke
 	l.Info("deploying")
 
 	startedAt := time.Now()
+
+	defer func() {
+		elapsed := time.Since(startedAt)
+		if err == nil {
+			l.Info("deploying complete", "elapsed", elapsed)
+		} else {
+			l.Error("deploying error", "elapsed", elapsed, "error", err)
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -109,15 +118,15 @@ func (a *Agent) onDeployment(config *guvnor.Deployment, deploymentResult nats.Ke
 	eg.Go(func() (err error) {
 		defer cancel()
 
-		var stdOut, stdErr, output []byte
+		var out, allOut []byte
 
 		defer func() {
 			// todo handle output that is larger than 1 MB and therefore too large for the KV store
 
 			result := guvnor.DeploymentResult{
-				Deployment: *config,
-				Success:    err == nil,
-				Output:     string(output),
+				Deployment: *deployment,
+				Error:      err,
+				Output:     string(allOut),
 			}
 
 			b, err := json.Marshal(result)
@@ -126,17 +135,18 @@ func (a *Agent) onDeployment(config *guvnor.Deployment, deploymentResult nats.Ke
 				return
 			}
 
-			_, err = deploymentResult.Put(a.nkey, b)
+			_, err = resultStore.Put(a.nkey, b)
 			if err != nil {
 				l.Error("failed to write command output to object store", "error", err)
 			}
 		}()
 
 		l.Info("copying from binary cache")
-		stdOut, stdErr, err = nix.CopyFromBinaryCache(c.ListenAddr(), config.Closure)
-		output = append(output, stdOut...)
+
+		out, err = nix.CopyFromBinaryCache(c.ListenAddr(), deployment.Closure)
+		allOut = append(allOut, out...)
+
 		if err != nil {
-			output = append(output, stdErr...)
 			l.Error("failure whilst copying from binary cache")
 			return err
 		}
@@ -144,26 +154,17 @@ func (a *Agent) onDeployment(config *guvnor.Deployment, deploymentResult nats.Ke
 		// todo check if the agent binary has changed and perform a restart after switching
 
 		l.Info("switching configuration")
-		stdOut, stdErr, err = nix.SwitchToConfiguration(config, a.Options.DryRun)
 
-		output = append(output, stdOut...)
+		out, err = nix.SwitchToConfiguration(deployment, a.Options.DryRun)
+		allOut = append(allOut, out...)
+
 		if err != nil {
-			output = append(output, stdErr...)
 			l.Error("failure whilst switching configuration")
 			return err
 		}
 
 		return nil
 	})
-
-	defer func() {
-		elapsed := time.Since(startedAt)
-		if err == nil {
-			l.Info("deploying complete", "elapsed", elapsed)
-		} else {
-			l.Error("deploying error", "elapsed", elapsed, "error", err)
-		}
-	}()
 
 	err = eg.Wait()
 }

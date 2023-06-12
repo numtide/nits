@@ -60,6 +60,6 @@ type Deployment struct {
 
 type DeploymentResult struct {
 	Deployment Deployment `json:"deployment"`
-	Success    bool       `json:"success"`
+	Error      error      `json:"error"`
 	Output     string     `json:"output"`
 }
