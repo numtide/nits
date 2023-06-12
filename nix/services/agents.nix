@@ -110,8 +110,8 @@
             startLimitIntervalSec = 0;
 
             serviceConfig = {
-                Type = "simple";
-                ExecStart = "${pkgs.hello}/bin/hello";
+              Type = "simple";
+              ExecStart = "${pkgs.hello}/bin/hello";
             };
           };
         })

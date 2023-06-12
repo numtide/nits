@@ -14,7 +14,15 @@
         pname = "nits";
         version = "0.0.1+dev";
 
-        src = ../.;
+        src = with lib;
+          cleanSourceWith {
+            filter = cleanSourceFilter;
+            src = cleanSourceWith {
+              src = ../.;
+              filter = name: type: !((type == "directory" && name == "nix") || (hasSuffix ".nix" name));
+            };
+          };
+
         vendorSha256 = "sha256-zmr9RAdkqPfNW/Mp8/zApsoQyV1Sq0Gpcm0vjKVEw2w=";
 
         ldflags = [
