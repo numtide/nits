@@ -6,6 +6,6 @@
     ./nixos
     ./packages.nix
     ./shell.nix
-    ./services
+    ./dev
   ];
 }
