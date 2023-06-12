@@ -26,7 +26,7 @@
             "NATS_JWT_FILE=$GUVNOR_DATA_DIR/user.jwt"
             "NITS_CACHE_PRIVATE_KEY_FILE=${keyFile}"
           ];
-          command = "${self'.packages.nits}/bin/cache run";
+          command = "${self'.packages.nits}/bin/guvnor run";
           depends_on = {
             nats-server.condition = "process_healthy";
             nats-permissions.condition = "process_completed";
