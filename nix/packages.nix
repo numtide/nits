@@ -1,7 +1,12 @@
-{
+{inputs, ...}: {
+  imports = [
+    inputs.flake-parts.flakeModules.easyOverlay
+  ];
+
   perSystem = {
     lib,
     pkgs,
+    self',
     ...
   }: {
     packages = rec {
@@ -9,8 +14,16 @@
         pname = "nits";
         version = "0.0.1+dev";
 
-        src = ../.;
-        vendorSha256 = "sha256-QEmdmeDKjYYaQm85LyGAhajVv7DaLGL2a5OeA6+XM6g=";
+        src = with lib;
+          cleanSourceWith {
+            filter = cleanSourceFilter;
+            src = cleanSourceWith {
+              src = ../.;
+              filter = name: type: !((type == "directory" && name == "nix") || (hasSuffix ".nix" name));
+            };
+          };
+
+        vendorSha256 = "sha256-zmr9RAdkqPfNW/Mp8/zApsoQyV1Sq0Gpcm0vjKVEw2w=";
 
         ldflags = [
           "-X 'build.Name=${pname}'"
@@ -26,5 +39,7 @@
 
       default = nits;
     };
+
+    overlayAttrs = self'.packages;
   };
 }

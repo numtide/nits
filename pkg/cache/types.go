@@ -2,8 +2,9 @@ package cache
 
 import (
 	"fmt"
-	"github.com/juju/errors"
 	"io"
+
+	"github.com/juju/errors"
 )
 
 type Info struct {

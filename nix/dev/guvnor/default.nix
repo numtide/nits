@@ -1,26 +1,32 @@
 {
   perSystem = {self', ...}: {
     config.devshells.default = {
+      env = [
+        {
+          name = "GUVNOR_DATA_DIR";
+          eval = "$PRJ_DATA_DIR/guvnor";
+        }
+      ];
       devshell.startup = {
-        generate-binary-cache-key.text = ''
-          OUT="$PRJ_DATA_DIR/cache"
-          [ -d $OUT ] && exit 0
-          mkdir -p $OUT
-          nix-store --generate-binary-cache-key nits-cache "$OUT/key.sec" "$OUT/key.pub"
+        setup-guvnor.text = ''
+          [ -d $GUVNOR_DATA_DIR ] && exit 0
+          mkdir -p $GUVNOR_DATA_DIR
         '';
       };
     };
 
     config.process-compose.configs = {
-      dev-services.processes = {
-        cache = {
-          environment = [
+      dev.processes = {
+        guvnor = {
+          environment = let
+            keyFile = ./key.sec;
+          in [
             "LOG_LEVEL=info"
-            "LOG_DEVELOPMENT=true"
-            "NATS_CREDENTIALS_FILE=$NSC_HOME/creds/numtide/numtide/cache.creds"
-            "NITS_CACHE_PRIVATE_KEY_FILE=$PRJ_DATA_DIR/cache/key.sec"
+            "NATS_SEED_FILE=$GUVNOR_DATA_DIR/user.seed"
+            "NATS_JWT_FILE=$GUVNOR_DATA_DIR/user.jwt"
+            "NITS_CACHE_PRIVATE_KEY_FILE=${keyFile}"
           ];
-          command = "${self'.packages.nits}/bin/nits cache";
+          command = "${self'.packages.nits}/bin/guvnor run";
           depends_on = {
             nats-server.condition = "process_healthy";
             nats-permissions.condition = "process_completed";

@@ -36,6 +36,10 @@
             pkgs.delve
             pkgs.golangci-lint
 
+            pkgs.openssl
+
+            pkgs.qemu-utils
+
             pkgs.statix
           ]
           # platform dependent CGO dependencies

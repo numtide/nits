@@ -33,7 +33,7 @@
     };
   in {
     config.process-compose.configs = {
-      dev-services.processes = {
+      dev.processes = {
         nats-server = {
           working_dir = "$NATS_HOME";
           command = ''${lib.getExe pkgs.nats-server} -c ./nats.conf -sd ./'';
@@ -57,39 +57,57 @@
 
     config.devshells.default = {
       devshell.startup = {
-        setup-nats.text = ''
-          set -euo pipefail
+        setup-nats = {
+          deps = ["setup-agent-vms" "setup-guvnor"];
+          text = ''
+            set -euo pipefail
 
-          # we only setup the data dir if it doesn't exist
-          # to refresh simply delete the directory and run `direnv reload`
-          [ -d $NSC_HOME ] && exit 0
+            # we only setup the data dir if it doesn't exist
+            # to refresh simply delete the directory and run `direnv reload`
+            [ -d $NSC_HOME ] && exit 0
 
-          mkdir -p $NSC_HOME
+            mkdir -p $NSC_HOME
 
-          # initialise nsc state
-          nsc init -n numtide --dir $NSC_HOME
-          nsc edit operator \
-            --service-url nats://localhost:4222 \
-            --account-jwt-server-url nats://localhost:4222
+            # initialise nsc state
+            nsc init -n numtide --dir $NSC_HOME
+            nsc edit operator \
+              --service-url nats://localhost:4222 \
+              --account-jwt-server-url nats://localhost:4222
 
-          # setup server config
-          mkdir -p $NATS_HOME
-          cp ${config} "$NATS_HOME/nats.conf"
-          nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
+            # setup server config
+            mkdir -p $NATS_HOME
+            cp ${config} "$NATS_HOME/nats.conf"
+            nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
 
-          # enable jetstream for numtide account, no limits
-          nsc edit account -n numtide \
-            --js-mem-storage -1 \
-            --js-disk-storage -1 \
-            --js-streams -1 \
-            --js-consumer -1
+            # generate a sys context
+            nsc generate context -a SYS -u sys --context sys
 
-          # generate some users
-          nsc add user -a numtide -n cache
+            # enable jetstream for numtide account, no limits
+            nsc edit account -n numtide \
+              --js-mem-storage -1 \
+              --js-disk-storage -1 \
+              --js-streams -1 \
+              --js-consumer -1
 
-          # generate some cli contexts
-          nsc generate context -a numtide -u cache --context cache
-        '';
+            # generate a user for the guvnor
+            nsc add user -a numtide -n guvnor
+            nsc export keys --user guvnor --dir "$GUVNOR_DATA_DIR"
+            rm $GUVNOR_DATA_DIR/O*.nk
+            rm $GUVNOR_DATA_DIR/A*.nk
+            mv $(ls $GUVNOR_DATA_DIR/U*.nk | head) "$GUVNOR_DATA_DIR/user.seed"
+
+            nsc describe user -n guvnor -R > "$GUVNOR_DATA_DIR/user.jwt"
+            nsc generate context -a numtide -u guvnor --context guvnor
+
+            # generate users for the agent vms
+            for AGENT_DIR in $VM_DATA_DIR/*; do
+               NKEY=$(${self'.packages.nits}/bin/agent nkey "$AGENT_DIR/ssh_host_ed25519_key")
+               BASENAME=$(basename $AGENT_DIR)
+               nsc add user -a numtide -k $NKEY -n $BASENAME
+               nsc describe user -n $BASENAME -R > $AGENT_DIR/user.jwt
+            done
+          '';
+        };
       };
 
       env = [

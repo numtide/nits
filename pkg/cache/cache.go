@@ -3,8 +3,13 @@ package cache
 import (
 	"context"
 	"io"
+	"net"
 	"net/http"
 	"os"
+
+	"github.com/numtide/nits/pkg/state"
+
+	log "github.com/inconshreveable/log15"
 
 	"github.com/numtide/nits/pkg/config"
 
@@ -12,7 +17,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
-	"go.uber.org/zap"
 )
 
 var DefaultCacheInfo = Info{
@@ -28,7 +32,17 @@ type Options struct {
 	Info      Info
 	SecretKey signature.SecretKey
 
+	NatsConn   *nats.Conn
 	NatsConfig *config.Nats
+
+	BindAddress string
+}
+
+func BindAddress(address string) Option {
+	return func(opts *Options) error {
+		opts.BindAddress = address
+		return nil
+	}
 }
 
 func NatsConfig(config *config.Nats) Option {
@@ -37,6 +51,16 @@ func NatsConfig(config *config.Nats) Option {
 			return errors.New("config cannot be nil")
 		}
 		opts.NatsConfig = config
+		return nil
+	}
+}
+
+func NatsConnection(conn *nats.Conn) Option {
+	return func(opts *Options) error {
+		if conn == nil {
+			return errors.New("conn cannot be nil")
+		}
+		opts.NatsConn = conn
 		return nil
 	}
 }
@@ -74,18 +98,20 @@ func InfoConfig(storeDir string, wantMassQuery bool, priority int) Option {
 
 func GetDefaultOptions() Options {
 	return Options{
-		NatsConfig: config.DefaultNatsConfig,
-		Info:       DefaultCacheInfo,
+		BindAddress: "localhost:3000",
+		NatsConfig:  config.DefaultNatsConfig,
+		Info:        DefaultCacheInfo,
 	}
 }
 
 type Cache struct {
 	Options Options
 
-	log *zap.Logger
+	log log.Logger
 
-	conn *nats.Conn
-	js   nats.JetStreamContext
+	conn     *nats.Conn
+	js       nats.JetStreamContext
+	listener net.Listener
 
 	nar           nats.ObjectStore
 	narInfo       nats.KeyValue
@@ -100,7 +126,7 @@ func (c *Cache) Init() (err error) {
 		if err == nil {
 			c.log.Info("init complete")
 		} else {
-			c.log.Error("init error", zap.Error(err))
+			c.log.Error("init error", "error", err)
 		}
 	}()
 
@@ -109,35 +135,57 @@ func (c *Cache) Init() (err error) {
 	}
 
 	c.createRouter()
+
+	l, err := net.Listen("tcp", c.Options.BindAddress)
+	if err != nil {
+		return err
+	}
+
+	c.listener = l
+	c.log.Info("listening", "addr", l.Addr())
+
 	return nil
 }
 
+func (c *Cache) ListenAddr() (addr net.Addr) {
+	if c.listener != nil {
+		addr = c.listener.Addr()
+	}
+	return
+}
+
 func (c *Cache) Run(ctx context.Context) (err error) {
-	server := http.Server{
-		Addr:    "localhost:3000",
+	logger := c.log.New("addr", c.ListenAddr())
+
+	srv := http.Server{
 		Handler: c.router,
 	}
 
 	go func() {
 		<-ctx.Done()
-		_ = server.Close()
+		_ = srv.Close()
+		_ = c.listener.Close()
+
+		logger.Info("listening stopped")
 	}()
 
-	err = server.ListenAndServe()
-	if errors.Is(err, http.ErrServerClosed) {
+	err = srv.Serve(c.listener)
+	if err == http.ErrServerClosed {
 		err = nil
 	}
-
-	return err
+	return
 }
 
 func (c *Cache) connectNats() error {
 	var err error
+	conn := c.Options.NatsConn
 
-	nc := c.Options.NatsConfig
-	conn, err := nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
-	if err != nil {
-		return errors.Annotate(err, "failed to connect to NATS")
+	if conn == nil {
+		nc := c.Options.NatsConfig
+		conn, err = nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
+		if err != nil {
+			return errors.Annotate(err, "failed to connect to NATS")
+		}
 	}
 
 	js, err := conn.JetStream()
@@ -145,23 +193,17 @@ func (c *Cache) connectNats() error {
 		return errors.Annotate(err, "failed to create a JetStream context")
 	}
 
-	nar, err := js.CreateObjectStore(&nats.ObjectStoreConfig{
-		Bucket: "nar",
-	})
+	nar, err := state.Nar(js)
 	if err != nil {
-		return errors.Annotate(err, "failed to create nar store")
+		return errors.Annotate(err, "failed to get nar object store")
 	}
 
-	narInfo, err := js.CreateKeyValue(&nats.KeyValueConfig{
-		Bucket: "nar-info",
-	})
+	narInfo, err := state.NarInfo(js)
 	if err != nil {
-		return errors.Annotate(err, "failed to create nar info store")
+		return errors.Annotate(err, "failed to create nar info kv store")
 	}
 
-	narInfoAccess, err := js.CreateKeyValue(&nats.KeyValueConfig{
-		Bucket: "nar-info-access",
-	})
+	narInfoAccess, err := state.NarInfoAccess(js)
 	if err != nil {
 		return errors.Annotate(err, "failed to create nar info access store")
 	}
@@ -176,7 +218,7 @@ func (c *Cache) connectNats() error {
 	return nil
 }
 
-func NewCache(log *zap.Logger, options ...Option) (*Cache, error) {
+func NewCache(logger log.Logger, options ...Option) (*Cache, error) {
 	// process options
 	opts := GetDefaultOptions()
 	for _, opt := range options {
@@ -187,6 +229,6 @@ func NewCache(log *zap.Logger, options ...Option) (*Cache, error) {
 
 	return &Cache{
 		Options: opts,
-		log:     log,
+		log:     logger,
 	}, nil
 }

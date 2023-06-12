@@ -1,23 +1,21 @@
 package cache
 
 import (
-	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
 
+	log "github.com/inconshreveable/log15"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo"
-	"go.uber.org/zap"
-
-	"moul.io/chizap"
 )
 
 const (
-	RouteCatchAll  = "/*"
 	RouteNar       = "/nar/{hash:[a-z0-9]+}.nar.{compression:*}"
 	RouteNarInfo   = "/{hash:[a-z0-9]+}.narinfo"
 	RouteCacheInfo = "/nix-cache-info"
@@ -33,16 +31,14 @@ func (c *Cache) createRouter() {
 
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
-	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(60 * time.Second))
-	router.Use(chizap.New(c.log, &chizap.Opts{
-		WithReferer:   true,
-		WithUserAgent: true,
-	}))
+	router.Use(requestLogger(c.log))
+	router.Use(middleware.Recoverer)
 
 	router.Get(RouteCacheInfo, c.getNixCacheInfo)
 
-	router.Get(RouteNarInfo, c.getNarInfo())
+	router.Head(RouteNarInfo, c.getNarInfo(false))
+	router.Get(RouteNarInfo, c.getNarInfo(true))
 	router.Put(RouteNarInfo, c.putNarInfo())
 
 	router.Head(RouteNar, c.getNar(false))
@@ -52,9 +48,41 @@ func (c *Cache) createRouter() {
 	c.router = router
 }
 
+func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			startedAt := time.Now()
+			reqId := middleware.GetReqID(r.Context())
+
+			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+			defer func() {
+				entries := []interface{}{
+					"status", ww.Status(),
+					"elapsed", time.Since(startedAt),
+					"from", r.RemoteAddr,
+					"reqId", reqId,
+				}
+
+				switch r.Method {
+				case http.MethodHead, http.MethodGet:
+					entries = append(entries, "bytes", ww.BytesWritten())
+				case http.MethodPost, http.MethodPut, http.MethodPatch:
+					entries = append(entries, "bytes", r.ContentLength)
+				}
+
+				logger.Info(fmt.Sprintf("%s %s", r.Method, r.RequestURI), entries...)
+			}()
+
+			next.ServeHTTP(ww, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
 func (c *Cache) getNixCacheInfo(w http.ResponseWriter, r *http.Request) {
 	if err := c.Options.Info.Write(w); err != nil {
-		c.log.Error("failed to write cache info response", zap.Error(err))
+		c.log.Error("failed to write cache info response", "error", err)
 	}
 }
 
@@ -71,6 +99,8 @@ func (c *Cache) putNar() http.HandlerFunc {
 			w.WriteHeader(500)
 			_, _ = w.Write(nil)
 		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -102,12 +132,13 @@ func (c *Cache) getNar(body bool) http.HandlerFunc {
 		h.Set(ContentLength, strconv.FormatUint(info.Size, 10))
 
 		if !body {
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		var written int64
-		chunkSize := int64(info.Opts.ChunkSize)
-		for written, err = io.CopyN(w, obj, chunkSize); written == chunkSize; {
+		written, err := io.CopyN(w, obj, int64(info.Size))
+		if written != int64(info.Size) {
+			log.Error("Bytes copied does not match object size", "expected", info.Size, "written", written)
 		}
 	}
 }
@@ -116,12 +147,35 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
 
-		value, err := io.ReadAll(r.Body)
+		var err error
+		var info *narinfo.NarInfo
+
+		info, err = narinfo.Parse(r.Body)
 		if err != nil {
-			w.WriteHeader(500)
-			_, _ = w.Write(nil)
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Could not parse nar info"))
 		}
-		_, err = c.narInfo.Put(hash, value)
+
+		sign := true
+		for _, sig := range info.Signatures {
+			if sig.Name == c.Options.Name {
+				// no need to sign
+				sign = false
+				break
+			}
+		}
+
+		if sign {
+			sig, err := c.Options.SecretKey.Sign(nil, info.Fingerprint())
+			if err != nil {
+				c.log.Error("failed to generate nar info signature", "error", err)
+				w.WriteHeader(500)
+				return
+			}
+			info.Signatures = append(info.Signatures, sig)
+		}
+
+		_, err = c.narInfo.Put(hash, []byte(info.String()))
 		if err != nil {
 			w.WriteHeader(500)
 			_, _ = w.Write(nil)
@@ -133,13 +187,15 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 			w.WriteHeader(500)
 			_, _ = w.Write(nil)
 		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-func (c *Cache) getNarInfo() http.HandlerFunc {
+func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
-		obj, err := c.narInfo.Get(hash)
+		entry, err := c.narInfo.Get(hash)
 
 		if err == nats.ErrKeyNotFound {
 			w.WriteHeader(404)
@@ -157,46 +213,18 @@ func (c *Cache) getNarInfo() http.HandlerFunc {
 			return
 		}
 
-		info, err := narinfo.Parse(bytes.NewReader(obj.Value()))
-
-		sign := true
-		for _, sig := range info.Signatures {
-			if sig.Name == c.Options.Name {
-				// no need to sign
-				sign = false
-				break
-			}
-		}
-
-		if sign {
-			sig, err := c.Options.SecretKey.Sign(nil, info.Fingerprint())
-			if err != nil {
-				c.log.Error("failed to generate nar info signature", zap.Error(err))
-				w.WriteHeader(500)
-				return
-			}
-			info.Signatures = append(info.Signatures, sig)
-		}
-
-		res := []byte(info.String())
-
-		if sign {
-			// update store
-			_, err = c.narInfo.Put(hash, res)
-			if err != nil {
-				c.log.Error("failed to put updated nar info into NATS", zap.Error(err))
-				w.WriteHeader(500)
-				return
-			}
-		}
-
 		h := w.Header()
 		h.Set(ContentType, ContentTypeNarInfo)
-		h.Set(ContentLength, strconv.FormatInt(int64(len(res)), 10))
+		h.Set(ContentLength, strconv.FormatInt(int64(len(entry.Value())), 10))
 
-		_, err = w.Write(res)
+		if !body {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		_, err = w.Write(entry.Value())
 		if err != nil {
-			c.log.Error("failed to write response", zap.Error(err))
+			c.log.Error("failed to write response", "error", err)
 		}
 	}
 }
