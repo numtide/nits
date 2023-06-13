@@ -1,6 +1,6 @@
 {inputs, ...}: {
   imports = [
-    ./agents.nix
+    ./agents
     ./guvnor
     ./nats.nix
   ];
