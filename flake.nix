@@ -27,9 +27,24 @@
     process-compose-flake.url = "github:Platonic-Systems/process-compose-flake";
   };
 
-  outputs = inputs @ {flake-parts, ...}:
-    flake-parts.lib.mkFlake {inherit inputs;} {
-      imports = [./nix];
+  outputs = inputs @ {
+    flake-parts,
+    nixpkgs,
+    ...
+  }: let
+    lib = nixpkgs.lib.extend (final: _: import ./nix/lib.nix final);
+  in
+    flake-parts.lib.mkFlake
+    {
+      inherit inputs;
+      specialArgs = {
+        inherit lib;    # make custom lib available to top level functions
+      };
+    } {
+      imports = [
+      {_module.args.lib = lib; }   # make custom lib available to perSystem functions
+        ./nix
+      ];
       debug = true;
       systems = [
         "x86_64-linux"
