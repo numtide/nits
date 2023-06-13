@@ -6,8 +6,8 @@
   ];
 
   perSystem = {self', ...}: {
-    config.process-compose.configs = {
-      dev.log_location = "$PRJ_DATA_DIR/dev.log";
+    config.process-compose.dev.settings = {
+      log_location = "$PRJ_DATA_DIR/dev.log";
     };
 
     config.devshells.default = {

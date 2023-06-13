@@ -38,11 +38,11 @@
     {
       inherit inputs;
       specialArgs = {
-        inherit lib;    # make custom lib available to top level functions
+        inherit lib; # make custom lib available to top level functions
       };
     } {
       imports = [
-      {_module.args.lib = lib; }   # make custom lib available to perSystem functions
+        {_module.args.lib = lib;} # make custom lib available to perSystem functions
         ./nix
       ];
       debug = true;

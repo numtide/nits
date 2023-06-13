@@ -160,8 +160,8 @@ in {
       };
     };
 
-    config.process-compose.configs = {
-      dev.processes = let
+    config.process-compose = {
+      dev.settings.processes = let
         mkAgentProcess = id: {
           command = "nix run .#nixosConfigurations.agent-host-${builtins.toString id}.config.system.build.vm";
           depends_on = {

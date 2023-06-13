@@ -15,8 +15,8 @@
       };
     };
 
-    config.process-compose.configs = {
-      dev.processes = {
+    config.process-compose = {
+      dev.settings.processes = {
         guvnor = {
           environment = let
             keyFile = ./key.sec;
