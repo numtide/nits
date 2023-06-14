@@ -53,7 +53,7 @@ type Agent struct {
 	logger log.Logger
 
 	nkey string
-	conn *nats.Conn
+	conn *nats.EncodedConn
 	js   nats.JetStreamContext
 }
 
@@ -127,7 +127,12 @@ func (a *Agent) connectNats() error {
 		return errors.Annotate(err, "failed to create a jet stream context")
 	}
 
-	a.conn = conn
+	encoded, err := nats.NewEncodedConn(conn, nats.JSON_ENCODER)
+	if err != nil {
+		return err
+	}
+
+	a.conn = encoded
 	a.js = js
 
 	return nil

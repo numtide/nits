@@ -48,7 +48,7 @@ type Guvnor struct {
 	Options Options
 	logger  log.Logger
 
-	conn *nats.Conn
+	conn *nats.EncodedConn
 	js   nats.JetStreamContext
 
 	cache *cache.Cache
@@ -131,12 +131,17 @@ func (g *Guvnor) connectNats() error {
 		return errors.Annotatef(err, "nkey = %s", publicKey)
 	}
 
+	encoded, err := nats.NewEncodedConn(conn, nats.JSON_ENCODER)
+	if err != nil {
+		return err
+	}
+
 	js, err := conn.JetStream()
 	if err != nil {
 		return errors.Annotate(err, "failed to create a jet stream context")
 	}
 
-	g.conn = conn
+	g.conn = encoded
 	g.js = js
 
 	return nil

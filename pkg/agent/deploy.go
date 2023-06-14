@@ -152,7 +152,6 @@ func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.Key
 		}
 
 		// todo check if the agent binary has changed and perform a restart after switching
-
 		l.Info("switching configuration")
 
 		out, err = nix.SwitchToConfiguration(deployment, a.Options.DryRun)

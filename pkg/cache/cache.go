@@ -32,7 +32,7 @@ type Options struct {
 	Info      Info
 	SecretKey signature.SecretKey
 
-	NatsConn   *nats.Conn
+	NatsConn   *nats.EncodedConn
 	NatsConfig *config.Nats
 
 	BindAddress string
@@ -55,7 +55,7 @@ func NatsConfig(config *config.Nats) Option {
 	}
 }
 
-func NatsConnection(conn *nats.Conn) Option {
+func NatsConnection(conn *nats.EncodedConn) Option {
 	return func(opts *Options) error {
 		if conn == nil {
 			return errors.New("conn cannot be nil")
@@ -109,7 +109,7 @@ type Cache struct {
 
 	log log.Logger
 
-	conn     *nats.Conn
+	conn     *nats.EncodedConn
 	js       nats.JetStreamContext
 	listener net.Listener
 
@@ -182,13 +182,18 @@ func (c *Cache) connectNats() error {
 
 	if conn == nil {
 		nc := c.Options.NatsConfig
-		conn, err = nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
+		c, err := nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
 		if err != nil {
 			return errors.Annotate(err, "failed to connect to NATS")
 		}
+
+		conn, err = nats.NewEncodedConn(c, nats.JSON_ENCODER)
+		if err != nil {
+			return err
+		}
 	}
 
-	js, err := conn.JetStream()
+	js, err := conn.Conn.JetStream()
 	if err != nil {
 		return errors.Annotate(err, "failed to create a JetStream context")
 	}
