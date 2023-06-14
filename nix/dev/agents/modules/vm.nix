@@ -8,6 +8,8 @@
     diskSize = 5120;
     diskImage = "$VM_DATA_DIR/${hostname}/disk.qcow2";
 
+    writableStoreUseTmpfs = false;
+
     forwardPorts = [
       {
         from = "host";

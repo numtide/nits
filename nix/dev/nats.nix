@@ -105,6 +105,7 @@
                BASENAME=$(basename $AGENT_DIR)
                nsc add user -a numtide -k $NKEY -n $BASENAME
                nsc describe user -n $BASENAME -R > $AGENT_DIR/user.jwt
+               echo "$NKEY" > "$AGENT_DIR/nkey.pub"
             done
           '';
         };

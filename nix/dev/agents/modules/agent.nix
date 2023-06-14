@@ -1,6 +1,7 @@
 {
   self,
   pkgs,
+  lib,
   ...
 }: {
   imports = [
@@ -16,7 +17,7 @@
   };
 
   systemd.services.hello = {
-    enable = true;
+    enable = lib.mkDefault true;
     after = ["network.target"];
     wantedBy = ["sysinit.target"];
     description = "A test service";
@@ -26,6 +27,9 @@
     serviceConfig = {
       Type = "simple";
       ExecStart = "${pkgs.hello}/bin/hello";
+
+      Restart = "always";
+      RestartSec = 1;
     };
   };
 }
