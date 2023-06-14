@@ -6,6 +6,14 @@
           name = "GUVNOR_DATA_DIR";
           eval = "$PRJ_DATA_DIR/guvnor";
         }
+        {
+          name = "GUVNOR_URL";
+          eval = "http://localhost:3000";
+        }
+        {
+          name = "GUVNOR_CACHE_URL";
+          eval = "$GUVNOR_URL/\?compression\=zstd";
+        }
       ];
       devshell.startup = {
         setup-guvnor.text = ''
@@ -13,6 +21,17 @@
           mkdir -p $GUVNOR_DATA_DIR
         '';
       };
+
+      commands = [
+        {
+          category = "development";
+          help = "copy a store path to the guvnor binary cache";
+          name = "copy-to-guvnor";
+          # refresh flag is important otherwise nix will use ~/.cache/nix to avoid sending paths it thinks are
+          # already in the cache
+          command = "nix copy -v --refresh --to $GUVNOR_CACHE_URL $1";
+        }
+      ];
     };
 
     config.process-compose = {
