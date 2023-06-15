@@ -12,8 +12,8 @@ const (
 	DeployActionDryActivate
 )
 
-func (a *DeployAction) String() string {
-	switch *a {
+func (a DeployAction) String() string {
+	switch a {
 	case DeployActionSwitch:
 		return "switch"
 	case DeployActionBoot:
