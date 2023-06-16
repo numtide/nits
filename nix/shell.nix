@@ -50,6 +50,28 @@
             pkgs.darwin.cctools
           ])
         ];
+
+      commands = let
+        category = "docs";
+      in [
+        {
+          inherit category;
+          package = pkgs.vhs;
+          help = "generate terminal gifs";
+        }
+        {
+          inherit category;
+          help = "regenerate gifs for docs";
+          name = "gifs";
+          command = ''
+            set -xeuo pipefail
+
+            for tape in $PRJ_ROOT/docs/vhs/*; do
+                vhs $tape -o "$PRJ_ROOT/docs/assets/$(basename $tape .tape).gif"
+            done
+          '';
+        }
+      ];
     };
   };
 }
