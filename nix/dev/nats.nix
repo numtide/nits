@@ -89,8 +89,11 @@
               --js-streams -1 \
               --js-consumer -1
 
-            # generate a user for the guvnor
-            nsc add user -a numtide -n guvnor
+            # set default permissions for numtide account to deny pubsub to anything
+            nsc edit account -n numtide --deny-pubsub '>'
+
+            # generate a user for the guvnor and allow it to pubsub everything
+            nsc add user -a numtide -n guvnor --allow-pubsub '>'
             nsc export keys --user guvnor --dir "$GUVNOR_DATA_DIR"
             rm $GUVNOR_DATA_DIR/O*.nk
             rm $GUVNOR_DATA_DIR/A*.nk
@@ -103,7 +106,19 @@
             for AGENT_DIR in $VM_DATA_DIR/*; do
                NKEY=$(${self'.packages.nits}/bin/agent nkey "$AGENT_DIR/ssh_host_ed25519_key")
                BASENAME=$(basename $AGENT_DIR)
-               nsc add user -a numtide -k $NKEY -n $BASENAME
+
+               nsc add user -a numtide -k $NKEY -n $BASENAME \
+                --allow-pub nits.log.agent.$NKEY \
+                --allow-sub nits.inbox.agent.$NKEY.\> \
+                --allow-pub \$JS.API.STREAM.INFO.KV_deployment,\$JS.API.CONSUMER.CREATE.KV_deployment \
+                --allow-sub \$JS.API.DIRECT.GET.KV_deployment.\$KV.deployment.$NKEY,\$KV.deployment.$NKEY \
+                --allow-pub \$JS.API.STREAM.INFO.KV_deployment-result,\$KV.deployment-result.$NKEY \
+                --allow-pub \$JS.API.STREAM.INFO.KV_nar-info,\$JS.API.DIRECT.GET.KV_nar-info.\> \
+                --allow-pub \$JS.API.STREAM.INFO.OBJ_nar,\$JS.API.STREAM.MSG.GET.OBJ_nar, \
+                --allow-pub \$JS.API.STREAM.NAMES,\$JS.API.CONSUMER.CREATE.OBJ_nar,\$JS.FC.OBJ_nar.\> \
+                --allow-pub \$JS.API.CONSUMER.DELETE.OBJ_nar.\> \
+                --allow-sub \$O.nar.\>
+
                nsc describe user -n $BASENAME -R > $AGENT_DIR/user.jwt
                echo "$NKEY" > "$AGENT_DIR/nkey.pub"
             done

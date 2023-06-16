@@ -181,13 +181,6 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 			_, _ = w.Write(nil)
 		}
 
-		// record access
-		_, err = c.narInfoAccess.Put(hash, nil)
-		if err != nil {
-			w.WriteHeader(500)
-			_, _ = w.Write(nil)
-		}
-
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -201,13 +194,6 @@ func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 			w.WriteHeader(404)
 			return
 		}
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-
-		// record access
-		_, err = c.narInfoAccess.Put(hash, nil)
 		if err != nil {
 			w.WriteHeader(500)
 			return

@@ -113,9 +113,8 @@ type Cache struct {
 	js       nats.JetStreamContext
 	listener net.Listener
 
-	nar           nats.ObjectStore
-	narInfo       nats.KeyValue
-	narInfoAccess nats.KeyValue
+	nar     nats.ObjectStore
+	narInfo nats.KeyValue
 
 	router *chi.Mux
 }
@@ -182,7 +181,7 @@ func (c *Cache) connectNats() error {
 
 	if conn == nil {
 		nc := c.Options.NatsConfig
-		c, err := nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
+		c, err := nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed), nats.CustomInboxPrefix(nc.InboxPrefix))
 		if err != nil {
 			return errors.Annotate(err, "failed to connect to NATS")
 		}
@@ -208,17 +207,11 @@ func (c *Cache) connectNats() error {
 		return errors.Annotate(err, "failed to create nar info kv store")
 	}
 
-	narInfoAccess, err := state.NarInfoAccess(js)
-	if err != nil {
-		return errors.Annotate(err, "failed to create nar info access store")
-	}
-
 	c.js = js
 	c.conn = conn
 
 	c.nar = nar
 	c.narInfo = narInfo
-	c.narInfoAccess = narInfoAccess
 
 	return nil
 }

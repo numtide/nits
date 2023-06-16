@@ -53,6 +53,7 @@ in {
         NATS_URL = cfg.nats.url;
         NATS_HOST_KEY_FILE = cfg.nats.hostKeyFile;
         NATS_JWT_FILE = cfg.nats.jwtFile;
+        NATS_INBOX_PREFIX = "nits.inbox.agent";
         LOG_LEVEL = cfg.logLevel;
       };
 

@@ -16,4 +16,5 @@ type Nats struct {
 	Seed        string
 	JwtFile     *os.File
 	HostKeyFile *os.File
+	InboxPrefix string
 }

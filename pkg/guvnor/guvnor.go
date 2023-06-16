@@ -98,7 +98,7 @@ func (g *Guvnor) Run(ctx context.Context) error {
 func (g *Guvnor) connectNats() error {
 	nc := g.Options.NatsConfig
 
-	var natsOpts []nats.Option
+	natsOpts := []nats.Option{nats.CustomInboxPrefix(nc.InboxPrefix)}
 	if nc.Seed != "" {
 		natsOpts = append(natsOpts, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
 	}

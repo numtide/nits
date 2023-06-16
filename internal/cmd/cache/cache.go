@@ -30,5 +30,4 @@ var Cmd struct {
 	Cache Options `embed:"" prefix:""`
 
 	Run runCmd `cmd:"" help:"Run a binary cache."`
-	GC  gcCmd  `cmd:"" help:"Garbage collect the binary cache."`
 }

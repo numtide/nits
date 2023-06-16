@@ -3,6 +3,9 @@ package agent
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
+
+	"github.com/nats-io/nkeys"
 
 	log "github.com/inconshreveable/log15"
 
@@ -87,6 +90,15 @@ func (a *Agent) connectNats() error {
 	var natsOpts []nats.Option
 	if nc.Seed != "" {
 		natsOpts = append(natsOpts, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
+		keypair, err := nkeys.FromSeed([]byte(nc.Seed))
+		if err != nil {
+			return err
+		}
+		nkey, err := keypair.PublicKey()
+		if err != nil {
+			return err
+		}
+		a.nkey = nkey
 	}
 
 	if nc.HostKeyFile != nil {
@@ -116,6 +128,16 @@ func (a *Agent) connectNats() error {
 
 		a.nkey = nkey
 	}
+
+	// set a custom inbox prefix by appending nkey to configured prefix
+	natsOpts = append(natsOpts, nats.CustomInboxPrefix(fmt.Sprintf("%s.%s", nc.InboxPrefix, a.nkey)))
+
+	// capture nats errors in the logging
+	natsOpts = append(natsOpts, nats.ErrorHandler(func(_ *nats.Conn, subscription *nats.Subscription, err error) {
+		if err != nil {
+			a.logger.Error("nats error", "subscription", subscription, "error", err)
+		}
+	}))
 
 	conn, err := nats.Connect(nc.Url, natsOpts...)
 	if err != nil {
