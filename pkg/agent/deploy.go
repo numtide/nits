@@ -59,7 +59,10 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 }
 
 func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.KeyValue) {
+	startedAt := time.Now()
+
 	l := a.logger.New("action", deployment.Action, "closure", deployment.Closure)
+	l.Info("checking current system closure")
 
 	currentSystem, err := nix.CurrentSystemClosure()
 	if err != nil {
@@ -71,16 +74,12 @@ func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.Key
 		return
 	}
 
-	l.Info("deploying")
-
-	startedAt := time.Now()
-
 	defer func() {
 		elapsed := time.Since(startedAt)
 		if err == nil {
-			l.Info("deploying complete", "elapsed", elapsed)
+			l.Info("end of deployment", "elapsed", elapsed)
 		} else {
-			l.Error("deploying error", "elapsed", elapsed, "error", err)
+			l.Error("end of deployment", "elapsed", elapsed, "error", err)
 		}
 	}()
 
@@ -94,6 +93,8 @@ func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.Key
 
 	cacheLog := l.New("component", "cache")
 	cacheLog.SetHandler(log.LvlFilterHandler(log.LvlError, l.GetHandler()))
+
+	l.Info("initialising embedded binary cache")
 
 	c, err = cache.NewCache(
 		cacheLog,
@@ -118,15 +119,12 @@ func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.Key
 	eg.Go(func() (err error) {
 		defer cancel()
 
-		var out, allOut []byte
-
 		defer func() {
 			// todo handle output that is larger than 1 MB and therefore too large for the KV store
 
 			result := guvnor.DeploymentResult{
 				Deployment: *deployment,
 				Error:      err,
-				Output:     string(allOut),
 			}
 
 			b, err := json.Marshal(result)
@@ -141,24 +139,20 @@ func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.Key
 			}
 		}()
 
-		l.Info("copying from binary cache")
+		l.Info("copying closure from binary cache")
 
-		out, err = nix.CopyFromBinaryCache(c.ListenAddr(), deployment.Closure)
-		allOut = append(allOut, out...)
-
+		err = nix.CopyFromBinaryCache(c.ListenAddr(), deployment.Closure, l)
 		if err != nil {
 			l.Error("failure whilst copying from binary cache")
 			return err
 		}
 
 		// todo check if the agent binary has changed and perform a restart after switching
-		l.Info("switching configuration")
+		l.Info("applying configuration")
 
-		out, err = nix.SwitchToConfiguration(deployment, a.Options.DryRun)
-		allOut = append(allOut, out...)
-
+		err = nix.SwitchToConfiguration(deployment, a.Options.DryRun, l)
 		if err != nil {
-			l.Error("failure whilst switching configuration")
+			l.Error("failed to apply configuration", "error", err)
 			return err
 		}
 

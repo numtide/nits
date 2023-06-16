@@ -1,11 +1,14 @@
 package nix
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 
+	"github.com/inconshreveable/log15"
 	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/guvnor"
 )
@@ -14,47 +17,78 @@ const (
 	ErrorMalformedClosure = errors.ConstError("closure is malformed")
 )
 
+type outLogger struct {
+	buf []byte
+	log log15.Logger
+}
+
+func (o outLogger) Write(b []byte) (n int, err error) {
+	buf := o.buf
+
+	buf = append(buf, b...)
+	scanner := bufio.NewScanner(bytes.NewBuffer(buf))
+
+	count := 0
+
+	for scanner.Scan() {
+		msg := scanner.Text()
+		count += len(msg)
+		o.log.Info(msg)
+	}
+
+	// resize based on number of bytes read
+	o.buf = buf[count:]
+
+	return len(b), nil
+}
+
 func CurrentSystemClosure() (string, error) {
 	return os.Readlink("/run/current-system")
 }
 
-func CopyToBinaryCache(cacheAddr net.Addr, path string) ([]byte, error) {
-	args := []string{
-		"copy",
-		"-v",
-		"--to",
-		fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
-		path,
-	}
-	cmd := exec.Command("nix", args...)
-	return cmd.CombinedOutput()
+func runCmd(name string, args []string, log log15.Logger) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = outLogger{log: log.New("output", "stdout")}
+	cmd.Stderr = outLogger{log: log.New("output", "stderr")}
+	return cmd.Run()
 }
 
-func CopyFromBinaryCache(cacheAddr net.Addr, path string) ([]byte, error) {
+func CopyToBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) error {
 	args := []string{
 		"copy",
 		"-v",
-		"--from",
-		fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
+		"--log-format", "raw",
+		"--to", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
+		path,
+	}
+	return runCmd("nix", args, log)
+}
+
+func CopyFromBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) error {
+	args := []string{
+		"copy",
+		"-v",
 		"--refresh",
+		"--log-format", "raw",
+		"--from", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
 		path,
 	}
-	cmd := exec.Command("nix", args...)
-	return cmd.CombinedOutput()
+	log.Info("copying from binary cache", "args", args)
+	return runCmd("nix", args, log)
 }
 
-func SwitchToConfiguration(config *guvnor.Deployment, dryRun bool) (output []byte, err error) {
+func SwitchToConfiguration(config *guvnor.Deployment, dryRun bool, log log15.Logger) error {
 	binPath := config.Closure + "/bin/switch-to-configuration"
-	_, err = os.Stat(binPath)
+	_, err := os.Stat(binPath)
 	if err != nil {
-		return nil, ErrorMalformedClosure
+		return ErrorMalformedClosure
 	}
 
-	cmd := exec.Command(binPath, config.Action.String())
+	args := []string{config.Action.String()}
 
 	if dryRun {
-		return []byte(fmt.Sprintf("dry-run: %s", cmd.String())), nil
+		log.Info("dry run", "name", binPath, "args", args)
+		return nil
 	}
-
-	return cmd.CombinedOutput()
+	return runCmd(binPath, args, log)
 }
