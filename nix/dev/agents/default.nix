@@ -13,41 +13,32 @@
     ];
   };
 
-  builder = rec {
-    agentHost = {
-      id,
-      self,
-      pkgs,
-      modules ? [
-        ./modules/base.nix
-        ./modules/vm.nix
-        ./modules/agent.nix
-      ],
-      extraModules ? [],
-    }:
-      (lib.nixosSystem rec {
-        system = pkgs.system;
-        inherit pkgs modules;
-        specialArgs = {
-          inherit self id;
-          hostname = "agent-host-${builtins.toString id}";
-        };
-      })
-      // {
-        extend = mod:
-          agentHost {
-            inherit id self pkgs;
-            modules = modules ++ [mod];
-          };
+  mkAgentHost = {
+    id,
+    self,
+    pkgs,
+    modules ? [
+      ./modules/base.nix
+      ./modules/vm.nix
+      ./modules/agent.nix
+    ],
+    extraModules ? [],
+  }:
+    lib.nixosSystem rec {
+      system = pkgs.system;
+      inherit pkgs modules;
+      specialArgs = {
+        inherit self id;
+        hostname = "agent-host-${builtins.toString id}";
       };
-  };
+    };
 
   numAgents = 1;
 in {
   flake.nixosConfigurations = let
     configs =
       map
-      (id: lib.nameValuePair "agent-host-${builtins.toString id}" (builder.agentHost {inherit id self pkgs;}))
+      (id: lib.nameValuePair "agent-host-${builtins.toString id}" (mkAgentHost {inherit id self pkgs;}))
       (lib.range 1 numAgents);
   in
     builtins.listToAttrs configs;
@@ -110,7 +101,7 @@ in {
             ACTION=$2
             CONFIG=$3
 
-            DRV=$(nix-instantiate --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."agent-host-''${id}".extend mod).config.system.build.toplevel)' --argstr flakeRoot $PWD --argstr id $ID --arg mod "$CONFIG")
+            DRV=$(nix-instantiate --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."agent-host-''${id}".extendModules { modules = [mod];}).config.system.build.toplevel)' --argstr flakeRoot $PWD --argstr id $ID --arg mod "$CONFIG")
             STORE_PATH=$(nix-store --realise $DRV)
 
             echo "STORE PATH: $STORE_PATH"
@@ -118,6 +109,7 @@ in {
 
             NKEY=$(cat $VM_DATA_DIR/agent-host-$ID/nkey.pub)
             nats --context guvnor kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
+            nats --context guvnor subscribe --stream logs --last "nits.log.agent.$NKEY" --raw
           '';
         }
       ];
