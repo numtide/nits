@@ -27,4 +27,10 @@ The project is currently in a state of rapid iteration. We will update this sect
 
 # Preview
 
+If an agent is connected, the deployment behaves much like a push-based system. If the agent is not connected, it will
+apply the changes the next time it connects.
+
+Agent logs are streamed into NATS and captured, allowing you to observe what the agent is doing in real-time or go back
+and have a look at the logs later.
+
 ![](./docs/assets/deploy.gif)
