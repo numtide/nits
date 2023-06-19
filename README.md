@@ -24,3 +24,7 @@ We feel that NATS is a logical platform on top of which to build a pull-based de
 # Usage
 
 The project is currently in a state of rapid iteration. We will update this section and add more documentation when it has reached a steady state.
+
+# Preview
+
+![](./docs/assets/deploy.gif)
