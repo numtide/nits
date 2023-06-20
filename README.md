@@ -34,6 +34,6 @@ Agent logs are streamed into NATS and captured, allowing you to observe what the
 and have a look at the logs later.
 
 When deploying, system closures are built and pushed into NATS. The agent then copies the closure from NATS into it's local
-Nix store before applying the new closure. 
+Nix store before applying the new closure.
 
 ![](./docs/assets/deploy.gif)

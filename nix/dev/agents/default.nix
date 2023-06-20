@@ -94,21 +94,48 @@ in {
           name = "deploy-agent";
           command = let
             flakeRoot = lib.getExe config.flake-root.package;
+            perl = lib.getExe pkgs.perl;
           in ''
             set -euo pipefail
+
+            PATH=$PATH:${perl}
 
             ID=$1
             ACTION=$2
             CONFIG=$3
 
-            DRV=$(nix-instantiate --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."agent-host-''${id}".extendModules { modules = [mod];}).config.system.build.toplevel)' --argstr flakeRoot $PWD --argstr id $ID --arg mod "$CONFIG")
+            exec 3>&1
+            exec 4>&2
+
+            prefix_out () {
+                exec 1> >( ${perl} -ne '$| = 1; print "'"[$1]"' | $_"' >&3)
+                exec 2> >( ${perl} -ne '$| = 1; print "'"[$1]"' | $_"' >&4)
+            }
+
+            prefix_out "build-closure"
+
+            create_derivation () {
+                nix-instantiate \
+                    --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."agent-host-''${id}".extendModules { modules = [mod];}).config.system.build.toplevel)' \
+                    --argstr flakeRoot $PWD \
+                    --argstr id $ID \
+                    --arg mod "$CONFIG"
+            }
+
+            DRV=$(create_derivation)
             STORE_PATH=$(nix-store --realise $DRV)
 
-            echo "STORE PATH: $STORE_PATH"
+            prefix_out "copy-to-nats"
+
             copy-to-guvnor $STORE_PATH
+
+            prefix_out "update-deployment"
 
             NKEY=$(cat $VM_DATA_DIR/agent-host-$ID/nkey.pub)
             nats --context guvnor kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
+
+            prefix_out "agent-logs"
+
             nats --context guvnor subscribe --stream logs --last "nits.log.agent.$NKEY" --raw
           '';
         }

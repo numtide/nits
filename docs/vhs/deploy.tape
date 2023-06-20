@@ -2,7 +2,7 @@ Require deploy-agent
 
 Set FontSize 14
 
-Set Width 1024
+Set Width 1440
 Set Height 800
 
 Type "# How to deploy an agent"
