@@ -19,6 +19,10 @@ import (
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 )
 
+const (
+	DefaultInboxPrefix = "nits.cache.inbox"
+)
+
 var DefaultCacheInfo = Info{
 	StoreDir:      "/nix/store",
 	WantMassQuery: true,
@@ -181,9 +185,16 @@ func (c *Cache) connectNats() error {
 
 	if conn == nil {
 		nc := c.Options.NatsConfig
-		c, err := nats.Connect(nc.Url, nats.UserJWTAndSeed(nc.Jwt, nc.Seed), nats.CustomInboxPrefix(nc.InboxPrefix))
+
+		nc.Logger = c.log
+
+		if nc.InboxPrefix == "" {
+			nc.InboxPrefix = DefaultInboxPrefix
+		}
+
+		c, nkey, err := nc.ConnectNats()
 		if err != nil {
-			return errors.Annotate(err, "failed to connect to NATS")
+			return errors.Annotatef(err, "nkey = "+nkey)
 		}
 
 		conn, err = nats.NewEncodedConn(c, nats.JSON_ENCODER)

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/rand"
 
 	"github.com/numtide/nits/pkg/cache"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/config"
 	"github.com/numtide/nits/pkg/state"
-	"github.com/numtide/nits/pkg/util"
 )
 
 const DefaultInboxPrefix = "nits.server.inbox"
@@ -105,38 +103,11 @@ func (s *Server) connectNats() error {
 		inboxPrefix = DefaultInboxPrefix
 	}
 
-	natsOpts := []nats.Option{nats.CustomInboxPrefix(inboxPrefix)}
+	nc.Logger = s.logger
 
-	if nc.Seed != "" {
-		natsOpts = append(natsOpts, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
-	}
-
-	var publicKey string
-	if nc.HostKeyFile != nil {
-
-		signer, err := util.NewSigner(nc.HostKeyFile)
-		if err != nil {
-			return err
-		}
-
-		publicKey, err = util.PublicKeyForSigner(signer)
-		s.logger.Info("loaded host key file", "publicKey", publicKey)
-
-		natsOpts = append(natsOpts, nats.UserJWT(
-			func() (string, error) {
-				return nc.Jwt, nil
-			}, func(bytes []byte) ([]byte, error) {
-				sig, err := signer.Sign(rand.Reader, bytes)
-				if err != nil {
-					return nil, err
-				}
-				return sig.Blob, err
-			}))
-	}
-
-	conn, err := nats.Connect(nc.Url, natsOpts...)
+	conn, nkey, err := nc.ConnectNats()
 	if err != nil {
-		return errors.Annotatef(err, "nkey = %s", publicKey)
+		return errors.Annotatef(err, "nkey = "+nkey)
 	}
 
 	encoded, err := nats.NewEncodedConn(conn, nats.JSON_ENCODER)

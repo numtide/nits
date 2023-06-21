@@ -2,10 +2,7 @@ package agent
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-
-	"github.com/nats-io/nkeys"
 
 	log "github.com/inconshreveable/log15"
 
@@ -104,80 +101,41 @@ func (a *Agent) Run(ctx context.Context) error {
 func (a *Agent) connectNats() error {
 	nc := a.Options.NatsConfig
 
-	var natsOpts []nats.Option
-	if nc.Seed != "" {
-		natsOpts = append(natsOpts, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
-		keypair, err := nkeys.FromSeed([]byte(nc.Seed))
-		if err != nil {
-			return err
-		}
-		nkey, err := keypair.PublicKey()
-		if err != nil {
-			return err
-		}
-		a.nkey = nkey
+	// set logger for capturing nats errors
+	nc.Logger = a.logger
+
+	// customise the inbox prefix, appending the agent nkey
+	if nc.InboxPrefix == "" {
+		nc.InboxPrefix = DefaultInboxPrefix
+	}
+	nc.InboxPrefixFn = func(config *config.Nats, nkey string) string {
+		return fmt.Sprintf("%s.%s", config.InboxPrefix, nkey)
 	}
 
-	if nc.HostKeyFile != nil {
-
-		signer, err := util.NewSigner(nc.HostKeyFile)
-		if err != nil {
-			return err
-		}
-
-		nkey, err := util.PublicKeyForSigner(signer)
-		if err != nil {
-			return err
-		}
-
-		a.logger.Info("loaded host key file", "nkey", nkey)
-
-		natsOpts = append(natsOpts, nats.UserJWT(
-			func() (string, error) {
-				return nc.Jwt, nil
-			}, func(bytes []byte) ([]byte, error) {
-				sig, err := signer.Sign(rand.Reader, bytes)
-				if err != nil {
-					return nil, err
-				}
-				return sig.Blob, err
-			}))
-
-		a.nkey = nkey
-	}
-
-	// set a custom inbox prefix by appending nkey to configured prefix
-	inboxPrefix := nc.InboxPrefix
-	if inboxPrefix == "" {
-		inboxPrefix = DefaultInboxPrefix
-	}
-
-	natsOpts = append(natsOpts, nats.CustomInboxPrefix(fmt.Sprintf("%s.%s", inboxPrefix, a.nkey)))
-
-	// capture nats errors in the logging
-	natsOpts = append(natsOpts, nats.ErrorHandler(func(_ *nats.Conn, subscription *nats.Subscription, err error) {
-		if err != nil {
-			a.logger.Error("nats error", "subscription", subscription, "error", err)
-		}
-	}))
-
-	conn, err := nats.Connect(nc.Url, natsOpts...)
+	// connect to nats
+	conn, nkey, err := nc.ConnectNats()
 	if err != nil {
-		return errors.Annotatef(err, "nkey = %s", a.nkey)
+		return errors.Annotatef(err, "nkey = "+nkey)
 	}
 
+	// get the jetstream context
 	js, err := conn.JetStream()
 	if err != nil {
-		return errors.Annotate(err, "failed to create a jet stream context")
+		return err
 	}
 
+	// convert the connection to a json encoded connection
 	encoded, err := nats.NewEncodedConn(conn, nats.JSON_ENCODER)
 	if err != nil {
 		return err
 	}
 
-	a.conn = encoded
+	// capture references
 	a.js = js
+	a.nkey = nkey
+	a.conn = encoded
+
+	a.logger.Info("connected to nats", "nkey", a.nkey)
 
 	return nil
 }
