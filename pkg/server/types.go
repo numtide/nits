@@ -1,4 +1,4 @@
-package guvnor
+package server
 
 import "encoding/json"
 

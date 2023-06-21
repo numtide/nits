@@ -3,49 +3,49 @@
     config.devshells.default = {
       env = [
         {
-          name = "GUVNOR_DATA_DIR";
-          eval = "$PRJ_DATA_DIR/guvnor";
+          name = "SERVER_DATA_DIR";
+          eval = "$PRJ_DATA_DIR/server";
         }
         {
-          name = "GUVNOR_URL";
+          name = "SERVER_URL";
           eval = "http://localhost:3000";
         }
         {
-          name = "GUVNOR_CACHE_URL";
-          eval = "$GUVNOR_URL/\?compression\=zstd";
+          name = "SERVER_CACHE_URL";
+          eval = "$SERVER_URL/\?compression\=zstd";
         }
       ];
       devshell.startup = {
-        setup-guvnor.text = ''
-          [ -d $GUVNOR_DATA_DIR ] && exit 0
-          mkdir -p $GUVNOR_DATA_DIR
+        setup-server.text = ''
+          [ -d $SERVER_DATA_DIR ] && exit 0
+          mkdir -p $SERVER_DATA_DIR
         '';
       };
 
       commands = [
         {
           category = "development";
-          help = "copy a store path to the guvnor binary cache";
-          name = "copy-to-guvnor";
+          help = "copy a store path to the binary cache";
+          name = "copy-to-server";
           # refresh flag is important otherwise nix will use ~/.cache/nix to avoid sending paths it thinks are
           # already in the cache
-          command = "nix copy -v --refresh --to $GUVNOR_CACHE_URL $1";
+          command = "nix copy -v --refresh --to $SERVER_CACHE_URL $1";
         }
       ];
     };
 
     config.process-compose = {
       dev.settings.processes = {
-        guvnor = {
+        nits-server = {
           environment = let
             keyFile = ./key.sec;
           in [
             "LOG_LEVEL=info"
-            "NATS_SEED_FILE=$GUVNOR_DATA_DIR/user.seed"
-            "NATS_JWT_FILE=$GUVNOR_DATA_DIR/user.jwt"
+            "NATS_SEED_FILE=$SERVER_DATA_DIR/user.seed"
+            "NATS_JWT_FILE=$SERVER_DATA_DIR/user.jwt"
             "NITS_CACHE_PRIVATE_KEY_FILE=${keyFile}"
           ];
-          command = "${self'.packages.nits}/bin/guvnor run";
+          command = "${self'.packages.nits}/bin/nits-server";
           depends_on = {
             nats-server.condition = "process_healthy";
             nats-permissions.condition = "process_completed";

@@ -10,7 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/juju/errors"
-	"github.com/numtide/nits/pkg/guvnor"
+	"github.com/numtide/nits/pkg/server"
 )
 
 const (
@@ -77,7 +77,7 @@ func CopyFromBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) erro
 	return runCmd("nix", args, log)
 }
 
-func SwitchToConfiguration(config *guvnor.Deployment, dryRun bool, log log15.Logger) error {
+func SwitchToConfiguration(config *server.Deployment, dryRun bool, log log15.Logger) error {
 	binPath := config.Closure + "/bin/switch-to-configuration"
 	_, err := os.Stat(binPath)
 	if err != nil {

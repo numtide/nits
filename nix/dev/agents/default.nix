@@ -127,16 +127,16 @@ in {
 
             prefix_out "copy-to-nats"
 
-            copy-to-guvnor $STORE_PATH
+            copy-to-server $STORE_PATH
 
             prefix_out "update-deployment"
 
             NKEY=$(cat $VM_DATA_DIR/agent-host-$ID/nkey.pub)
-            nats --context guvnor kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
+            nats --context server kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
 
             prefix_out "agent-logs"
 
-            nats --context guvnor subscribe --stream logs --last "nits.log.agent.$NKEY" --raw
+            nats --context server subscribe --stream logs --last "nits.log.agent.$NKEY" --raw
           '';
         }
       ];
@@ -147,7 +147,7 @@ in {
         mkAgentProcess = id: {
           command = "run-agent ${builtins.toString id}";
           depends_on = {
-            guvnor.condition = "process_healthy";
+            nits-server.condition = "process_healthy";
           };
         };
         configs =

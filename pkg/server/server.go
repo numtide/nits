@@ -1,4 +1,4 @@
-package guvnor
+package server
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 
 type Option func(opts *Options) error
 
-type InitFn func(srv *Guvnor) error
+type InitFn func(srv *Server) error
 
 type Options struct {
 	NatsConfig   *config.Nats
@@ -44,7 +44,7 @@ func GetDefaultOptions() Options {
 	return Options{}
 }
 
-type Guvnor struct {
+type Server struct {
 	Options Options
 	logger  log.Logger
 
@@ -54,28 +54,28 @@ type Guvnor struct {
 	cache *cache.Cache
 }
 
-func (g *Guvnor) Init() (err error) {
-	if err = g.connectNats(); err != nil {
+func (s *Server) Init() (err error) {
+	if err = s.connectNats(); err != nil {
 		return err
 	}
 
-	if err = state.InitObjectStores(g.js); err != nil {
+	if err = state.InitObjectStores(s.js); err != nil {
 		return err
 	}
 
-	if err = state.InitKeyValueStores(g.js); err != nil {
+	if err = state.InitKeyValueStores(s.js); err != nil {
 		return err
 	}
 
-	if err = state.InitStreams(g.js); err != nil {
+	if err = state.InitStreams(s.js); err != nil {
 		return err
 	}
 
-	cacheOpts := g.Options.CacheOptions
-	cacheOpts = append(cacheOpts, cache.NatsConnection(g.conn))
+	cacheOpts := s.Options.CacheOptions
+	cacheOpts = append(cacheOpts, cache.NatsConnection(s.conn))
 
 	c, err := cache.NewCache(
-		g.logger.New("component", "cache"),
+		s.logger.New("component", "cache"),
 		cacheOpts...,
 	)
 	if err != nil {
@@ -86,17 +86,17 @@ func (g *Guvnor) Init() (err error) {
 		return err
 	}
 
-	g.cache = c
+	s.cache = c
 
 	return nil
 }
 
-func (g *Guvnor) Run(ctx context.Context) error {
-	return g.cache.Run(ctx)
+func (s *Server) Run(ctx context.Context) error {
+	return s.cache.Run(ctx)
 }
 
-func (g *Guvnor) connectNats() error {
-	nc := g.Options.NatsConfig
+func (s *Server) connectNats() error {
+	nc := s.Options.NatsConfig
 
 	natsOpts := []nats.Option{nats.CustomInboxPrefix(nc.InboxPrefix)}
 	if nc.Seed != "" {
@@ -112,7 +112,7 @@ func (g *Guvnor) connectNats() error {
 		}
 
 		publicKey, err = util.PublicKeyForSigner(signer)
-		g.logger.Info("loaded host key file", "publicKey", publicKey)
+		s.logger.Info("loaded host key file", "publicKey", publicKey)
 
 		natsOpts = append(natsOpts, nats.UserJWT(
 			func() (string, error) {
@@ -141,13 +141,13 @@ func (g *Guvnor) connectNats() error {
 		return errors.Annotate(err, "failed to create a jet stream context")
 	}
 
-	g.conn = encoded
-	g.js = js
+	s.conn = encoded
+	s.js = js
 
 	return nil
 }
 
-func NewGuvnor(logger log.Logger, options ...Option) (*Guvnor, error) {
+func NewGuvnor(logger log.Logger, options ...Option) (*Server, error) {
 	// process options
 	opts := GetDefaultOptions()
 	for _, opt := range options {
@@ -156,7 +156,7 @@ func NewGuvnor(logger log.Logger, options ...Option) (*Guvnor, error) {
 		}
 	}
 
-	return &Guvnor{
+	return &Server{
 		Options: opts,
 		logger:  logger,
 	}, nil

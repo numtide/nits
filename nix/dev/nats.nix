@@ -58,7 +58,7 @@
     config.devshells.default = {
       devshell.startup = {
         setup-nats = {
-          deps = ["setup-agent-vms" "setup-guvnor"];
+          deps = ["setup-agent-vms" "setup-server"];
           text = ''
             set -euo pipefail
 
@@ -92,15 +92,15 @@
             # set default permissions for numtide account to deny pubsub to anything
             nsc edit account -n numtide --deny-pubsub '>'
 
-            # generate a user for the guvnor and allow it to pubsub everything
-            nsc add user -a numtide -n guvnor --allow-pubsub '>'
-            nsc export keys --user guvnor --dir "$GUVNOR_DATA_DIR"
-            rm $GUVNOR_DATA_DIR/O*.nk
-            rm $GUVNOR_DATA_DIR/A*.nk
-            mv $(ls $GUVNOR_DATA_DIR/U*.nk | head) "$GUVNOR_DATA_DIR/user.seed"
+            # generate a user for the server and allow it to pubsub everything
+            nsc add user -a numtide -n server --allow-pubsub '>'
+            nsc export keys --user server --dir "$SERVER_DATA_DIR"
+            rm $SERVER_DATA_DIR/O*.nk
+            rm $SERVER_DATA_DIR/A*.nk
+            mv $(ls $SERVER_DATA_DIR/U*.nk | head) "$SERVER_DATA_DIR/user.seed"
 
-            nsc describe user -n guvnor -R > "$GUVNOR_DATA_DIR/user.jwt"
-            nsc generate context -a numtide -u guvnor --context guvnor
+            nsc describe user -n server -R > "$SERVER_DATA_DIR/user.jwt"
+            nsc generate context -a numtide -u server --context server
 
             # generate users for the agent vms
             for AGENT_DIR in $VM_DATA_DIR/*; do

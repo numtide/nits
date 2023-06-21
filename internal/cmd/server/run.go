@@ -1,11 +1,11 @@
-package guvnor
+package server
 
 import (
 	"context"
 
 	"github.com/juju/errors"
 	"github.com/numtide/nits/internal/cmd"
-	"github.com/numtide/nits/pkg/guvnor"
+	"github.com/numtide/nits/pkg/server"
 )
 
 type runCmd struct{}
@@ -24,10 +24,10 @@ func (r *runCmd) Run() error {
 			return err
 		}
 
-		srv, err := guvnor.NewGuvnor(
+		srv, err := server.NewGuvnor(
 			logger,
-			guvnor.NatsConfig(natsConfig),
-			guvnor.CacheOptions(cacheOptions),
+			server.NatsConfig(natsConfig),
+			server.CacheOptions(cacheOptions),
 		)
 		if err != nil {
 			return errors.Annotate(err, "failed to create server")

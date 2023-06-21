@@ -10,7 +10,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/cache"
-	"github.com/numtide/nits/pkg/guvnor"
+	"github.com/numtide/nits/pkg/server"
 	"github.com/numtide/nits/pkg/state"
 	"golang.org/x/sync/errgroup"
 )
@@ -47,7 +47,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 			}
 			if entry.Operation() == nats.KeyValuePut {
 				// only process puts
-				var config guvnor.Deployment
+				var config server.Deployment
 				if err = json.Unmarshal(entry.Value(), &config); err != nil {
 					a.logger.Error("failed to unmarshal deployment update", "error", err)
 					continue
@@ -58,7 +58,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 	}
 }
 
-func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.KeyValue) {
+func (a *Agent) onDeployment(deployment *server.Deployment, resultStore nats.KeyValue) {
 	startedAt := time.Now()
 
 	l := a.logger.New("action", deployment.Action, "closure", deployment.Closure)
@@ -122,7 +122,7 @@ func (a *Agent) onDeployment(deployment *guvnor.Deployment, resultStore nats.Key
 		defer func() {
 			// todo handle output that is larger than 1 MB and therefore too large for the KV store
 
-			result := guvnor.DeploymentResult{
+			result := server.DeploymentResult{
 				Deployment: *deployment,
 				Error:      err,
 			}

@@ -15,7 +15,7 @@
     settings = {
       experimental-features = "nix-command flakes";
       trusted-public-keys = [
-        (lib.readFile ../../guvnor/key.pub)
+        (lib.readFile ../../server/key.pub)
       ];
     };
   };

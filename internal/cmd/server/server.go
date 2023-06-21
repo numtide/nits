@@ -1,4 +1,4 @@
-package guvnor
+package server
 
 import (
 	"github.com/numtide/nits/internal/cmd"
