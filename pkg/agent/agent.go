@@ -17,6 +17,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const DefaultInboxPrefix = "nits.inbox.agent"
+
 type Option func(opts *Options) error
 
 func NatsConfig(config *config.Nats) Option {
@@ -130,7 +132,12 @@ func (a *Agent) connectNats() error {
 	}
 
 	// set a custom inbox prefix by appending nkey to configured prefix
-	natsOpts = append(natsOpts, nats.CustomInboxPrefix(fmt.Sprintf("%s.%s", nc.InboxPrefix, a.nkey)))
+	inboxPrefix := nc.InboxPrefix
+	if inboxPrefix == "" {
+		inboxPrefix = DefaultInboxPrefix
+	}
+
+	natsOpts = append(natsOpts, nats.CustomInboxPrefix(fmt.Sprintf("%s.%s", inboxPrefix, a.nkey)))
 
 	// capture nats errors in the logging
 	natsOpts = append(natsOpts, nats.ErrorHandler(func(_ *nats.Conn, subscription *nats.Subscription, err error) {

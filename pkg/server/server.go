@@ -14,6 +14,8 @@ import (
 	"github.com/numtide/nits/pkg/util"
 )
 
+const DefaultInboxPrefix = "nits.server.inbox"
+
 type Option func(opts *Options) error
 
 type InitFn func(srv *Server) error
@@ -98,7 +100,13 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) connectNats() error {
 	nc := s.Options.NatsConfig
 
-	natsOpts := []nats.Option{nats.CustomInboxPrefix(nc.InboxPrefix)}
+	inboxPrefix := nc.InboxPrefix
+	if inboxPrefix == "" {
+		inboxPrefix = DefaultInboxPrefix
+	}
+
+	natsOpts := []nats.Option{nats.CustomInboxPrefix(inboxPrefix)}
+
 	if nc.Seed != "" {
 		natsOpts = append(natsOpts, nats.UserJWTAndSeed(nc.Jwt, nc.Seed))
 	}

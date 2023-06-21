@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"context"
-	"github.com/numtide/nits/pkg/cache"
 	"io"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/numtide/nits/pkg/cache"
 
 	log "github.com/inconshreveable/log15"
 	"github.com/juju/errors"
@@ -34,7 +35,7 @@ type NatsOptions struct {
 	Seed        string   `name:"seed" env:"NATS_SEED"`
 	SeedFile    *os.File `name:"seed-file" env:"NATS_SEED_FILE"`
 	HostKeyFile *os.File `name:"host-key-file" env:"NATS_HOST_KEY_FILE"`
-	InboxPrefix string   `name:"inbox-prefix" env:"NATS_INBOX_PREFIX" default:"_INBOX"`
+	InboxPrefix string   `name:"inbox-prefix" env:"NATS_INBOX_PREFIX"`
 }
 
 func (n *NatsOptions) ToNatsConfig() (*config.Nats, error) {
