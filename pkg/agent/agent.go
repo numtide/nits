@@ -17,7 +17,10 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const DefaultInboxPrefix = "nits.inbox.agent"
+const (
+	DefaultInboxPrefix = "nits.inbox.agent"
+	DefaultLogPrefix   = "nits.log.agent"
+)
 
 type Option func(opts *Options) error
 
@@ -38,17 +41,29 @@ func SwitchDryRun(dryRun bool) Option {
 	}
 }
 
+func LogSubjectPrefix(prefix string) Option {
+	return func(opts *Options) error {
+		if prefix == "" {
+			return errors.New("log prefix cannot be empty")
+		}
+		opts.LogSubjectPrefix = prefix
+		return nil
+	}
+}
+
 type Options struct {
-	NatsConfig *config.Nats
-	DryRun     bool
+	NatsConfig       *config.Nats
+	DryRun           bool
+	LogSubjectPrefix string
 
 	signer ssh.Signer
 }
 
 func GetDefaultOptions() Options {
 	return Options{
-		NatsConfig: config.DefaultNatsConfig,
-		DryRun:     false,
+		NatsConfig:       config.DefaultNatsConfig,
+		DryRun:           false,
+		LogSubjectPrefix: DefaultLogPrefix,
 	}
 }
 
@@ -72,7 +87,7 @@ func (a *Agent) Init() error {
 		a.logger.GetHandler(),
 		&util.NatsLogger{
 			Js:      a.js,
-			Subject: "nits.log.agent." + a.nkey,
+			Subject: fmt.Sprintf("%s.%s", a.Options.LogSubjectPrefix, a.nkey),
 		},
 	)
 

@@ -8,7 +8,8 @@ import (
 )
 
 type runCmd struct {
-	DryRun bool `name:"dry-run" env:"NITS_AGENT_DRY_RUN" default:"false"`
+	DryRun           bool   `name:"dry-run" env:"NITS_AGENT_DRY_RUN" default:"false"`
+	LogSubjectPrefix string `name:"log-subject-prefix" env:"NITS_AGENT_LOG_SUBJECT_PREFIX"`
 }
 
 func (a *runCmd) toOptions() ([]agent.Option, error) {
@@ -17,10 +18,15 @@ func (a *runCmd) toOptions() ([]agent.Option, error) {
 		return nil, err
 	}
 
-	return []agent.Option{
+	opts := []agent.Option{
 		agent.NatsConfig(nats),
 		agent.SwitchDryRun(Cmd.Run.DryRun),
-	}, nil
+	}
+	if Cmd.Run.LogSubjectPrefix != "" {
+		opts = append(opts, agent.LogSubjectPrefix(Cmd.Run.LogSubjectPrefix))
+	}
+
+	return opts, nil
 }
 
 func (a *runCmd) Run() error {
