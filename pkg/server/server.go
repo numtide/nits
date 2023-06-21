@@ -147,7 +147,7 @@ func (s *Server) connectNats() error {
 	return nil
 }
 
-func NewGuvnor(logger log.Logger, options ...Option) (*Server, error) {
+func NewServer(logger log.Logger, options ...Option) (*Server, error) {
 	// process options
 	opts := GetDefaultOptions()
 	for _, opt := range options {

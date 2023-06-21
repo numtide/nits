@@ -24,7 +24,7 @@ func (r *runCmd) Run() error {
 			return err
 		}
 
-		srv, err := server.NewGuvnor(
+		srv, err := server.NewServer(
 			logger,
 			server.NatsConfig(natsConfig),
 			server.CacheOptions(cacheOptions),
