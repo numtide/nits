@@ -104,7 +104,7 @@
 
             # generate users for the agent vms
             for AGENT_DIR in $VM_DATA_DIR/*; do
-               NKEY=$(${self'.packages.nits}/bin/agent nkey "$AGENT_DIR/ssh_host_ed25519_key")
+               NKEY=$(${self'.packages.nits}/bin/nits-agent nkey "$AGENT_DIR/ssh_host_ed25519_key")
                BASENAME=$(basename $AGENT_DIR)
 
                nsc add user -a numtide -k $NKEY -n $BASENAME \

@@ -63,7 +63,7 @@ in {
 
         User = "root";
         StateDirectory = "nits-agent";
-        ExecStart = "${pkgs.nits}/bin/agent";
+        ExecStart = "${pkgs.nits}/bin/nits-agent";
       };
     };
   };
