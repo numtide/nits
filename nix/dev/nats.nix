@@ -110,7 +110,7 @@
                nsc add user -a numtide -k $NKEY -n $BASENAME \
                 --allow-pub nits.log.agent.$NKEY \
                 --allow-sub nits.inbox.agent.$NKEY.\> \
-                --allow-pub \$JS.API.STREAM.INFO.KV_deployment,\$JS.API.CONSUMER.CREATE.KV_deployment \
+                --allow-pub \$JS.API.STREAM.INFO.KV_deployment,\$JS.API.CONSUMER.CREATE.KV_deployment,\$JS.API.CONSUMER.DELETE.KV_deployment.\> \
                 --allow-sub \$JS.API.DIRECT.GET.KV_deployment.\$KV.deployment.$NKEY,\$KV.deployment.$NKEY \
                 --allow-pub \$JS.API.STREAM.INFO.KV_deployment-result,\$KV.deployment-result.$NKEY \
                 --allow-pub \$JS.API.STREAM.INFO.KV_nar-info,\$JS.API.DIRECT.GET.KV_nar-info.\> \
