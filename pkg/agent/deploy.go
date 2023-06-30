@@ -3,13 +3,14 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"time"
 
-	log "github.com/inconshreveable/log15"
+	natshttp "github.com/brianmcgee/nats.http"
+
 	"github.com/numtide/nits/pkg/nix"
 
 	"github.com/nats-io/nats.go"
-	"github.com/numtide/nits/pkg/cache"
 	"github.com/numtide/nits/pkg/server"
 	"github.com/numtide/nits/pkg/state"
 	"golang.org/x/sync/errgroup"
@@ -88,32 +89,26 @@ func (a *Agent) onDeployment(deployment *server.Deployment, resultStore nats.Key
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	// set up the binary cache proxy
-	var c *cache.Cache
-
-	cacheLog := l.New("component", "cache")
-	cacheLog.SetHandler(log.LvlFilterHandler(log.LvlError, l.GetHandler()))
-
 	l.Info("initialising embedded binary cache")
 
-	c, err = cache.NewCache(
-		cacheLog,
-		cache.NatsConnection(a.conn),
-		cache.BindAddress("localhost:0"), // listen to a random available port on localhost
-	)
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return
 	}
 
-	if err = c.Init(); err != nil {
-		return
+	cacheProxy := natshttp.Proxy{
+		Subject: "nits.cache",
+		Transport: &natshttp.Transport{
+			Conn: a.conn.Conn,
+		},
+		Listener: listener,
 	}
 
-	eg.Go(func() (err error) {
-		if err = c.Run(ctx); err != nil {
-			return err
+	eg.Go(func() error {
+		if err := cacheProxy.Listen(ctx); err != nil {
+			l.Error("cache proxy failed to listen", "error", err)
 		}
-		return nil
+		return err
 	})
 
 	eg.Go(func() (err error) {
@@ -139,9 +134,9 @@ func (a *Agent) onDeployment(deployment *server.Deployment, resultStore nats.Key
 			}
 		}()
 
-		l.Info("copying closure from binary cache")
+		l.Info("copying closure from binary cache", "listenAddr", listener.Addr())
 
-		err = nix.CopyFromBinaryCache(c.ListenAddr(), deployment.Closure, l)
+		err = nix.CopyFromBinaryCache(listener.Addr(), deployment.Closure, l)
 		if err != nil {
 			l.Error("failure whilst copying from binary cache")
 			return err

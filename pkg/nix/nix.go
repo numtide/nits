@@ -67,7 +67,6 @@ func CopyToBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) error 
 func CopyFromBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) error {
 	args := []string{
 		"copy",
-		"-v",
 		"--refresh",
 		"--log-format", "raw",
 		"--from", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),

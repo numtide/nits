@@ -3,6 +3,9 @@ package agent
 import (
 	"context"
 	"fmt"
+	"net/http"
+
+	natshttp "github.com/brianmcgee/nats.http"
 
 	log "github.com/inconshreveable/log15"
 
@@ -72,6 +75,8 @@ type Agent struct {
 	nkey string
 	conn *nats.EncodedConn
 	js   nats.JetStreamContext
+
+	cacheClient *http.Client
 }
 
 func (a *Agent) Init() error {
@@ -134,6 +139,12 @@ func (a *Agent) connectNats() error {
 	a.js = js
 	a.nkey = nkey
 	a.conn = encoded
+
+	a.cacheClient = &http.Client{
+		Transport: &natshttp.Transport{
+			Conn: conn,
+		},
+	}
 
 	a.logger.Info("connected to nats", "nkey", a.nkey)
 

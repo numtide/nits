@@ -110,14 +110,10 @@
                nsc add user -a numtide -k $NKEY -n $BASENAME \
                 --allow-pub nits.log.agent.$NKEY \
                 --allow-sub nits.inbox.agent.$NKEY.\> \
-                --allow-pub \$JS.API.STREAM.INFO.KV_deployment,\$JS.API.CONSUMER.CREATE.KV_deployment,\$JS.API.CONSUMER.DELETE.KV_deployment.\> \
+                --allow-pub nits.cache \
+                --allow-pub \$JS.API.STREAM.INFO.KV_deployment,\$JS.API.CONSUMER.CREATE.KV_deployment.\>,\$JS.API.CONSUMER.DELETE.KV_deployment.\> \
                 --allow-sub \$JS.API.DIRECT.GET.KV_deployment.\$KV.deployment.$NKEY,\$KV.deployment.$NKEY \
-                --allow-pub \$JS.API.STREAM.INFO.KV_deployment-result,\$KV.deployment-result.$NKEY \
-                --allow-pub \$JS.API.STREAM.INFO.KV_nar-info,\$JS.API.DIRECT.GET.KV_nar-info.\> \
-                --allow-pub \$JS.API.STREAM.INFO.OBJ_nar,\$JS.API.STREAM.MSG.GET.OBJ_nar, \
-                --allow-pub \$JS.API.STREAM.NAMES,\$JS.API.CONSUMER.CREATE.OBJ_nar,\$JS.FC.OBJ_nar.\> \
-                --allow-pub \$JS.API.CONSUMER.DELETE.OBJ_nar.\> \
-                --allow-sub \$O.nar.\>
+                --allow-pub \$JS.API.STREAM.INFO.KV_deployment-result,\$KV.deployment-result.$NKEY
 
                nsc describe user -n $BASENAME -R > $AGENT_DIR/user.jwt
                echo "$NKEY" > "$AGENT_DIR/nkey.pub"

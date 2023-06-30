@@ -9,6 +9,7 @@ import (
 
 	"github.com/numtide/nits/pkg/state"
 
+	natshttp "github.com/brianmcgee/nats.http"
 	log "github.com/inconshreveable/log15"
 
 	"github.com/numtide/nits/pkg/config"
@@ -39,6 +40,8 @@ type Options struct {
 	NatsConn   *nats.EncodedConn
 	NatsConfig *config.Nats
 
+	Subject     string
+	Group       string
 	BindAddress string
 }
 
@@ -102,6 +105,8 @@ func InfoConfig(storeDir string, wantMassQuery bool, priority int) Option {
 
 func GetDefaultOptions() Options {
 	return Options{
+		Subject:     "nits.cache",
+		Group:       "binary-cache",
 		BindAddress: "localhost:3000",
 		NatsConfig:  config.DefaultNatsConfig,
 		Info:        DefaultCacheInfo,
@@ -113,9 +118,11 @@ type Cache struct {
 
 	log log.Logger
 
-	conn     *nats.EncodedConn
-	js       nats.JetStreamContext
-	listener net.Listener
+	conn *nats.EncodedConn
+	js   nats.JetStreamContext
+
+	listener       net.Listener
+	natsHttpServer *natshttp.Server
 
 	nar     nats.ObjectStore
 	narInfo nats.KeyValue
@@ -147,6 +154,20 @@ func (c *Cache) Init() (err error) {
 	c.listener = l
 	c.log.Info("listening", "addr", l.Addr())
 
+	natsHttpLogger := c.log.New("subject", c.Options.Subject, "group", c.Options.Group)
+
+	c.natsHttpServer = &natshttp.Server{
+		Conn:    c.conn.Conn,
+		Subject: c.Options.Subject,
+		Group:   c.Options.Group,
+		Handler: c.router,
+		ErrorHandler: func(err error) {
+			natsHttpLogger.Error("failed to serve request", "error", err)
+		},
+	}
+
+	natsHttpLogger.Info("listening")
+
 	return nil
 }
 
@@ -170,6 +191,12 @@ func (c *Cache) Run(ctx context.Context) (err error) {
 		_ = c.listener.Close()
 
 		logger.Info("listening stopped")
+	}()
+
+	go func() {
+		if err := c.natsHttpServer.Listen(ctx); err != nil {
+			logger.Error("nats server failed", "error", err)
+		}
 	}()
 
 	err = srv.Serve(c.listener)

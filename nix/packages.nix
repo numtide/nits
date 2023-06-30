@@ -15,7 +15,7 @@
         version = "0.0.1+dev";
 
         src = lib.cleanSourceAndNix ../.;
-        vendorSha256 = "sha256-HkihkbzZUJBPkQTleNgFTI1rrymLL/Ie8m8mnHwFkbk=";
+        vendorSha256 = "sha256-aszcUv6bMau8C8E/JydezD+HsuxNhJpmFaYkZw6D27w=";
 
         ldflags = [
           "-X 'build.Name=${pname}'"

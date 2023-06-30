@@ -1,16 +1,17 @@
 package cache
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
 
-	log "github.com/inconshreveable/log15"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	log "github.com/inconshreveable/log15"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo"
 )
@@ -56,6 +57,8 @@ func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
 
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
+			// todo improve identification of request origin e.g. nats or normal
+
 			defer func() {
 				entries := []interface{}{
 					"status", ww.Status(),
@@ -71,7 +74,7 @@ func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
 					entries = append(entries, "bytes", r.ContentLength)
 				}
 
-				logger.Info(fmt.Sprintf("%s %s", r.Method, r.RequestURI), entries...)
+				logger.Info(fmt.Sprintf("%s %s", r.Method, r.URL.Path), entries...)
 			}()
 
 			next.ServeHTTP(ww, r)
@@ -81,9 +84,15 @@ func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
 }
 
 func (c *Cache) getNixCacheInfo(w http.ResponseWriter, r *http.Request) {
-	if err := c.Options.Info.Write(w); err != nil {
-		c.log.Error("failed to write cache info response", "error", err)
-	}
+	buf := bytes.NewBuffer(nil)
+	bufWriter := bufio.NewWriter(buf)
+	_ = c.Options.Info.Write(bufWriter)
+	// todo handle error
+
+	_ = bufWriter.Flush()
+	b := buf.Bytes()
+	w.Header().Set("Content-Length", strconv.Itoa(len(b)))
+	_, _ = w.Write(b)
 }
 
 func (c *Cache) putNar() http.HandlerFunc {
@@ -129,12 +138,14 @@ func (c *Cache) getNar(body bool) http.HandlerFunc {
 
 		h := w.Header()
 		h.Set(ContentType, ContentTypeNar)
-		h.Set(ContentLength, strconv.FormatUint(info.Size, 10))
 
 		if !body {
+			h.Set(ContentLength, strconv.FormatUint(info.Size, 10))
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+
+		h.Set("Transfer-Encoding", "chunked")
 
 		written, err := io.CopyN(w, obj, int64(info.Size))
 		if written != int64(info.Size) {
