@@ -12,7 +12,7 @@ import (
 	"github.com/numtide/nits/pkg/state"
 )
 
-const DefaultInboxPrefix = "nits.server.inbox"
+const DefaultInboxFormat = "nits.server.%s.inbox"
 
 type Option func(opts *Options) error
 
@@ -98,9 +98,9 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) connectNats() error {
 	nc := s.Options.NatsConfig
 
-	inboxPrefix := nc.InboxPrefix
+	inboxPrefix := nc.InboxFormat
 	if inboxPrefix == "" {
-		inboxPrefix = DefaultInboxPrefix
+		inboxPrefix = DefaultInboxFormat
 	}
 
 	nc.Logger = s.logger

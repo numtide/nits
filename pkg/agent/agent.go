@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	DefaultInboxPrefix = "nits.inbox.agent"
-	DefaultLogPrefix   = "nits.log.agent"
+	DefaultInboxFormat      = "nits.agent.%s.inbox"
+	DefaultLogSubjectFormat = "nits.agent.%s.logs"
 )
 
 type Option func(opts *Options) error
@@ -41,12 +41,12 @@ func SwitchDryRun(dryRun bool) Option {
 	}
 }
 
-func LogSubjectPrefix(prefix string) Option {
+func LogSubjectFormat(format string) Option {
 	return func(opts *Options) error {
-		if prefix == "" {
-			return errors.New("log prefix cannot be empty")
+		if format == "" {
+			return errors.New("log format cannot be empty")
 		}
-		opts.LogSubjectPrefix = prefix
+		opts.LogSubjectFormat = format
 		return nil
 	}
 }
@@ -54,7 +54,7 @@ func LogSubjectPrefix(prefix string) Option {
 type Options struct {
 	NatsConfig       *config.Nats
 	DryRun           bool
-	LogSubjectPrefix string
+	LogSubjectFormat string
 
 	signer ssh.Signer
 }
@@ -63,7 +63,7 @@ func GetDefaultOptions() Options {
 	return Options{
 		NatsConfig:       config.DefaultNatsConfig,
 		DryRun:           false,
-		LogSubjectPrefix: DefaultLogPrefix,
+		LogSubjectFormat: DefaultLogSubjectFormat,
 	}
 }
 
@@ -89,7 +89,7 @@ func (a *Agent) Init() error {
 		a.logger.GetHandler(),
 		&util.NatsLogger{
 			Js:      a.js,
-			Subject: fmt.Sprintf("%s.%s", a.Options.LogSubjectPrefix, a.nkey),
+			Subject: fmt.Sprintf(a.Options.LogSubjectFormat, a.nkey),
 		},
 	)
 
@@ -110,11 +110,11 @@ func (a *Agent) connectNats() error {
 	nc.Logger = a.logger
 
 	// customise the inbox prefix, appending the agent nkey
-	if nc.InboxPrefix == "" {
-		nc.InboxPrefix = DefaultInboxPrefix
+	if nc.InboxFormat == "" {
+		nc.InboxFormat = DefaultInboxFormat
 	}
 	nc.InboxPrefixFn = func(config *config.Nats, nkey string) string {
-		return fmt.Sprintf("%s.%s", config.InboxPrefix, nkey)
+		return fmt.Sprintf(config.InboxFormat, nkey)
 	}
 
 	// connect to nats

@@ -136,7 +136,7 @@ in {
 
             prefix_out "agent-logs"
 
-            nats --context server subscribe --stream logs --last "nits.log.agent.$NKEY" --raw
+            nats --context server subscribe --stream agent-logs --last "nits.agent.$NKEY.logs" --raw
           '';
         }
       ];

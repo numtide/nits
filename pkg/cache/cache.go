@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	DefaultInboxPrefix = "nits.cache.inbox"
+	DefaultInboxFormat = "nits.cache.%s.inbox"
 )
 
 var DefaultCacheInfo = Info{
@@ -215,8 +215,8 @@ func (c *Cache) connectNats() error {
 
 		nc.Logger = c.log
 
-		if nc.InboxPrefix == "" {
-			nc.InboxPrefix = DefaultInboxPrefix
+		if nc.InboxFormat == "" {
+			nc.InboxFormat = DefaultInboxFormat
 		}
 
 		c, nkey, err := nc.ConnectNats()

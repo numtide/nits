@@ -9,7 +9,7 @@ import (
 
 type runCmd struct {
 	DryRun           bool   `name:"dry-run" env:"NITS_AGENT_DRY_RUN" default:"false"`
-	LogSubjectPrefix string `name:"log-subject-prefix" env:"NITS_AGENT_LOG_SUBJECT_PREFIX"`
+	LogSubjectFormat string `name:"log-subject-format" env:"NITS_AGENT_LOG_SUBJECT_FORMAT"`
 }
 
 func (a *runCmd) toOptions() ([]agent.Option, error) {
@@ -22,8 +22,8 @@ func (a *runCmd) toOptions() ([]agent.Option, error) {
 		agent.NatsConfig(nats),
 		agent.SwitchDryRun(Cmd.Run.DryRun),
 	}
-	if Cmd.Run.LogSubjectPrefix != "" {
-		opts = append(opts, agent.LogSubjectPrefix(Cmd.Run.LogSubjectPrefix))
+	if Cmd.Run.LogSubjectFormat != "" {
+		opts = append(opts, agent.LogSubjectFormat(Cmd.Run.LogSubjectFormat))
 	}
 
 	return opts, nil

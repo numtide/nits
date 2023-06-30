@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/rand"
+	"fmt"
 	"os"
 
 	log "github.com/inconshreveable/log15"
@@ -25,7 +26,7 @@ type Nats struct {
 	Seed        string
 	JwtFile     *os.File
 	HostKeyFile *os.File
-	InboxPrefix string
+	InboxFormat string
 	Logger      log.Logger
 
 	InboxPrefixFn func(config *Nats, nkey string) string
@@ -74,8 +75,8 @@ func (n Nats) ConnectNats(extra ...nats.Option) (conn *nats.Conn, nkey string, e
 
 	if n.InboxPrefixFn != nil {
 		opts = append(opts, nats.CustomInboxPrefix(n.InboxPrefixFn(&n, nkey)))
-	} else if n.InboxPrefix != "" {
-		opts = append(opts, nats.CustomInboxPrefix(n.InboxPrefix))
+	} else if n.InboxFormat != "" {
+		opts = append(opts, nats.CustomInboxPrefix(fmt.Sprintf(n.InboxFormat, nkey)))
 	}
 
 	// log nats errors

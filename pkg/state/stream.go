@@ -2,12 +2,12 @@ package state
 
 import "github.com/nats-io/nats.go"
 
-var LogStreamConfig = &nats.StreamConfig{
-	Name:     "logs",
-	Subjects: []string{"nits.log.>"},
+var AgentLogStreamConfig = &nats.StreamConfig{
+	Name:     "agent-logs",
+	Subjects: []string{"nits.agent.*.logs"},
 }
 
 func InitStreams(js nats.JetStreamContext) (err error) {
-	_, err = js.AddStream(LogStreamConfig)
+	_, err = js.AddStream(AgentLogStreamConfig)
 	return
 }

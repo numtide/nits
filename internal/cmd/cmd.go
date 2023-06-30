@@ -35,7 +35,7 @@ type NatsOptions struct {
 	Seed        string   `name:"seed" env:"NATS_SEED"`
 	SeedFile    *os.File `name:"seed-file" env:"NATS_SEED_FILE"`
 	HostKeyFile *os.File `name:"host-key-file" env:"NATS_HOST_KEY_FILE"`
-	InboxPrefix string   `name:"inbox-prefix" env:"NATS_INBOX_PREFIX"`
+	InboxFormat string   `name:"inbox-prefix" env:"NATS_INBOX_FORMAT"`
 }
 
 func (n *NatsOptions) ToNatsConfig() (*config.Nats, error) {
@@ -44,7 +44,7 @@ func (n *NatsOptions) ToNatsConfig() (*config.Nats, error) {
 		Jwt:         n.Jwt,
 		Seed:        n.Seed,
 		HostKeyFile: n.HostKeyFile,
-		InboxPrefix: n.InboxPrefix,
+		InboxFormat: n.InboxFormat,
 	}
 
 	if c.Seed == "" && n.SeedFile != nil {
