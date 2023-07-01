@@ -3,9 +3,9 @@ package cache
 import (
 	"fmt"
 	"io"
-
-	"github.com/juju/errors"
 )
+
+const DefaultStoreDir = "/nix/store"
 
 type Info struct {
 	StoreDir      string
@@ -26,24 +26,4 @@ func (i Info) Write(w io.Writer) (err error) {
 	)
 	_, err = io.WriteString(w, str)
 	return err
-}
-
-func compressionExtension(compression string) (result string, err error) {
-	switch compression {
-	case "xz":
-		result = "xz"
-	case "bzip2":
-		result = "bz2"
-	case "zstd":
-		result = "zst"
-	case "lzip":
-		result = "lzip"
-	case "lz4":
-		result = "lz4"
-	case "br":
-		result = "br"
-	default:
-		err = errors.New("unexpected compression")
-	}
-	return
 }

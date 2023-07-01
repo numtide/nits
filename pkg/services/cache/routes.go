@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/go-http-utils/headers"
+	"github.com/numtide/nits/pkg/state"
 	"io"
 	"net/http"
 	"strconv"
@@ -21,19 +23,17 @@ const (
 	RouteNarInfo   = "/{hash:[a-z0-9]+}.narinfo"
 	RouteCacheInfo = "/nix-cache-info"
 
-	ContentLength      = "Content-Length"
-	ContentType        = "Content-Type"
 	ContentTypeNar     = "application/x-nix-nar"
 	ContentTypeNarInfo = "text/x-nix-narinfo"
 )
 
-func (c *Cache) createRouter() {
+func (c *Cache) createRouter() *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Timeout(60 * time.Second))
-	router.Use(requestLogger(c.log))
+	router.Use(requestLogger(c.logger))
 	router.Use(middleware.Recoverer)
 
 	router.Get(RouteCacheInfo, c.getNixCacheInfo)
@@ -46,7 +46,7 @@ func (c *Cache) createRouter() {
 	router.Get(RouteNar, c.getNar(true))
 	router.Put(RouteNar, c.putNar())
 
-	c.router = router
+	return router
 }
 
 func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
@@ -103,7 +103,7 @@ func (c *Cache) putNar() http.HandlerFunc {
 		name := hash + "-" + compression
 		meta := &nats.ObjectMeta{Name: name}
 
-		_, err := c.nar.Put(meta, r.Body)
+		_, err := state.Nar.Put(meta, r.Body)
 		if err != nil {
 			w.WriteHeader(500)
 			_, _ = w.Write(nil)
@@ -119,7 +119,7 @@ func (c *Cache) getNar(body bool) http.HandlerFunc {
 		compression := chi.URLParam(r, "compression")
 
 		name := hash + "-" + compression
-		obj, err := c.nar.Get(name)
+		obj, err := state.Nar.Get(name)
 
 		if err == nats.ErrObjectNotFound {
 			w.WriteHeader(404)
@@ -137,10 +137,10 @@ func (c *Cache) getNar(body bool) http.HandlerFunc {
 		}
 
 		h := w.Header()
-		h.Set(ContentType, ContentTypeNar)
+		h.Set(headers.ContentType, ContentTypeNar)
 
 		if !body {
-			h.Set(ContentLength, strconv.FormatUint(info.Size, 10))
+			h.Set(headers.ContentLength, strconv.FormatUint(info.Size, 10))
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -169,7 +169,7 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 
 		sign := true
 		for _, sig := range info.Signatures {
-			if sig.Name == c.Options.Name {
+			if sig.Name == c.name {
 				// no need to sign
 				sign = false
 				break
@@ -179,14 +179,14 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 		if sign {
 			sig, err := c.Options.SecretKey.Sign(nil, info.Fingerprint())
 			if err != nil {
-				c.log.Error("failed to generate nar info signature", "error", err)
+				c.logger.Error("failed to generate nar info signature", "error", err)
 				w.WriteHeader(500)
 				return
 			}
 			info.Signatures = append(info.Signatures, sig)
 		}
 
-		_, err = c.narInfo.Put(hash, []byte(info.String()))
+		_, err = state.NarInfo.Put(hash, []byte(info.String()))
 		if err != nil {
 			w.WriteHeader(500)
 			_, _ = w.Write(nil)
@@ -199,7 +199,7 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hash := chi.URLParam(r, "hash")
-		entry, err := c.narInfo.Get(hash)
+		entry, err := state.NarInfo.Get(hash)
 
 		if err == nats.ErrKeyNotFound {
 			w.WriteHeader(404)
@@ -211,8 +211,8 @@ func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 		}
 
 		h := w.Header()
-		h.Set(ContentType, ContentTypeNarInfo)
-		h.Set(ContentLength, strconv.FormatInt(int64(len(entry.Value())), 10))
+		h.Set(headers.ContentType, ContentTypeNarInfo)
+		h.Set(headers.ContentLength, strconv.FormatInt(int64(len(entry.Value())), 10))
 
 		if !body {
 			w.WriteHeader(http.StatusNoContent)
@@ -221,7 +221,7 @@ func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 
 		_, err = w.Write(entry.Value())
 		if err != nil {
-			c.log.Error("failed to write response", "error", err)
+			c.logger.Error("failed to write response", "error", err)
 		}
 	}
 }

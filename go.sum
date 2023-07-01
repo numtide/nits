@@ -20,6 +20,12 @@ github.com/brianmcgee/nats.http v0.0.0-20230630082309-56fc959294ac h1:tGeHAZQidO
 github.com/brianmcgee/nats.http v0.0.0-20230630082309-56fc959294ac/go.mod h1:sZXvbcH2C3Wg5yQlmBcVcjyzXSjOSIZuE5bsIpBl8c0=
 github.com/brianmcgee/nats.http v0.0.0-20230630141336-dd6de8026c32 h1:9LH/WvLYiT+8AeUydTRkzVKoD2utptz4f5jPHmm0J58=
 github.com/brianmcgee/nats.http v0.0.0-20230630141336-dd6de8026c32/go.mod h1:UhvDHYe9/KHzvVMe5nG6yczlFcS1EX7GcMsMYeLgXeE=
+github.com/brianmcgee/nats.http v0.0.0-20230701152920-4f2e61f7f8a0 h1:pLZ/qie57d5t4ezSmzYJBcyWrsRbiRULEy7pMJqmivo=
+github.com/brianmcgee/nats.http v0.0.0-20230701152920-4f2e61f7f8a0/go.mod h1:UhvDHYe9/KHzvVMe5nG6yczlFcS1EX7GcMsMYeLgXeE=
+github.com/brianmcgee/nats.http v0.0.0-20230701153634-8cbbf45e1bee h1:CVVdtdRRkT5ipn2KwtpSPwbzLF1lEX76R6t041jTDfg=
+github.com/brianmcgee/nats.http v0.0.0-20230701153634-8cbbf45e1bee/go.mod h1:UhvDHYe9/KHzvVMe5nG6yczlFcS1EX7GcMsMYeLgXeE=
+github.com/brianmcgee/nats.http v0.0.0-20230701154334-ac6ee22d9046 h1:TjL56T5nVallRvtq9MVaV2FANGoqDwM0ic79rLuXkRQ=
+github.com/brianmcgee/nats.http v0.0.0-20230701154334-ac6ee22d9046/go.mod h1:UhvDHYe9/KHzvVMe5nG6yczlFcS1EX7GcMsMYeLgXeE=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/go-chi/chi/v5 v5.0.8 h1:lD+NLqFcAi1ovnVZpsnObHGW4xb4J8lNmoYVfECH1Y0=

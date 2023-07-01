@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
-
-	"github.com/numtide/nits/pkg/cache"
+	natshttp "github.com/brianmcgee/nats.http"
+	"github.com/numtide/nits/pkg/services/cache"
+	"golang.org/x/sync/errgroup"
+	"net"
 
 	log "github.com/inconshreveable/log15"
 	"github.com/juju/errors"
@@ -12,131 +14,81 @@ import (
 	"github.com/numtide/nits/pkg/state"
 )
 
-const DefaultInboxFormat = "nits.server.%s.inbox"
-
-type Option func(opts *Options) error
-
-type InitFn func(srv *Server) error
-
-type Options struct {
-	NatsConfig   *config.Nats
-	CacheOptions []cache.Option
-}
-
-func NatsConfig(config *config.Nats) Option {
-	return func(opts *Options) error {
-		if config == nil {
-			return errors.New("config cannot be nil")
-		}
-		opts.NatsConfig = config
-		return nil
-	}
-}
-
-func CacheOptions(options []cache.Option) Option {
-	return func(opts *Options) error {
-		opts.CacheOptions = options
-		return nil
-	}
-}
-
-func GetDefaultOptions() Options {
-	return Options{}
-}
-
 type Server struct {
-	Options Options
-	logger  log.Logger
+	NatsConfig   *config.Nats
+	CacheOptions *cache.Options
+	CacheAddress string
 
-	conn *nats.EncodedConn
-	js   nats.JetStreamContext
-
-	cache *cache.Cache
+	log  log.Logger
+	conn *nats.Conn
 }
 
-func (s *Server) Init() (err error) {
+func (s *Server) Run(ctx context.Context, log log.Logger) (err error) {
+	// validate properties
+	if s.NatsConfig == nil {
+		return errors.New("server: Server.NatsConfig cannot be nil")
+	}
+
+	// create sub logger
+	s.log = log.New("component", "server")
+
+	// connect to nats
 	if err = s.connectNats(); err != nil {
 		return err
 	}
 
-	if err = state.InitObjectStores(s.js); err != nil {
-		return err
+	// create cache service
+	c := cache.Cache{
+		Conn:    s.conn,
+		Options: *s.CacheOptions,
 	}
 
-	if err = state.InitKeyValueStores(s.js); err != nil {
-		return err
-	}
-
-	if err = state.InitStreams(s.js); err != nil {
-		return err
-	}
-
-	cacheOpts := s.Options.CacheOptions
-	cacheOpts = append(cacheOpts, cache.NatsConnection(s.conn))
-
-	c, err := cache.NewCache(
-		s.logger.New("component", "cache"),
-		cacheOpts...,
-	)
+	// create a http proxy for the cache service
+	listener, err := net.Listen("tcp", s.CacheAddress)
 	if err != nil {
 		return err
 	}
 
-	if err = c.Init(); err != nil {
-		return err
+	proxy := natshttp.Proxy{
+		Subject:  c.Options.Subject,
+		Listener: listener,
+		Transport: &natshttp.Transport{
+			Conn: s.conn,
+			// increase the subscription pending msg bytes to 512 MB
+			PendingBytesLimit: 1024 * 1024 * 512,
+		},
 	}
 
-	s.cache = c
+	// run services in an error group
+	eg := errgroup.Group{}
 
-	return nil
-}
+	eg.Go(func() error {
+		return c.Listen(ctx, s.log)
+	})
 
-func (s *Server) Run(ctx context.Context) error {
-	return s.cache.Run(ctx)
-}
+	eg.Go(func() error {
+		return proxy.Listen(ctx)
+	})
 
-func (s *Server) connectNats() error {
-	nc := s.Options.NatsConfig
-
-	inboxPrefix := nc.InboxFormat
-	if inboxPrefix == "" {
-		inboxPrefix = DefaultInboxFormat
+	err = eg.Wait()
+	if err == context.Canceled {
+		err = nil
 	}
 
-	nc.Logger = s.logger
+	return err
+}
 
-	conn, nkey, err := nc.ConnectNats()
+func (s *Server) connectNats() (err error) {
+	var nkey string
+	s.conn, nkey, err = s.NatsConfig.Connect(s.log)
 	if err != nil {
 		return errors.Annotatef(err, "nkey = "+nkey)
 	}
 
-	encoded, err := nats.NewEncodedConn(conn, nats.JSON_ENCODER)
-	if err != nil {
+	// initialise various stores and streams
+	if err = state.Init(s.conn); err != nil {
 		return err
 	}
 
-	js, err := conn.JetStream()
-	if err != nil {
-		return errors.Annotate(err, "failed to create a jet stream context")
-	}
-
-	s.conn = encoded
-	s.js = js
-
 	return nil
-}
-
-func NewServer(logger log.Logger, options ...Option) (*Server, error) {
-	// process options
-	opts := GetDefaultOptions()
-	for _, opt := range options {
-		if err := opt(&opts); err != nil {
-			return nil, err
-		}
-	}
-
-	return &Server{
-		Options: opts,
-		logger:  logger,
-	}, nil
 }

@@ -27,12 +27,11 @@ type Nats struct {
 	JwtFile     *os.File
 	HostKeyFile *os.File
 	InboxFormat string
-	Logger      log.Logger
 
 	InboxPrefixFn func(config *Nats, nkey string) string
 }
 
-func (n Nats) ConnectNats(extra ...nats.Option) (conn *nats.Conn, nkey string, err error) {
+func (n Nats) Connect(log log.Logger, extra ...nats.Option) (conn *nats.Conn, nkey string, err error) {
 	var opts []nats.Option
 	if !(n.Seed == "" || n.Jwt == "") {
 		opts = append(opts, nats.UserJWTAndSeed(n.Jwt, n.Seed))
@@ -82,7 +81,7 @@ func (n Nats) ConnectNats(extra ...nats.Option) (conn *nats.Conn, nkey string, e
 	// log nats errors
 	opts = append(opts, nats.ErrorHandler(func(_ *nats.Conn, subscription *nats.Subscription, err error) {
 		if err != nil {
-			n.Logger.Error("nats error", "subscription", subscription, "error", err)
+			log.Error("nats error", "subscription", subscription, "error", err)
 		}
 	}))
 

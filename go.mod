@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/alecthomas/kong v0.7.1
-	github.com/brianmcgee/nats.http v0.0.0-20230630141336-dd6de8026c32
+	github.com/brianmcgee/nats.http v0.0.0-20230701154334-ac6ee22d9046
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/inconshreveable/log15 v2.16.0+incompatible
 	github.com/juju/errors v1.0.0

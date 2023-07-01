@@ -2,9 +2,13 @@ package state
 
 import "github.com/nats-io/nats.go"
 
+var NarInfo nats.KeyValue
+
 var NarInfoConfig = nats.KeyValueConfig{
 	Bucket: "nar-info",
 }
+
+var Deployment nats.KeyValue
 
 var DeploymentConfig = nats.KeyValueConfig{
 	Bucket: "deployment",
@@ -17,29 +21,19 @@ var DeploymentResultConfig = nats.KeyValueConfig{
 	History: 64,
 }
 
+var DeploymentResult nats.KeyValue
+
 func InitKeyValueStores(js nats.JetStreamContext) (err error) {
-	_, err = js.CreateKeyValue(&NarInfoConfig)
+	NarInfo, err = js.CreateKeyValue(&NarInfoConfig)
 	if err != nil {
 		return err
 	}
 
-	_, err = js.CreateKeyValue(&DeploymentConfig)
+	Deployment, err = js.CreateKeyValue(&DeploymentConfig)
 	if err != nil {
 		return err
 	}
 
-	_, err = js.CreateKeyValue(&DeploymentResultConfig)
+	DeploymentResult, err = js.CreateKeyValue(&DeploymentResultConfig)
 	return err
-}
-
-func NarInfo(js nats.JetStreamContext) (nats.KeyValue, error) {
-	return js.KeyValue(NarInfoConfig.Bucket)
-}
-
-func Deployment(js nats.JetStreamContext) (nats.KeyValue, error) {
-	return js.KeyValue(DeploymentConfig.Bucket)
-}
-
-func DeploymentResult(js nats.JetStreamContext) (nats.KeyValue, error) {
-	return js.KeyValue(DeploymentResultConfig.Bucket)
 }

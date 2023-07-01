@@ -17,18 +17,19 @@ import (
 )
 
 func (a *Agent) listenForDeployment(ctx context.Context) error {
-	kv, err := state.Deployment(a.js)
+
+	deployment, err := a.js.KeyValue(state.DeploymentConfig.Bucket)
 	if err != nil {
 		return err
 	}
 
-	deploymentResult, err := state.DeploymentResult(a.js)
+	deploymentResult, err := a.js.KeyValue(state.DeploymentResultConfig.Bucket)
 	if err != nil {
 		return err
 	}
 
 	// listen for deployments using our nkey
-	watch, err := kv.Watch(a.nkey)
+	watch, err := deployment.Watch(a.nkey)
 	if err != nil {
 		return err
 	}

@@ -106,9 +106,6 @@ func (a *Agent) Run(ctx context.Context) error {
 func (a *Agent) connectNats() error {
 	nc := a.Options.NatsConfig
 
-	// set logger for capturing nats errors
-	nc.Logger = a.logger
-
 	// customise the inbox prefix, appending the agent nkey
 	if nc.InboxFormat == "" {
 		nc.InboxFormat = DefaultInboxFormat
@@ -118,7 +115,7 @@ func (a *Agent) connectNats() error {
 	}
 
 	// connect to nats
-	conn, nkey, err := nc.ConnectNats()
+	conn, nkey, err := nc.Connect(a.logger)
 	if err != nil {
 		return errors.Annotatef(err, "nkey = "+nkey)
 	}

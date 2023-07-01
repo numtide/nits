@@ -3,15 +3,20 @@ package server
 import (
 	"context"
 
-	"github.com/juju/errors"
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/server"
 )
 
-type runCmd struct{}
+type runCmd struct {
+	CacheAddress string `env:"NITS_CACHE_ADDRESS" default:"localhost:3000"`
+}
 
 func (r *runCmd) Run() error {
 	logger := Cmd.Logging.ToLogger()
+
+	if Cmd.Nats.InboxFormat == "" {
+		Cmd.Nats.InboxFormat = "nits.server.%s.inbox"
+	}
 
 	return cmd.Run(logger, func(ctx context.Context) error {
 		natsConfig, err := Cmd.Nats.ToNatsConfig()
@@ -24,19 +29,12 @@ func (r *runCmd) Run() error {
 			return err
 		}
 
-		srv, err := server.NewServer(
-			logger,
-			server.NatsConfig(natsConfig),
-			server.CacheOptions(cacheOptions),
-		)
-		if err != nil {
-			return errors.Annotate(err, "failed to create server")
+		srv := server.Server{
+			NatsConfig:   natsConfig,
+			CacheOptions: cacheOptions,
+			CacheAddress: r.CacheAddress,
 		}
 
-		if err = srv.Init(); err != nil {
-			return errors.Annotate(err, "failed to initialise server")
-		}
-
-		return srv.Run(ctx)
+		return srv.Run(ctx, logger)
 	})
 }
