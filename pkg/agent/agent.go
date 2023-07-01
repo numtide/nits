@@ -14,61 +14,12 @@ import (
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/config"
-	"golang.org/x/crypto/ssh"
 )
-
-const (
-	DefaultInboxFormat      = "nits.agent.%s.inbox"
-	DefaultLogSubjectFormat = "nits.agent.%s.logs"
-)
-
-type Option func(opts *Options) error
-
-func NatsConfig(config *config.Nats) Option {
-	return func(opts *Options) error {
-		if config == nil {
-			return errors.New("config cannot be nil")
-		}
-		opts.NatsConfig = config
-		return nil
-	}
-}
-
-func SwitchDryRun(dryRun bool) Option {
-	return func(opts *Options) error {
-		opts.DryRun = dryRun
-		return nil
-	}
-}
-
-func LogSubjectFormat(format string) Option {
-	return func(opts *Options) error {
-		if format == "" {
-			return errors.New("log format cannot be empty")
-		}
-		opts.LogSubjectFormat = format
-		return nil
-	}
-}
-
-type Options struct {
-	NatsConfig       *config.Nats
-	DryRun           bool
-	LogSubjectFormat string
-
-	signer ssh.Signer
-}
-
-func GetDefaultOptions() Options {
-	return Options{
-		NatsConfig:       config.DefaultNatsConfig,
-		DryRun:           false,
-		LogSubjectFormat: DefaultLogSubjectFormat,
-	}
-}
 
 type Agent struct {
-	Options Options
+	DryRun              bool
+	NatsConfig          *config.Nats
+	SubjectPrefixFormat string
 
 	logger log.Logger
 
@@ -79,36 +30,34 @@ type Agent struct {
 	cacheClient *http.Client
 }
 
-func (a *Agent) Init() error {
+func (a *Agent) Run(ctx context.Context, logger log.Logger) error {
+	a.logger = logger.New("component", "agent")
+
 	// connect to nats server
 	if err := a.connectNats(); err != nil {
 		return err
 	}
 
 	multiHandler := log.MultiHandler(
-		a.logger.GetHandler(),
+		logger.GetHandler(),
 		&util.NatsLogger{
 			Js:      a.js,
-			Subject: fmt.Sprintf(a.Options.LogSubjectFormat, a.nkey),
+			Subject: fmt.Sprintf(a.SubjectPrefixFormat+".logs", a.nkey),
 		},
 	)
 
 	// mixin nats logging
 	a.logger.SetHandler(multiHandler)
 
-	return nil
-}
-
-func (a *Agent) Run(ctx context.Context) error {
 	return a.listenForDeployment(ctx)
 }
 
-func (a *Agent) connectNats() error {
-	nc := a.Options.NatsConfig
+func (a *Agent) connectNats() (err error) {
+	nc := a.NatsConfig
 
 	// customise the inbox prefix, appending the agent nkey
 	if nc.InboxFormat == "" {
-		nc.InboxFormat = DefaultInboxFormat
+		nc.InboxFormat = a.SubjectPrefixFormat + ".inbox"
 	}
 	nc.InboxPrefixFn = func(config *config.Nats, nkey string) string {
 		return fmt.Sprintf(config.InboxFormat, nkey)
@@ -120,45 +69,28 @@ func (a *Agent) connectNats() error {
 		return errors.Annotatef(err, "nkey = "+nkey)
 	}
 
+	a.nkey = nkey
+
 	// get the jetstream context
-	js, err := conn.JetStream()
+	a.js, err = conn.JetStream()
 	if err != nil {
 		return err
 	}
 
 	// convert the connection to a json encoded connection
-	encoded, err := nats.NewEncodedConn(conn, nats.JSON_ENCODER)
+	a.conn, err = nats.NewEncodedConn(conn, nats.JSON_ENCODER)
 	if err != nil {
 		return err
 	}
 
-	// capture references
-	a.js = js
-	a.nkey = nkey
-	a.conn = encoded
-
 	a.cacheClient = &http.Client{
 		Transport: &natshttp.Transport{
-			Conn: conn,
+			Conn:              conn,
+			PendingBytesLimit: 1024 * 1024 * 512,
 		},
 	}
 
 	a.logger.Info("connected to nats", "nkey", a.nkey)
 
 	return nil
-}
-
-func NewAgent(logger log.Logger, options ...Option) (*Agent, error) {
-	// process options
-	opts := GetDefaultOptions()
-	for _, opt := range options {
-		if err := opt(&opts); err != nil {
-			return nil, err
-		}
-	}
-
-	return &Agent{
-		Options: opts,
-		logger:  logger,
-	}, nil
 }

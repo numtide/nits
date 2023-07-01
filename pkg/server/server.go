@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
+	"net"
+
 	natshttp "github.com/brianmcgee/nats.http"
 	"github.com/numtide/nits/pkg/services/cache"
 	"golang.org/x/sync/errgroup"
-	"net"
 
 	log "github.com/inconshreveable/log15"
 	"github.com/juju/errors"

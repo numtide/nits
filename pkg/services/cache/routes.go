@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/go-http-utils/headers"
-	"github.com/numtide/nits/pkg/state"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/go-http-utils/headers"
+	"github.com/numtide/nits/pkg/state"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"context"
-	"github.com/nix-community/go-nix/pkg/narinfo/signature"
-	"github.com/numtide/nits/pkg/services/cache"
 	"io"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/nix-community/go-nix/pkg/narinfo/signature"
+	"github.com/numtide/nits/pkg/services/cache"
 
 	log "github.com/inconshreveable/log15"
 	"github.com/juju/errors"
@@ -80,7 +81,6 @@ type CacheOptions struct {
 }
 
 func (o *CacheOptions) ToCacheOptions() (*cache.Options, error) {
-
 	bytes, err := io.ReadAll(o.PrivateKeyFile)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,8 @@ func (o *CacheOptions) ToCacheOptions() (*cache.Options, error) {
 		Info: &cache.Info{
 			StoreDir:      o.StoreDir,
 			WantMassQuery: o.WantMassQuery,
-			Priority:      o.Priority},
+			Priority:      o.Priority,
+		},
 	}, nil
 }
 

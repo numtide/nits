@@ -8,48 +8,24 @@ import (
 )
 
 type runCmd struct {
-	DryRun           bool   `name:"dry-run" env:"NITS_AGENT_DRY_RUN" default:"false"`
-	LogSubjectFormat string `name:"log-subject-format" env:"NITS_AGENT_LOG_SUBJECT_FORMAT"`
-}
-
-func (a *runCmd) toOptions() ([]agent.Option, error) {
-	nats, err := Cmd.Nats.ToNatsConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	opts := []agent.Option{
-		agent.NatsConfig(nats),
-		agent.SwitchDryRun(Cmd.Run.DryRun),
-	}
-	if Cmd.Run.LogSubjectFormat != "" {
-		opts = append(opts, agent.LogSubjectFormat(Cmd.Run.LogSubjectFormat))
-	}
-
-	return opts, nil
+	DryRun              bool   `name:"dry-run" env:"NITS_AGENT_DRY_RUN" default:"false"`
+	SubjectPrefixFormat string `name:"subject-prefix-format" env:"NITS_AGENT_SUBJECT_PREFIX_FORMAT" default:"nits.agent.%s"`
 }
 
 func (a *runCmd) Run() error {
 	logger := Cmd.Logging.ToLogger()
+
+	natsConfig, err := Cmd.Nats.ToNatsConfig()
+	if err != nil {
+		return err
+	}
+
 	return cmd.Run(logger, func(ctx context.Context) error {
-		// process options
-		options, err := Cmd.Run.toOptions()
-		if err != nil {
-			return err
+		a := agent.Agent{
+			DryRun:              a.DryRun,
+			NatsConfig:          natsConfig,
+			SubjectPrefixFormat: a.SubjectPrefixFormat,
 		}
-
-		// create server
-		s, err := agent.NewAgent(logger, options...)
-		if err != nil {
-			return err
-		}
-
-		// initialise
-		if err := s.Init(); err != nil {
-			return err
-		}
-
-		// run main loop
-		return s.Run(ctx)
+		return a.Run(ctx, logger)
 	})
 }

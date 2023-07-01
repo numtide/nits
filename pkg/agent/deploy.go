@@ -17,7 +17,6 @@ import (
 )
 
 func (a *Agent) listenForDeployment(ctx context.Context) error {
-
 	deployment, err := a.js.KeyValue(state.DeploymentConfig.Bucket)
 	if err != nil {
 		return err
@@ -146,7 +145,7 @@ func (a *Agent) onDeployment(deployment *server.Deployment, resultStore nats.Key
 		// todo check if the agent binary has changed and perform a restart after switching
 		l.Info("applying configuration")
 
-		err = nix.SwitchToConfiguration(deployment, a.Options.DryRun, l)
+		err = nix.SwitchToConfiguration(deployment, a.DryRun, l)
 		if err != nil {
 			l.Error("failed to apply configuration", "error", err)
 			return err
