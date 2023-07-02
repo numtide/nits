@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	natshttp "github.com/brianmcgee/nats.http"
+	natshttp "github.com/brianmcgee/nats-http"
 	"github.com/numtide/nits/pkg/services/cache"
 	"golang.org/x/sync/errgroup"
 

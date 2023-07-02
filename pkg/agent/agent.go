@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	natshttp "github.com/brianmcgee/nats.http"
+	natshttp "github.com/brianmcgee/nats-http"
 
 	log "github.com/inconshreveable/log15"
 

@@ -3,7 +3,7 @@ package cache
 import (
 	"context"
 
-	natshttp "github.com/brianmcgee/nats.http"
+	natshttp "github.com/brianmcgee/nats-http"
 	log "github.com/inconshreveable/log15"
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 

@@ -108,7 +108,7 @@
                BASENAME=$(basename $AGENT_DIR)
 
                nsc add user -a numtide -k $NKEY -n $BASENAME \
-                --allow-pub nits.cache \
+                --allow-pub nits.cache.\> \
                 --allow-pubsub nits.agent.$NKEY.\> \
                 --allow-pub \$JS.API.STREAM.INFO.KV_deployment,\$JS.API.CONSUMER.CREATE.KV_deployment.\>,\$JS.API.CONSUMER.DELETE.KV_deployment.\> \
                 --allow-sub \$JS.API.DIRECT.GET.KV_deployment.\$KV.deployment.$NKEY,\$KV.deployment.$NKEY \

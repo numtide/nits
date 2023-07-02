@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	natshttp "github.com/brianmcgee/nats.http"
+	natshttp "github.com/brianmcgee/nats-http"
 
 	"github.com/numtide/nits/pkg/nix"
 
