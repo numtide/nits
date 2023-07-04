@@ -3,15 +3,18 @@ package nix
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 
+	"github.com/nix-community/go-nix/pkg/nixpath"
+	"github.com/numtide/nits/pkg/types"
+
 	"github.com/charmbracelet/log"
 
 	"github.com/juju/errors"
-	"github.com/numtide/nits/pkg/server"
 )
 
 const (
@@ -43,18 +46,33 @@ func (o outLogger) Write(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func CurrentSystemClosure() (string, error) {
-	return os.Readlink("/run/current-system")
+func CurrentSystemClosure() (*nixpath.NixPath, error) {
+	path, err := os.Readlink("/run/current-system")
+	if err != nil {
+		return nil, err
+	}
+	return nixpath.FromString(path)
 }
 
-func runCmd(name string, args []string, logger *log.Logger) error {
+func runCmd(name string, args []string, ctx context.Context) error {
+	logger := log.FromContext(ctx)
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = outLogger{log: logger.With("output", "stdout")}
 	cmd.Stderr = outLogger{log: logger.With("output", "stderr")}
+
+	// todo be able to interrupt a command?
 	return cmd.Run()
 }
 
-func CopyToBinaryCache(cacheAddr net.Addr, path string, logger *log.Logger) error {
+func SetSystemProfile(path *nixpath.NixPath, ctx context.Context) error {
+	args := []string{
+		"--profile", "/nix/var/nix/profiles/system",
+		"--set", path.String(),
+	}
+	return runCmd("nix-env", args, ctx)
+}
+
+func CopyToBinaryCache(cacheAddr net.Addr, path string, ctx context.Context) error {
 	args := []string{
 		"copy",
 		"-v",
@@ -62,10 +80,10 @@ func CopyToBinaryCache(cacheAddr net.Addr, path string, logger *log.Logger) erro
 		"--to", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
 		path,
 	}
-	return runCmd("nix", args, logger)
+	return runCmd("nix", args, ctx)
 }
 
-func CopyFromBinaryCache(cacheAddr net.Addr, path string, logger *log.Logger) error {
+func CopyFromBinaryCache(cacheAddr net.Addr, path string, ctx context.Context) error {
 	args := []string{
 		"copy",
 		"--refresh",
@@ -73,11 +91,11 @@ func CopyFromBinaryCache(cacheAddr net.Addr, path string, logger *log.Logger) er
 		"--from", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
 		path,
 	}
-	log.Info("copying from binary cache", "args", args)
-	return runCmd("nix", args, logger)
+	log.FromContext(ctx).Info("copying from binary cache", "args", args)
+	return runCmd("nix", args, ctx)
 }
 
-func SwitchToConfiguration(config *server.Deployment, dryRun bool, logger *log.Logger) error {
+func SwitchToConfiguration(config *types.Deployment, ctx context.Context) error {
 	binPath := config.Closure + "/bin/switch-to-configuration"
 	_, err := os.Stat(binPath)
 	if err != nil {
@@ -86,9 +104,5 @@ func SwitchToConfiguration(config *server.Deployment, dryRun bool, logger *log.L
 
 	args := []string{config.Action.String()}
 
-	if dryRun {
-		log.Info("dry run", "name", binPath, "args", args)
-		return nil
-	}
-	return runCmd(binPath, args, logger)
+	return runCmd(binPath, args, ctx)
 }

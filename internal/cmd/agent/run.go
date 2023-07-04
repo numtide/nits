@@ -5,10 +5,11 @@ import (
 
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/agent"
+	"github.com/numtide/nits/pkg/agent/deploy"
 )
 
 type runCmd struct {
-	DryRun              bool   `name:"dry-run" env:"NITS_AGENT_DRY_RUN" default:"false"`
+	Deployer            string `enum:"noop,nixos" env:"NITS_AGENT_DEPLOYER" default:"nixos" help:"Configure deployer to use."`
 	SubjectPrefixFormat string `name:"subject-prefix-format" env:"NITS_AGENT_SUBJECT_PREFIX_FORMAT" default:"nits.agent.%s"`
 }
 
@@ -25,8 +26,8 @@ func (a *runCmd) Run() error {
 
 	return cmd.Run(logger, func(ctx context.Context) error {
 		a := agent.Agent{
-			DryRun:              a.DryRun,
 			NatsConfig:          natsConfig,
+			Deployer:            deploy.ParseDeployer(a.Deployer),
 			SubjectPrefixFormat: a.SubjectPrefixFormat,
 		}
 		return a.Run(ctx, logger)

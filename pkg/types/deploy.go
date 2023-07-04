@@ -1,8 +1,12 @@
 package types
 
-import "encoding/json"
+import (
+	"encoding/json"
 
-type DeployAction int64
+	"github.com/nix-community/go-nix/pkg/nixpath"
+)
+
+type DeployAction int
 
 const (
 	DeployActionUnknown DeployAction = iota
@@ -58,8 +62,6 @@ type Deployment struct {
 	Closure string       `json:"closure"`
 }
 
-type DeploymentResult struct {
-	Deployment Deployment `json:"deployment"`
-	Error      error      `json:"error"`
-	Output     string     `json:"output"`
+func (d *Deployment) StorePath() (*nixpath.NixPath, error) {
+	return nixpath.FromString(d.Closure)
 }
