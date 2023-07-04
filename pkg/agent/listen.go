@@ -68,6 +68,8 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 				l.Info("complete", "elapsed", elapsed)
 			}
 
+			// clear prefix
+			l.SetPrefix("")
 		}
 	}
 }
