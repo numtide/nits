@@ -12,16 +12,15 @@
   }: {
     checks =
       {
-        # TODO statix currently seems to be broken
-        #        statix =
-        #          pkgs.runCommand "statix" {
-        #            nativeBuildInputs = [pkgs.statix];
-        #          } ''
-        #            cp --no-preserve=mode -r ${self} source
-        #            cd source
-        #            HOME=$TMPDIR statix check
-        #            touch $out
-        #          '';
+        statix =
+          pkgs.runCommand "statix" {
+            nativeBuildInputs = [pkgs.statix];
+          } ''
+            cp --no-preserve=mode -r ${self} source
+            cd source
+            HOME=$TMPDIR statix check
+            touch $out
+          '';
       }
       # merge in the package derivations to force a build of all packages during a `nix flake check`
       // (with lib; mapAttrs' (n: nameValuePair "package-${n}") self'.packages);

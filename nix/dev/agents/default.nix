@@ -25,8 +25,8 @@
     extraModules ? [],
   }:
     lib.nixosSystem rec {
-      system = pkgs.system;
       inherit pkgs modules;
+      inherit (pkgs) system;
       specialArgs = {
         inherit self id;
         hostname = "agent-host-${builtins.toString id}";
