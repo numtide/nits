@@ -42,7 +42,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 
 			// we go ahead and ack the message because we don't want re-delivery in case of failure
 			// instead a user must evaluate why it failed and publish a new deployment
-			if err = msg.Ack(nats.AckWait(10 * time.Minute)); err != nil {
+			if err = msg.Ack(); err != nil {
 				a.log.Error("failed to ack deployment", "error", err)
 				continue
 			}
