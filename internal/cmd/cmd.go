@@ -10,23 +10,34 @@ import (
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 	"github.com/numtide/nits/pkg/services/cache"
 
-	log "github.com/inconshreveable/log15"
+	"github.com/charmbracelet/log"
 	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/config"
 )
 
 type LogOptions struct {
-	Level string `enum:"debug,info,warn,error" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
+	Level  string `enum:"debug,info,warn,error,fatal" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
+	Format string `enum:"text,json,logfmt" env:"LOG_FORMAT" default:"text" help:"Configure logging format."`
 }
 
-func (lo *LogOptions) ToLogger() log.Logger {
-	l := log.New()
-	level, err := log.LvlFromString(lo.Level)
-	if err != nil {
-		panic(err)
+func (lo *LogOptions) ToLogger() (*log.Logger, error) {
+	log.SetLevel(log.ParseLevel(lo.Level))
+
+	var format log.Formatter
+	switch lo.Format {
+	case "text":
+		format = log.TextFormatter
+	case "json":
+		format = log.JSONFormatter
+	case "logfmt":
+		format = log.LogfmtFormatter
+	default:
+		return nil, errors.Errorf("nits: unexpected logfmt '%s', must be one of text, json or logfmt", lo.Format)
 	}
-	l.SetHandler(log.LvlFilterHandler(level, log.StreamHandler(os.Stderr, log.LogfmtFormat())))
-	return l
+
+	log.SetFormatter(format)
+
+	return log.Default(), nil
 }
 
 type NatsOptions struct {
@@ -103,7 +114,7 @@ func (o *CacheOptions) ToCacheOptions() (*cache.Options, error) {
 	}, nil
 }
 
-func Run(logger log.Logger, main func(ctx context.Context) error) (err error) {
+func Run(logger *log.Logger, main func(ctx context.Context) error) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

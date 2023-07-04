@@ -3,8 +3,9 @@ package cache
 import (
 	"context"
 
+	"github.com/charmbracelet/log"
+
 	natshttp "github.com/brianmcgee/nats-http"
-	log "github.com/inconshreveable/log15"
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 
 	"github.com/juju/errors"
@@ -45,11 +46,11 @@ type Cache struct {
 	Conn    *nats.Conn
 	Options Options
 
-	name   string
-	logger log.Logger
+	log  *log.Logger
+	name string
 }
 
-func (c *Cache) Listen(ctx context.Context, log log.Logger) (err error) {
+func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
 	// validate properties
 	if c.Conn == nil {
 		return errors.New("cache: Cache.Conn cannot be nil")
@@ -68,7 +69,7 @@ func (c *Cache) Listen(ctx context.Context, log log.Logger) (err error) {
 		logOpts = append(logOpts, "group", c.Options.Group)
 	}
 
-	c.logger = log.New(logOpts...)
+	c.log = logger.With(logOpts...)
 
 	// create server
 	srv := &natshttp.Server{
@@ -77,7 +78,7 @@ func (c *Cache) Listen(ctx context.Context, log log.Logger) (err error) {
 		Group:   c.Options.Group,
 		Handler: c.createRouter(),
 		ErrorHandler: func(err error) {
-			c.logger.Error("natshttp.Server: error serving request", "error", err)
+			c.log.Error("natshttp.Server: error serving request", "error", err)
 		},
 	}
 

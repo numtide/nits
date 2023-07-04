@@ -4,11 +4,12 @@ import (
 	"context"
 	"net"
 
+	"github.com/charmbracelet/log"
+
 	natshttp "github.com/brianmcgee/nats-http"
 	"github.com/numtide/nits/pkg/services/cache"
 	"golang.org/x/sync/errgroup"
 
-	log "github.com/inconshreveable/log15"
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/config"
@@ -20,18 +21,18 @@ type Server struct {
 	CacheOptions *cache.Options
 	CacheAddress string
 
-	log  log.Logger
+	log  *log.Logger
 	conn *nats.Conn
 }
 
-func (s *Server) Run(ctx context.Context, log log.Logger) (err error) {
+func (s *Server) Run(ctx context.Context, logger log.Logger) (err error) {
 	// validate properties
 	if s.NatsConfig == nil {
 		return errors.New("server: Server.NatsConfig cannot be nil")
 	}
 
 	// create sub logger
-	s.log = log.New("component", "server")
+	s.log = logger.With("component", "server")
 
 	// connect to nats
 	if err = s.connectNats(); err != nil {

@@ -12,7 +12,10 @@ type runCmd struct {
 }
 
 func (r *runCmd) Run() error {
-	logger := Cmd.Logging.ToLogger()
+	logger, err := Cmd.Logging.ToLogger()
+	if err != nil {
+		return err
+	}
 
 	if Cmd.Nats.InboxFormat == "" {
 		Cmd.Nats.InboxFormat = "nits.server.%s.inbox"
@@ -35,6 +38,6 @@ func (r *runCmd) Run() error {
 			CacheAddress: r.CacheAddress,
 		}
 
-		return srv.Run(ctx, logger)
+		return srv.Run(ctx, *logger)
 	})
 }

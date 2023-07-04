@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	natshttp "github.com/brianmcgee/nats-http"
-
-	log "github.com/inconshreveable/log15"
-
-	"github.com/numtide/nits/pkg/util"
+	"github.com/charmbracelet/log"
+	nits_log "github.com/numtide/nits/pkg/log"
 
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
@@ -21,7 +20,7 @@ type Agent struct {
 	NatsConfig          *config.Nats
 	SubjectPrefixFormat string
 
-	logger log.Logger
+	log *log.Logger
 
 	nkey string
 	conn *nats.EncodedConn
@@ -30,24 +29,22 @@ type Agent struct {
 	cacheClient *http.Client
 }
 
-func (a *Agent) Run(ctx context.Context, logger log.Logger) error {
-	a.logger = logger.New("component", "agent")
+func (a *Agent) Run(ctx context.Context, logger *log.Logger) error {
+	a.log = logger.With("component", "agent")
 
 	// connect to nats server
 	if err := a.connectNats(); err != nil {
 		return err
 	}
 
-	multiHandler := log.MultiHandler(
-		logger.GetHandler(),
-		&util.NatsLogger{
-			Js:      a.js,
-			Subject: fmt.Sprintf(a.SubjectPrefixFormat+".logs", a.nkey),
-		},
-	)
+	// publish logs into nats
+	writer := nits_log.NatsWriter{
+		Conn:     a.conn.Conn,
+		Subject:  fmt.Sprintf(a.SubjectPrefixFormat+".logs", a.nkey),
+		Delegate: os.Stderr,
+	}
 
-	// mixin nats logging
-	a.logger.SetHandler(multiHandler)
+	a.log.SetOutput(&writer)
 
 	return a.listenForDeployment(ctx)
 }
@@ -64,7 +61,7 @@ func (a *Agent) connectNats() (err error) {
 	}
 
 	// connect to nats
-	conn, nkey, err := nc.Connect(a.logger)
+	conn, nkey, err := nc.Connect(a.log)
 	if err != nil {
 		return errors.Annotatef(err, "nkey = "+nkey)
 	}
@@ -90,7 +87,7 @@ func (a *Agent) connectNats() (err error) {
 		},
 	}
 
-	a.logger.Info("connected to nats", "nkey", a.nkey)
+	a.log.Info("connected to nats", "nkey", a.nkey)
 
 	return nil
 }

@@ -13,7 +13,10 @@ type runCmd struct {
 }
 
 func (a *runCmd) Run() error {
-	logger := Cmd.Logging.ToLogger()
+	logger, err := Cmd.Logging.ToLogger()
+	if err != nil {
+		return err
+	}
 
 	natsConfig, err := Cmd.Nats.ToNatsConfig()
 	if err != nil {

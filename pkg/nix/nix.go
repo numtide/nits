@@ -8,7 +8,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/inconshreveable/log15"
+	"github.com/charmbracelet/log"
+
 	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/server"
 )
@@ -19,7 +20,7 @@ const (
 
 type outLogger struct {
 	buf []byte
-	log log15.Logger
+	log *log.Logger
 }
 
 func (o outLogger) Write(b []byte) (n int, err error) {
@@ -46,14 +47,14 @@ func CurrentSystemClosure() (string, error) {
 	return os.Readlink("/run/current-system")
 }
 
-func runCmd(name string, args []string, log log15.Logger) error {
+func runCmd(name string, args []string, logger *log.Logger) error {
 	cmd := exec.Command(name, args...)
-	cmd.Stdout = outLogger{log: log.New("output", "stdout")}
-	cmd.Stderr = outLogger{log: log.New("output", "stderr")}
+	cmd.Stdout = outLogger{log: logger.With("output", "stdout")}
+	cmd.Stderr = outLogger{log: logger.With("output", "stderr")}
 	return cmd.Run()
 }
 
-func CopyToBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) error {
+func CopyToBinaryCache(cacheAddr net.Addr, path string, logger *log.Logger) error {
 	args := []string{
 		"copy",
 		"-v",
@@ -61,10 +62,10 @@ func CopyToBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) error 
 		"--to", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
 		path,
 	}
-	return runCmd("nix", args, log)
+	return runCmd("nix", args, logger)
 }
 
-func CopyFromBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) error {
+func CopyFromBinaryCache(cacheAddr net.Addr, path string, logger *log.Logger) error {
 	args := []string{
 		"copy",
 		"--refresh",
@@ -73,10 +74,10 @@ func CopyFromBinaryCache(cacheAddr net.Addr, path string, log log15.Logger) erro
 		path,
 	}
 	log.Info("copying from binary cache", "args", args)
-	return runCmd("nix", args, log)
+	return runCmd("nix", args, logger)
 }
 
-func SwitchToConfiguration(config *server.Deployment, dryRun bool, log log15.Logger) error {
+func SwitchToConfiguration(config *server.Deployment, dryRun bool, logger *log.Logger) error {
 	binPath := config.Closure + "/bin/switch-to-configuration"
 	_, err := os.Stat(binPath)
 	if err != nil {
@@ -89,5 +90,5 @@ func SwitchToConfiguration(config *server.Deployment, dryRun bool, log log15.Log
 		log.Info("dry run", "name", binPath, "args", args)
 		return nil
 	}
-	return runCmd(binPath, args, log)
+	return runCmd(binPath, args, logger)
 }

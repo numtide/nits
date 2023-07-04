@@ -9,12 +9,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/charmbracelet/log"
+
 	"github.com/go-http-utils/headers"
 	"github.com/numtide/nits/pkg/state"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	log "github.com/inconshreveable/log15"
 	"github.com/nats-io/nats.go"
 	"github.com/nix-community/go-nix/pkg/narinfo"
 )
@@ -34,7 +35,7 @@ func (c *Cache) createRouter() *chi.Mux {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Timeout(60 * time.Second))
-	router.Use(requestLogger(c.logger))
+	router.Use(requestLogger(c.log))
 	router.Use(middleware.Recoverer)
 
 	router.Get(RouteCacheInfo, c.getNixCacheInfo)
@@ -50,7 +51,7 @@ func (c *Cache) createRouter() *chi.Mux {
 	return router
 }
 
-func requestLogger(logger log.Logger) func(handler http.Handler) http.Handler {
+func requestLogger(logger *log.Logger) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			startedAt := time.Now()
@@ -180,7 +181,7 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 		if sign {
 			sig, err := c.Options.SecretKey.Sign(nil, info.Fingerprint())
 			if err != nil {
-				c.logger.Error("failed to generate nar info signature", "error", err)
+				c.log.Error("failed to generate nar info signature", "error", err)
 				w.WriteHeader(500)
 				return
 			}
@@ -222,7 +223,7 @@ func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 
 		_, err = w.Write(entry.Value())
 		if err != nil {
-			c.logger.Error("failed to write response", "error", err)
+			c.log.Error("failed to write response", "error", err)
 		}
 	}
 }

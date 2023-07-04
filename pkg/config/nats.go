@@ -5,20 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/inconshreveable/log15"
+	"github.com/charmbracelet/log"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/numtide/nits/pkg/util"
 	"golang.org/x/crypto/ssh"
 )
-
-const (
-	DefaultNatsURL = "ns://127.0.0.1:4222"
-)
-
-var DefaultNatsConfig = &Nats{
-	Url: DefaultNatsURL,
-}
 
 type Nats struct {
 	Url         string
@@ -31,7 +23,7 @@ type Nats struct {
 	InboxPrefixFn func(config *Nats, nkey string) string
 }
 
-func (n Nats) Connect(log log.Logger, extra ...nats.Option) (conn *nats.Conn, nkey string, err error) {
+func (n Nats) Connect(log *log.Logger, extra ...nats.Option) (conn *nats.Conn, nkey string, err error) {
 	var opts []nats.Option
 	if !(n.Seed == "" || n.Jwt == "") {
 		opts = append(opts, nats.UserJWTAndSeed(n.Jwt, n.Seed))

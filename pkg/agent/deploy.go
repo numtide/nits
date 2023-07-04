@@ -50,7 +50,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 				// only process puts
 				var config server.Deployment
 				if err = json.Unmarshal(entry.Value(), &config); err != nil {
-					a.logger.Error("failed to unmarshal deployment update", "error", err)
+					a.log.Error("failed to unmarshal deployment update", "error", err)
 					continue
 				}
 				a.onDeployment(&config, deploymentResult)
@@ -62,7 +62,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 func (a *Agent) onDeployment(deployment *server.Deployment, resultStore nats.KeyValue) {
 	startedAt := time.Now()
 
-	l := a.logger.New("action", deployment.Action, "closure", deployment.Closure)
+	l := a.log.With("action", deployment.Action, "closure", deployment.Closure)
 	l.Info("checking current system closure")
 
 	currentSystem, err := nix.CurrentSystemClosure()
