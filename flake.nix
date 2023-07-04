@@ -45,7 +45,6 @@
         {_module.args.lib = lib;} # make custom lib available to perSystem functions
         ./nix
       ];
-      debug = true;
       systems = [
         "x86_64-linux"
         "aarch64-linux"
