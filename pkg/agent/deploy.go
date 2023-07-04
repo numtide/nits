@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/numtide/nits/pkg/types"
 	"net"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/numtide/nits/pkg/nix"
 
 	"github.com/nats-io/nats.go"
-	"github.com/numtide/nits/pkg/server"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -50,7 +50,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 				continue
 			}
 
-			var config server.Deployment
+			var config types.Deployment
 			if err = json.Unmarshal(msg.Data, &config); err != nil {
 				a.log.Error("failed to unmarshal deployment", "error", err)
 				continue
@@ -61,7 +61,7 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 	}
 }
 
-func (a *Agent) onDeployment(deployment *server.Deployment) {
+func (a *Agent) onDeployment(deployment *types.Deployment) {
 	startedAt := time.Now()
 
 	l := a.log.With("action", deployment.Action, "closure", deployment.Closure)
