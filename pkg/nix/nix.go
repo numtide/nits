@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/nix-community/go-nix/pkg/nixpath"
 	"github.com/numtide/nits/pkg/types"
@@ -56,6 +57,15 @@ func CurrentSystemClosure() (*nixpath.NixPath, error) {
 
 func runCmd(name string, args []string, ctx context.Context) error {
 	logger := log.FromContext(ctx)
+
+	logger.Info(name, "args", strings.Join(args, " "))
+
+	prefix := logger.GetPrefix()
+	logger.SetPrefix(name)
+
+	// reset prefix afterwards
+	defer logger.SetPrefix(prefix)
+
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = outLogger{log: logger.With("output", "stdout")}
 	cmd.Stderr = outLogger{log: logger.With("output", "stderr")}
@@ -91,7 +101,6 @@ func CopyFromBinaryCache(cacheAddr net.Addr, path string, ctx context.Context) e
 		"--from", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
 		path,
 	}
-	log.FromContext(ctx).Info("copying from binary cache", "args", args)
 	return runCmd("nix", args, ctx)
 }
 

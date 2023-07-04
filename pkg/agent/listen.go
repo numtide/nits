@@ -55,21 +55,17 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 
 			startedAt := time.Now()
 			l := a.log.With()
-			l.SetPrefix("deploy")
 
-			l.Info("new config", "action", config.Action, "closure", config.Closure)
+			l.Info("new deployment", "action", config.Action, "closure", config.Closure)
 
 			err = a.deployHandler.Apply(&config, log.WithContext(ctx, l))
 			elapsed := time.Now().Sub(startedAt)
 
 			if err != nil {
-				l.Error("failed", "error", err, "elapsed", elapsed)
+				l.Error("deployment failed", "error", err, "elapsed", elapsed)
 			} else {
-				l.Info("complete", "elapsed", elapsed)
+				l.Info("deployment complete", "elapsed", elapsed)
 			}
-
-			// clear prefix
-			l.SetPrefix("")
 		}
 	}
 }
