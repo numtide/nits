@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"time"
 
@@ -12,23 +13,12 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/server"
-	"github.com/numtide/nits/pkg/state"
 	"golang.org/x/sync/errgroup"
 )
 
 func (a *Agent) listenForDeployment(ctx context.Context) error {
-	deployment, err := a.js.KeyValue(state.DeploymentConfig.Bucket)
-	if err != nil {
-		return err
-	}
-
-	deploymentResult, err := a.js.KeyValue(state.DeploymentResultConfig.Bucket)
-	if err != nil {
-		return err
-	}
-
-	// listen for deployments using our nkey
-	watch, err := deployment.Watch(a.nkey)
+	subject := fmt.Sprintf(a.SubjectPrefixFormat+".deployment", a.nkey)
+	sub, err := a.js.SubscribeSync(subject, nats.DeliverLastPerSubject())
 	if err != nil {
 		return err
 	}
@@ -36,30 +26,42 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return watch.Stop()
-		case entry, ok := <-watch.Updates():
-			if !ok {
-				// channel has been closed
-				return nil
-			}
-			if entry == nil {
-				// nothing available yet for our nkey
+			return sub.Unsubscribe()
+		default:
+			msg, err := sub.NextMsg(1 * time.Second)
+			if err == nats.ErrTimeout {
+				// no currently available msg
 				continue
 			}
-			if entry.Operation() == nats.KeyValuePut {
-				// only process puts
-				var config server.Deployment
-				if err = json.Unmarshal(entry.Value(), &config); err != nil {
-					a.log.Error("failed to unmarshal deployment update", "error", err)
-					continue
-				}
-				a.onDeployment(&config, deploymentResult)
+
+			if err != nil {
+				a.log.Error("failed to retrieve next deployment msg", "error", err)
+				continue
 			}
+
+			if msg == nil {
+				continue
+			}
+
+			// we go ahead and ack the message because we don't want re-delivery in case of failure
+			// instead a user must evaluate why it failed and publish a new deployment
+			if err = msg.Ack(nats.AckWait(10 * time.Minute)); err != nil {
+				a.log.Error("failed to ack deployment", "error", err)
+				continue
+			}
+
+			var config server.Deployment
+			if err = json.Unmarshal(msg.Data, &config); err != nil {
+				a.log.Error("failed to unmarshal deployment", "error", err)
+				continue
+			}
+
+			a.onDeployment(&config)
 		}
 	}
 }
 
-func (a *Agent) onDeployment(deployment *server.Deployment, resultStore nats.KeyValue) {
+func (a *Agent) onDeployment(deployment *server.Deployment) {
 	startedAt := time.Now()
 
 	l := a.log.With("action", deployment.Action, "closure", deployment.Closure)
@@ -113,26 +115,6 @@ func (a *Agent) onDeployment(deployment *server.Deployment, resultStore nats.Key
 
 	eg.Go(func() (err error) {
 		defer cancel()
-
-		defer func() {
-			// todo handle output that is larger than 1 MB and therefore too large for the KV store
-
-			result := server.DeploymentResult{
-				Deployment: *deployment,
-				Error:      err,
-			}
-
-			b, err := json.Marshal(result)
-			if err != nil {
-				l.Error("failed to marshal deployment result to json", "error", err)
-				return
-			}
-
-			_, err = resultStore.Put(a.nkey, b)
-			if err != nil {
-				l.Error("failed to write command output to object store", "error", err)
-			}
-		}()
 
 		l.Info("copying closure from binary cache", "listenAddr", listener.Addr())
 

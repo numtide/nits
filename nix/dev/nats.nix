@@ -110,9 +110,9 @@
                nsc add user -a numtide -k $NKEY -n $BASENAME \
                 --allow-pub nits.cache.\> \
                 --allow-pubsub nits.agent.$NKEY.\> \
-                --allow-pub \$JS.API.STREAM.INFO.KV_deployment,\$JS.API.CONSUMER.CREATE.KV_deployment.\>,\$JS.API.CONSUMER.DELETE.KV_deployment.\> \
-                --allow-sub \$JS.API.DIRECT.GET.KV_deployment.\$KV.deployment.$NKEY,\$KV.deployment.$NKEY \
-                --allow-pub \$JS.API.STREAM.INFO.KV_deployment-result,\$KV.deployment-result.$NKEY
+                --allow-pub \$JS.API.STREAM.NAMES \
+                --allow-pub \$JS.API.CONSUMER.\*.agent-deployments.\> \
+                --allow-pub \$JS.ACK.agent-deployments.\>
 
                nsc describe user -n $BASENAME -R > $AGENT_DIR/user.jwt
                echo "$NKEY" > "$AGENT_DIR/nkey.pub"

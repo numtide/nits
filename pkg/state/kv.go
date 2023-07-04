@@ -14,6 +14,10 @@ var DeploymentConfig = nats.KeyValueConfig{
 	Bucket: "deployment",
 	// TODO max history size is hardcoded to 64 in the go client but there isn't a limit enforced by the server
 	History: 64,
+	RePublish: &nats.RePublish{
+		Source:      "$KV.deployment.*",
+		Destination: "nits.agent.{{wildcard(1)}}.deployment",
+	},
 }
 
 var DeploymentResultConfig = nats.KeyValueConfig{
