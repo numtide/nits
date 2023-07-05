@@ -109,10 +109,15 @@ func (h *NixosHandler) Apply(config *types.Deployment, ctx context.Context) (err
 			return err
 		}
 
-		err = nix.SetSystemProfile(storePath, ctx)
-		if err != nil {
-			l.Error("failed to set system profile", "error", err)
-			return err
+		switch config.Action {
+		case types.DeployActionBoot, types.DeployActionSwitch:
+			err = nix.SetSystemProfile(storePath, ctx)
+			if err != nil {
+				l.Error("failed to set system profile", "error", err)
+				return err
+			}
+		default:
+			// do nothing
 		}
 
 		l.Info("switch to configuration complete")
