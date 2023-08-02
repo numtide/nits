@@ -68,6 +68,20 @@ func ReadAccountJwt(path string) (k Keys, err error) {
 	return
 }
 
+func ReadUserJwt(path string) (k Keys, err error) {
+	if k.Jwt, err = readJwt(path); err != nil {
+		return
+	}
+
+	claims, err := jwt.DecodeUserClaims(k.Jwt)
+	if err != nil {
+		return
+	}
+
+	k.PubKey = claims.Subject
+	return
+}
+
 func readJwt(path string) (jwt string, err error) {
 	if path == "" {
 		return "", errors.New("path cannot be empty")

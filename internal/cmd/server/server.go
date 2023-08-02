@@ -9,6 +9,7 @@ var Cmd struct {
 
 	DataDir string `env:"NATS_SERVER_DATA_DIR" default:"./datadir"`
 
-	Run  runCmd  `cmd:"" default:"1"`
-	Init initCmd `cmd:""`
+	Run     runCmd     `cmd:"" default:"1"`
+	Init    initCmd    `cmd:""`
+	Cluster clusterCmd `cmd:""`
 }

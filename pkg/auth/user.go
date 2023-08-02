@@ -1,4 +1,4 @@
-package keys
+package auth
 
 import (
 	"github.com/nats-io/jwt/v2"
@@ -26,6 +26,7 @@ func ReadUserJwt(path string) (result *Set[jwt.UserClaims], err error) {
 }
 
 func ReadUserCredentials(path string) (s *Set[jwt.UserClaims], err error) {
+	s = &Set[jwt.UserClaims]{}
 	if s.KP, s.Jwt, err = ReadCredentials(path); err != nil {
 		return
 	} else if s.PubKey, err = s.KP.PublicKey(); err != nil {

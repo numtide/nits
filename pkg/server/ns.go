@@ -5,36 +5,32 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats-server/v2/server"
-	"github.com/numtide/nits/pkg/keys"
+	"github.com/numtide/nits/pkg/auth"
 	nitslog "github.com/numtide/nits/pkg/log"
 	"time"
 )
 
 func (s *Server) runNats(ctx context.Context, log *log.Logger) (err error) {
 
-	if err = keys.Generate(s.DataDir); err != nil {
+	if err = auth.Generate(s.DataDir); err != nil {
 		return err
 	}
 
-	var operator *keys.Set[jwt.OperatorClaims]
-	var sysAcct *keys.Set[jwt.AccountClaims]
+	var operator *auth.Set[jwt.OperatorClaims]
+	var sysAcct *auth.Set[jwt.AccountClaims]
 
-	if operator, err = keys.ReadOperatorJwt(s.DataDir + "/operator.jwt"); err != nil {
+	if operator, err = auth.ReadOperatorJwt(s.DataDir + "/operator.jwt"); err != nil {
 		return
-	} else if sysAcct, err = keys.ReadAccountJwt(s.DataDir + "/sys.jwt"); err != nil {
+	} else if sysAcct, err = auth.ReadAccountJwt(s.DataDir + "/sys.jwt"); err != nil {
 		return
 	}
 
 	accResolver, err := server.NewDirAccResolver(
 		s.DataDir+"/jwt",
 		1024,
-		10*time.Second,
+		5*time.Second,
 		server.RenameDeleted,
 	)
-
-	if err = accResolver.SaveAcc(sysAcct.PubKey, sysAcct.Jwt); err != nil {
-		return err
-	}
 
 	opts := server.Options{
 		JetStream:        true,

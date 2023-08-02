@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/charmbracelet/log"
-	"github.com/numtide/nits/pkg/keys"
+	"github.com/numtide/nits/pkg/auth"
 	"os"
 )
 
@@ -36,5 +36,5 @@ func (r *initCmd) Run() (err error) {
 	l.Info("generating NATS keys")
 	// generate NATS keys
 	// todo check if they already exist
-	return keys.Generate(Cmd.DataDir)
+	return auth.Generate(Cmd.DataDir)
 }
