@@ -147,7 +147,7 @@ in {
         mkAgentProcess = id: {
           command = "run-agent ${builtins.toString id}";
           depends_on = {
-            nits-server.condition = "process_healthy";
+            server.condition = "process_healthy";
           };
         };
         configs =

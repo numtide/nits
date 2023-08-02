@@ -27,8 +27,6 @@
         ## see: https://docs.nats.io/running-a-nats-service/configuration#jetstream
         jetstream {}
 
-        # include paths must be relative so for simplicity we just read in the auth.conf file
-        include './auth.conf'
       '';
     };
   in {
@@ -77,7 +75,9 @@
             # setup server config
             mkdir -p $NATS_HOME
             cp ${config} "$NATS_HOME/nats.conf"
-            nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
+            chmod u+w "$NATS_HOME/nats.conf"
+
+            nsc generate config --nats-resolver >> "$NATS_HOME/nats.conf"
 
             # generate a sys context
             nsc generate context -a SYS -u sys --context sys

@@ -12,18 +12,16 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-type Nats struct {
+type NatsClient struct {
 	Url         string
 	Jwt         string
 	Seed        string
 	JwtFile     *os.File
 	HostKeyFile *os.File
 	InboxFormat string
-
-	InboxPrefixFn func(config *Nats, nkey string) string
 }
 
-func (n Nats) Connect(log *log.Logger, extra ...nats.Option) (conn *nats.Conn, nkey string, err error) {
+func (n NatsClient) Connect(log *log.Logger, extra ...nats.Option) (conn *nats.Conn, nkey string, err error) {
 	var opts []nats.Option
 	if !(n.Seed == "" || n.Jwt == "") {
 		opts = append(opts, nats.UserJWTAndSeed(n.Jwt, n.Seed))
@@ -64,9 +62,7 @@ func (n Nats) Connect(log *log.Logger, extra ...nats.Option) (conn *nats.Conn, n
 			}))
 	}
 
-	if n.InboxPrefixFn != nil {
-		opts = append(opts, nats.CustomInboxPrefix(n.InboxPrefixFn(&n, nkey)))
-	} else if n.InboxFormat != "" {
+	if n.InboxFormat != "" {
 		opts = append(opts, nats.CustomInboxPrefix(fmt.Sprintf(n.InboxFormat, nkey)))
 	}
 

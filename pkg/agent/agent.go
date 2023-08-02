@@ -19,7 +19,7 @@ import (
 
 type Agent struct {
 	Deployer            deploy.Deployer
-	NatsConfig          *config.Nats
+	NatsConfig          *config.NatsClient
 	SubjectPrefixFormat string
 
 	log *log.Logger
@@ -68,9 +68,6 @@ func (a *Agent) connectNats() (err error) {
 	// customise the inbox prefix, appending the agent nkey
 	if nc.InboxFormat == "" {
 		nc.InboxFormat = a.SubjectPrefixFormat + ".inbox"
-	}
-	nc.InboxPrefixFn = func(config *config.Nats, nkey string) string {
-		return fmt.Sprintf(config.InboxFormat, nkey)
 	}
 
 	// connect to nats

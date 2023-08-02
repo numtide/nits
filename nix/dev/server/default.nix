@@ -36,25 +36,24 @@
 
     config.process-compose = {
       dev.settings.processes = {
-        nits-server = {
+        server = {
           environment = let
             keyFile = ./key.sec;
           in [
             "LOG_LEVEL=info"
+#            "NATS_SERVER_CONFIG=$NATS_HOME/nats.conf"
             "NATS_SEED_FILE=$SERVER_DATA_DIR/user.seed"
             "NATS_JWT_FILE=$SERVER_DATA_DIR/user.jwt"
             "NITS_CACHE_PRIVATE_KEY_FILE=${keyFile}"
           ];
           command = "${self'.packages.nits}/bin/nits-server";
           depends_on = {
-            nats-server.condition = "process_healthy";
-            nats-permissions.condition = "process_completed";
           };
           readiness_probe = {
             http_get = {
               host = "127.0.0.1";
-              port = 3000;
-              path = "/nix-cache-info";
+              port = 8222;
+              path = "/healthz";
             };
             initial_delay_seconds = 2;
           };

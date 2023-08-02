@@ -5,9 +5,10 @@ import (
 )
 
 var Cmd struct {
-	Nats    cmd.NatsOptions  `embed:"" prefix:"nats-"`
-	Logging cmd.LogOptions   `embed:"" prefix:"log-"`
-	Cache   cmd.CacheOptions `embed:"" prefix:"cache-"`
+	Logging cmd.LogOptions `embed:"" prefix:"log-"`
 
-	Run runCmd `cmd:"" default:"1"`
+	DataDir string `env:"NATS_SERVER_DATA_DIR" default:"./datadir"`
+
+	Run  runCmd  `cmd:"" default:"1"`
+	Init initCmd `cmd:""`
 }

@@ -50,8 +50,8 @@ type NatsOptions struct {
 	InboxFormat string   `name:"inbox-format" env:"NATS_INBOX_FORMAT"`
 }
 
-func (n *NatsOptions) ToNatsConfig() (*config.Nats, error) {
-	c := &config.Nats{
+func (n *NatsOptions) ToNatsConfig() (*config.NatsClient, error) {
+	c := &config.NatsClient{
 		Url:         n.Url,
 		Jwt:         n.Jwt,
 		Seed:        n.Seed,

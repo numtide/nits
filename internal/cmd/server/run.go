@@ -8,7 +8,8 @@ import (
 )
 
 type runCmd struct {
-	CacheAddress string `env:"NITS_CACHE_ADDRESS" default:"localhost:3000"`
+	Cache        cmd.CacheOptions `embed:"" prefix:"cache-"`
+	CacheAddress string           `env:"NITS_CACHE_ADDRESS" default:"localhost:3000"`
 }
 
 func (r *runCmd) Run() error {
@@ -17,27 +18,24 @@ func (r *runCmd) Run() error {
 		return err
 	}
 
-	if Cmd.Nats.InboxFormat == "" {
-		Cmd.Nats.InboxFormat = "nits.server.%s.inbox"
-	}
+	// todo
+	//if Cmd.Nats.InboxFormat == "" {
+	//	Cmd.Nats.InboxFormat = "nits.server.%s.inbox"
+	//}
 
 	return cmd.Run(logger, func(ctx context.Context) error {
-		natsConfig, err := Cmd.Nats.ToNatsConfig()
-		if err != nil {
-			return err
-		}
 
-		cacheOptions, err := Cmd.Cache.ToCacheOptions()
+		cacheOptions, err := r.Cache.ToCacheOptions()
 		if err != nil {
 			return err
 		}
 
 		srv := server.Server{
-			NatsConfig:   natsConfig,
+			DataDir:      Cmd.DataDir,
 			CacheOptions: cacheOptions,
 			CacheAddress: r.CacheAddress,
 		}
 
-		return srv.Run(ctx, *logger)
+		return srv.Run(ctx, logger)
 	})
 }
