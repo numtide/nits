@@ -7,8 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/numtide/nits/pkg/cache"
+
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
-	"github.com/numtide/nits/pkg/services/cache"
 
 	"github.com/charmbracelet/log"
 	"github.com/juju/errors"

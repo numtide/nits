@@ -92,15 +92,16 @@
             # set default permissions for numtide account to deny pubsub to anything
             nsc edit account -n numtide --deny-pubsub '>'
 
-            # generate a user for the server and allow it to pubsub everything
-            nsc add user -a numtide -n server --allow-pubsub '>'
-            nsc export keys --user server --dir "$SERVER_DATA_DIR"
-            rm $SERVER_DATA_DIR/O*.nk
-            rm $SERVER_DATA_DIR/A*.nk
-            mv $(ls $SERVER_DATA_DIR/U*.nk | head) "$SERVER_DATA_DIR/user.seed"
+            # generate a user for the cache
+            nsc add user -a numtide -n cache --allow-pubsub '>'
+            nsc export keys --user cache --dir "$CACHE_DATA_DIR"
 
-            nsc describe user -n server -R > "$SERVER_DATA_DIR/user.jwt"
-            nsc generate context -a numtide -u server --context server
+            rm $CACHE_DATA_DIR/O*.nk
+            rm $CACHE_DATA_DIR/A*.nk
+            mv $(ls $CACHE_DATA_DIR/U*.nk | head) "$CACHE_DATA_DIR/user.seed"
+
+            nsc describe user -n cache -R > "$CACHE_DATA_DIR/user.jwt"
+            nsc generate context -a numtide -u cache --context cache
 
             # generate users for the agent vms
             for AGENT_DIR in $VM_DATA_DIR/*; do

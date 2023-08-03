@@ -3,10 +3,11 @@ package cache
 import (
 	"context"
 
-	"github.com/charmbracelet/log"
-
 	natshttp "github.com/brianmcgee/nats-http"
+	"github.com/charmbracelet/log"
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
+	"github.com/numtide/nits/pkg/cache/state"
+	"github.com/numtide/nits/pkg/config"
 
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
@@ -43,8 +44,9 @@ func (o Options) Validate() error {
 }
 
 type Cache struct {
-	Conn    *nats.Conn
-	Options Options
+	Conn       *nats.Conn
+	ConnConfig *config.Nats
+	Options    Options
 
 	log  *log.Logger
 	name string
@@ -52,8 +54,8 @@ type Cache struct {
 
 func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
 	// validate properties
-	if c.Conn == nil {
-		return errors.New("cache: Cache.Conn cannot be nil")
+	if c.Conn == nil && c.ConnConfig == nil {
+		return errors.New("cache: one of Cache.Conn or Cache.ConnConfig must be provided")
 	}
 
 	if err = c.Options.Validate(); err != nil {
@@ -71,6 +73,11 @@ func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
 
 	c.log = logger.With(logOpts...)
 
+	// connect to nats
+	if err = c.connectNats(); err != nil {
+		return err
+	}
+
 	// create server
 	srv := &natshttp.Server{
 		Conn:    c.Conn,
@@ -83,4 +90,18 @@ func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
 	}
 
 	return srv.Listen(ctx)
+}
+
+func (c *Cache) connectNats() (err error) {
+	if c.Conn == nil {
+		// create a connection based on the provided config
+		var nkey string
+		c.Conn, nkey, err = c.ConnConfig.Connect(c.log)
+		if err != nil {
+			return errors.Annotatef(err, "nkey = "+nkey)
+		}
+	}
+
+	// initialise various stores and streams
+	return state.Init(c.Conn)
 }
