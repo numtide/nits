@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/alecthomas/kong"
-	"github.com/numtide/nits/internal/cmd/server"
+	"github.com/numtide/nits/internal/cmd/cache"
 )
 
 func main() {

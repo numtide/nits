@@ -1,8 +1,8 @@
 {inputs, ...}: {
   imports = [
     ./agents
-    ./server
-    ./nats.nix
+    ./cache
+    ./nats
   ];
 
   perSystem = {self', ...}: {
