@@ -52,6 +52,22 @@
             nats-server.condition = "process_healthy";
           };
         };
+        nits-numtide-config = {
+          depends_on = {
+            nats-permissions.condition = "process_completed_successfully";
+          };
+          command = pkgs.writeShellScriptBin "nits-numtide-config" ''
+            nats --context numtide-admin kv add deployment \
+                --history 64 \
+                --republish-source '$KV.deployment.*' \
+                --republish-destination 'nits.agent.{{wildcard(1)}}.deployment'
+
+            nats --context numtide-admin kv add deployment-result --history 64
+
+            nats --context numtide-admin stream add --config ${./agent-logs.json}
+            nats --context numtide-admin stream add --config ${./agent-deployments.json}
+          '';
+        };
       };
     };
 
@@ -69,10 +85,12 @@
             mkdir -p $NSC_HOME
 
             # initialise nsc state
-            nsc init -n numtide --dir $NSC_HOME
+            nsc init -n nits --dir $NSC_HOME
             nsc edit operator \
               --service-url nats://localhost:4222 \
               --account-jwt-server-url nats://localhost:4222
+
+            NITS_PK=$(nsc describe account -n nits --raw -J | jq -r .sub)
 
             # setup server config
             mkdir -p $NATS_HOME
@@ -82,26 +100,51 @@
             # generate a sys context
             nsc generate context -a SYS -u sys --context sys
 
-            # enable jetstream for numtide account, no limits
-            nsc edit account -n numtide \
+            # enable jetstream for nits account, no limits
+            nsc edit account -n nits \
               --js-mem-storage -1 \
               --js-disk-storage -1 \
               --js-streams -1 \
               --js-consumer -1
 
-            # set default permissions for numtide account to deny pubsub to anything
-            nsc edit account -n numtide --deny-pubsub '>'
-
-            # generate a user for the cache
-            nsc add user -a numtide -n cache --allow-pubsub '>'
+            # generate a user for the nits cache
+            nsc add user -a nits -n cache
             nsc export keys --user cache --dir "$CACHE_DATA_DIR"
 
             rm $CACHE_DATA_DIR/O*.nk
             rm $CACHE_DATA_DIR/A*.nk
             mv $(ls $CACHE_DATA_DIR/U*.nk | head) "$CACHE_DATA_DIR/user.seed"
 
-            nsc describe user -n cache -R > "$CACHE_DATA_DIR/user.jwt"
-            nsc generate context -a numtide -u cache --context cache
+            nsc describe user -a nits -n cache -R > "$CACHE_DATA_DIR/user.jwt"
+            nsc generate context -a nits -u cache --context cache
+
+            # export cache service
+            nsc add export -a nits --private \
+                --name "Binary Cache" \
+                --subject "nits.cache.>" \
+                --service --response-type Chunked
+
+            # generate a numtide account for our cluster
+            nsc add account -n numtide --deny-pubsub '>'
+            NUMTIDE_PK=$(nsc describe account -n numtide --raw -J | jq -r .sub)
+
+            # enable jetstream, no limits
+            nsc edit account -n numtide \
+                --js-mem-storage -1 \
+                --js-disk-storage -1 \
+                --js-streams -1 \
+                --js-consumer -1
+
+            # import cache service
+            TOKEN="$(mktemp -d)/numtide"
+            nsc generate activation \
+                --account nits --subject 'nits.cache.>' \
+                --output-file "$TOKEN" --target-account "$NUMTIDE_PK"
+            nsc add import -a numtide -n "Binary Cache" --token "$TOKEN"
+
+            # add admin user
+            nsc add user -a numtide -n admin --allow-pubsub '>'
+            nsc generate context -a numtide -u admin --context numtide-admin
 
             # generate users for the agent vms
             for AGENT_DIR in $VM_DATA_DIR/*; do
@@ -115,7 +158,7 @@
                 --allow-pub \$JS.API.CONSUMER.\*.agent-deployments.\> \
                 --allow-pub \$JS.ACK.agent-deployments.\>
 
-               nsc describe user -n $BASENAME -R > $AGENT_DIR/user.jwt
+               nsc describe user -a numtide -n $BASENAME -R > $AGENT_DIR/user.jwt
                echo "$NKEY" > "$AGENT_DIR/nkey.pub"
             done
           '';

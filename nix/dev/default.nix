@@ -2,7 +2,7 @@
   imports = [
     ./agents
     ./cache
-    ./nats.nix
+    ./nats
   ];
 
   perSystem = {self', ...}: {

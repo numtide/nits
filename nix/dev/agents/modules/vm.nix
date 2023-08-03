@@ -30,7 +30,7 @@
   system.activationScripts = {
     # replace host key with pre-generated one
     host-key.text = ''
-      rm /etc/ssh/ssh_host_ed25519_key*
+      rm -f /etc/ssh/ssh_host_ed25519_key*
       cp /mnt/shared/ssh_host_ed25519_key /etc/ssh/ssh_host_ed25519_key
       cp /mnt/shared/ssh_host_ed25519_key.pub /etc/ssh/ssh_host_ed25519_key.pub
 

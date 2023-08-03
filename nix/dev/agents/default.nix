@@ -125,18 +125,18 @@ in {
             DRV=$(create_derivation)
             STORE_PATH=$(nix-store --realise $DRV)
 
-            prefix_out "copy-to-nats"
+            prefix_out "copy-to-cache"
 
-            copy-to-server $STORE_PATH
+            copy-to-cache $STORE_PATH
 
             prefix_out "update-deployment"
 
             NKEY=$(cat $VM_DATA_DIR/agent-host-$ID/nkey.pub)
-            nats --context server kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
+            nats --context numtide-admin kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
 
             prefix_out "agent-logs"
 
-            nats --context server subscribe --stream agent-logs --last "nits.agent.$NKEY.logs" --raw
+            nats --context numtide-admin subscribe --stream agent-logs --last "nits.agent.$NKEY.logs" --raw
           '';
         }
       ];
