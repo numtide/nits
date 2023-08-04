@@ -136,7 +136,7 @@ in {
 
             prefix_out "agent-logs"
 
-            nats --context numtide-admin subscribe --stream agent-logs --last "nits.agent.$NKEY.logs" --raw
+            nats --context numtide-admin subscribe --stream agent-logs --last "NITS.AGENT.$NKEY.LOGS" --raw
           '';
         }
       ];

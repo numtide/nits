@@ -10,7 +10,7 @@ import (
 
 type runCmd struct {
 	Deployer            string `enum:"noop,nixos" env:"NITS_AGENT_DEPLOYER" default:"nixos" help:"Configure deployer to use."`
-	SubjectPrefixFormat string `name:"subject-prefix-format" env:"NITS_AGENT_SUBJECT_PREFIX_FORMAT" default:"nits.agent.%s"`
+	SubjectPrefixFormat string `name:"subject-prefix-format" env:"NITS_AGENT_SUBJECT_PREFIX_FORMAT" default:"NITS.AGENT.%s"`
 }
 
 func (a *runCmd) Run() error {

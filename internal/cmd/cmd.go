@@ -84,7 +84,7 @@ func (n *NatsOptions) ToNatsConfig() (*config.Nats, error) {
 }
 
 type CacheOptions struct {
-	Subject        string   `env:"NITS_CACHE_SUBJECT" default:"nits.cache"`
+	Subject        string   `env:"NITS_CACHE_SUBJECT" default:"NITS.CACHE"`
 	Group          string   `env:"NITS_CACHE_GROUP" default:"cache"`
 	StoreDir       string   `env:"NITS_CACHE_STORE_DIR" default:"/nix/store"`
 	WantMassQuery  bool     `env:"NITS_CACHE_WANT_MASS_QUERY" default:"true"`

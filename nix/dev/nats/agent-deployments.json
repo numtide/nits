@@ -1,6 +1,6 @@
 {
     "name": "agent-deployments",
-    "subjects": ["nits.agent.*.deployment"],
+    "subjects": ["NITS.AGENT.*.DEPLOYMENT"],
     "retention": "limits",
     "max_consumers": -1,
     "max_msgs_per_subject": 1,

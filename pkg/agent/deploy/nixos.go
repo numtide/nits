@@ -16,7 +16,7 @@ import (
 
 const (
 	DefaultNixStorePath = "/nix/store"
-	DefaultCacheSubject = "nits.cache"
+	DefaultCacheSubject = "NITS.CACHE"
 
 	ErrSystemUpToDate = errors.ConstError("nits: current system matches new system")
 	ErrSwitchComplete = errors.ConstError("nits: switch to configuration has completed")

@@ -60,7 +60,7 @@
             nats --context numtide-admin kv add deployment \
                 --history 64 \
                 --republish-source '$KV.deployment.*' \
-                --republish-destination 'nits.agent.{{wildcard(1)}}.deployment'
+                --republish-destination 'NITS.AGENT.{{wildcard(1)}}.DEPLOYMENT'
 
             nats --context numtide-admin kv add deployment-result --history 64
 
@@ -121,7 +121,7 @@
             # export cache service
             nsc add export -a nits --private \
                 --name "Binary Cache" \
-                --subject "nits.cache.>" \
+                --subject "NITS.CACHE.>" \
                 --service --response-type Chunked
 
             # generate a numtide account for our cluster
@@ -138,7 +138,7 @@
             # import cache service
             TOKEN="$(mktemp -d)/numtide"
             nsc generate activation \
-                --account nits --subject 'nits.cache.>' \
+                --account nits --subject 'NITS.CACHE.>' \
                 --output-file "$TOKEN" --target-account "$NUMTIDE_PK"
             nsc add import -a numtide -n "Binary Cache" --token "$TOKEN"
 
@@ -152,8 +152,8 @@
                BASENAME=$(basename $AGENT_DIR)
 
                nsc add user -a numtide -k $NKEY -n $BASENAME \
-                --allow-pub nits.cache.\> \
-                --allow-pubsub nits.agent.$NKEY.\> \
+                --allow-pub NITS.CACHE.\> \
+                --allow-pubsub NITS.AGENT.$NKEY.\> \
                 --allow-pub \$JS.API.STREAM.NAMES \
                 --allow-pub \$JS.API.CONSUMER.\*.agent-deployments.\> \
                 --allow-pub \$JS.ACK.agent-deployments.\>
