@@ -62,8 +62,6 @@
                 --republish-source '$KV.deployment.*' \
                 --republish-destination 'NITS.AGENT.{{wildcard(1)}}.DEPLOYMENT'
 
-            nats --context numtide-admin kv add deployment-result --history 64
-
             nats --context numtide-admin stream add --config ${./agent-logs.json}
             nats --context numtide-admin stream add --config ${./agent-deployments.json}
           '';
