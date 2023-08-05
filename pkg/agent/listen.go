@@ -13,7 +13,7 @@ import (
 )
 
 func (a *Agent) listenForDeployment(ctx context.Context) error {
-	subject := fmt.Sprintf(a.SubjectPrefixFormat+".deployment", a.nkey)
+	subject := fmt.Sprintf(a.SubjectPrefixFormat+".DEPLOYMENT", a.nkey)
 
 	sub, err := a.js.SubscribeSync(subject, nats.DeliverLastPerSubject())
 	if err != nil {

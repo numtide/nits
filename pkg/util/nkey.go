@@ -17,10 +17,12 @@ func NewSigner(file *os.File) (ssh.Signer, error) {
 	return ssh.ParsePrivateKey(b)
 }
 
-func PublicKeyForSigner(signer ssh.Signer) (string, error) {
-	key := signer.PublicKey()
+func NKeyForSigner(signer ssh.Signer) (string, error) {
+	return NKeyForPublicKey(signer.PublicKey())
+}
 
-	marshalled := key.Marshal()
+func NKeyForPublicKey(pk ssh.PublicKey) (string, error) {
+	marshalled := pk.Marshal()
 	seed := marshalled[len(marshalled)-32:]
 
 	encoded, err := nkeys.Encode(nkeys.PrefixByteUser, seed)
@@ -29,4 +31,17 @@ func PublicKeyForSigner(signer ssh.Signer) (string, error) {
 	}
 
 	return string(encoded), nil
+}
+
+func NKeyForPublicKeyFile(file *os.File) (string, error) {
+	b, err := io.ReadAll(file)
+	if err != nil {
+		return "", errors.Annotate(err, "failed to read key file")
+	}
+
+	var pk ssh.PublicKey
+	if pk, err = ssh.ParsePublicKey(b); err != nil {
+		return "", err
+	}
+	return NKeyForPublicKey(pk)
 }

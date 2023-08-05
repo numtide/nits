@@ -48,7 +48,7 @@
           command = "${self'.packages.nits}/bin/nits-cache";
           depends_on = {
             nats-server.condition = "process_healthy";
-            nats-permissions.condition = "process_completed";
+            nits-setup.condition = "process_completed";
           };
           readiness_probe = {
             http_get = {

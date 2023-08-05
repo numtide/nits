@@ -17,7 +17,7 @@ func (a *nkeyCmd) Run() error {
 		return err
 	}
 
-	pub, err := util.PublicKeyForSigner(signer)
+	pub, err := util.NKeyForSigner(signer)
 	if err != nil {
 		return err
 	}

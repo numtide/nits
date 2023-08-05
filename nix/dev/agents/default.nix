@@ -46,6 +46,7 @@ in {
   perSystem = {
     pkgs,
     config,
+    self',
     lib,
     ...
   }: let
@@ -91,6 +92,54 @@ in {
         {
           category = "development";
           help = "deploy changes to an agent host";
+          package = pkgs.writeShellApplication {
+            name = "deploy-agent";
+            runtimeInputs = [pkgs.coreutils pkgs.perl self'.packages.nits pkgs.natscli];
+            text = ''
+              set -euo pipefail
+
+              ID=$1
+              ACTION=$2
+              CONFIG=$3
+
+              exec 3>&1
+              exec 4>&2
+
+              prefix_out () {
+                  exec 1> >( perl -ne '$| = 1; print "'"[$1]"' | $_"' >&3)
+                  exec 2> >( perl -ne '$| = 1; print "'"[$1]"' | $_"' >&4)
+              }
+
+              prefix_out "build-closure"
+
+              create_derivation () {
+                  # shellcheck disable=SC2016
+                  nix-instantiate \
+                      --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."agent-host-''${id}".extendModules { modules = [mod];}).config.system.build.toplevel)' \
+                      --argstr flakeRoot "$PWD" \
+                      --argstr id "$ID" \
+                      --arg mod "$CONFIG"
+              }
+
+              DRV=$(create_derivation)
+              STORE_PATH=$(nix-store --realise "$DRV")
+
+              prefix_out "copy-to-cache"
+
+              copy-to-cache "$STORE_PATH"
+
+              prefix_out "update-deployment"
+
+              NKEY=$(nits-agent nkey "$VM_DATA_DIR/agent-host-$ID/ssh_host_ed25519_key")
+
+              export XDG_CONFIG_HOME="$PRJ_DATA_DIR"
+              nats --context Numtide-Admin publish "NITS.AGENT.$NKEY.DEPLOYMENT" "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
+
+              prefix_out "agent-logs"
+
+              nats --context Numtide-Admin subscribe --stream agent-logs --last "NITS.AGENT.$NKEY.LOGS" --raw
+            '';
+          };
           name = "deploy-agent";
           command = let
             flakeRoot = lib.getExe config.flake-root.package;
@@ -132,7 +181,7 @@ in {
             prefix_out "update-deployment"
 
             NKEY=$(cat $VM_DATA_DIR/agent-host-$ID/nkey.pub)
-            nats --context numtide-admin kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
+            nats --context Numtide-Admin kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
 
             prefix_out "agent-logs"
 
