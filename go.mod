@@ -9,9 +9,11 @@ require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/juju/errors v1.0.0
+	github.com/nats-io/jwt/v2 v2.4.1
 	github.com/nats-io/nats.go v1.28.0
 	github.com/nats-io/nkeys v0.4.4
 	github.com/nix-community/go-nix v0.0.0-20230226174119-1f9567c0a1e5
+	github.com/ztrue/shutdown v0.1.1
 	golang.org/x/crypto v0.11.0
 	golang.org/x/sync v0.3.0
 )

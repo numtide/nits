@@ -53,7 +53,7 @@ func (a *Agent) Run(ctx context.Context, logger *log.Logger) error {
 	// publish logs into nats
 	writer := nits_log.NatsWriter{
 		Conn:     a.conn.Conn,
-		Subject:  fmt.Sprintf(a.SubjectPrefixFormat+".logs", a.nkey),
+		Subject:  fmt.Sprintf(a.SubjectPrefixFormat+".LOGS", a.nkey),
 		Delegate: os.Stderr,
 	}
 
@@ -67,7 +67,7 @@ func (a *Agent) connectNats() (err error) {
 
 	// customise the inbox prefix, appending the agent nkey
 	if nc.InboxFormat == "" {
-		nc.InboxFormat = a.SubjectPrefixFormat + ".inbox"
+		nc.InboxFormat = a.SubjectPrefixFormat + ".INBOX"
 	}
 	nc.InboxPrefixFn = func(config *config.Nats, nkey string) string {
 		return fmt.Sprintf(config.InboxFormat, nkey)

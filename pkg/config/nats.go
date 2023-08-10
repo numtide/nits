@@ -47,7 +47,7 @@ func (n Nats) Connect(log *log.Logger, extra ...nats.Option) (conn *nats.Conn, n
 			return
 		}
 
-		nkey, err = util.PublicKeyForSigner(signer)
+		nkey, err = util.NKeyForSigner(signer)
 		if err != nil {
 			return
 		}

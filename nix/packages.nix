@@ -15,7 +15,7 @@
         version = "0.0.1+dev";
 
         src = lib.cleanSourceAndNix ../.;
-        vendorSha256 = "sha256-3PFFa7jsGEp7ixvIqf8ItMhL3jVqUf7PnJFGgpTfXR8=";
+        vendorSha256 = "sha256-y2jAASkdaDP+BzB/E+M3X12jSkFm5449eogHT1kGScs=";
 
         ldflags = [
           "-X 'build.Name=${pname}'"
@@ -26,6 +26,7 @@
           description = "Nix & NATS";
           homepage = "https://github.com/numtide/nits";
           license = licenses.apsl20;
+          mainProgram = "nits";
         };
       };
 

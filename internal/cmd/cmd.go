@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 
@@ -14,6 +15,11 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/config"
+)
+
+type (
+	Args     = []string
+	ArgsList = []Args
 )
 
 type LogOptions struct {
@@ -42,7 +48,7 @@ func (lo *LogOptions) ToLogger() (*log.Logger, error) {
 }
 
 type NatsOptions struct {
-	Url         string   `name:"url" env:"NATS_URL" default:"ns://127.0.0.1:4222" help:"NATS server url."`
+	Url         string   `name:"url" env:"NATS_URL" default:"nats://127.0.0.1:4222" help:"NATS server url."`
 	Jwt         string   `name:"jwt" env:"NATS_JWT"`
 	JwtFile     *os.File `name:"jwt-file" env:"NATS_JWT_FILE"`
 	Seed        string   `name:"seed" env:"NATS_SEED"`
@@ -128,4 +134,11 @@ func Run(logger *log.Logger, main func(ctx context.Context) error) (err error) {
 	}()
 
 	return main(ctx)
+}
+
+func Exec(cmd string, args ...string) (err error) {
+	c := exec.Command(cmd, args...)
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	return c.Run()
 }

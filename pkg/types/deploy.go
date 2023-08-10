@@ -44,7 +44,7 @@ func ToDeployAction(s string) DeployAction {
 	return DeployActionUnknown
 }
 
-func (a *DeployAction) MarshalJSON() ([]byte, error) {
+func (a DeployAction) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.String())
 }
 
