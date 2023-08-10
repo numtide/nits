@@ -14,7 +14,7 @@
         pname = "nits";
         version = "0.0.1+dev";
 
-        runtimeInputs = with pkgs; [ nsc natscli ];
+        runtimeInputs = with pkgs; [nsc natscli];
 
         src = lib.cleanSourceAndNix ../.;
         vendorSha256 = "sha256-y2jAASkdaDP+BzB/E+M3X12jSkFm5449eogHT1kGScs=";
