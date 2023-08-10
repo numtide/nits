@@ -97,7 +97,9 @@ func (h *NixosHandler) Apply(config *types.Deployment, ctx context.Context) (err
 
 		err = nix.CopyFromBinaryCache(listener.Addr(), config.Closure, ctx)
 		if err != nil {
-			return err
+			// for now, we don't treat this as fatal as it's possible the deployment will rely on other
+			// binary caches configured on the machine
+			l.Warn("failed to copy closure from NITS binary cache", "error", err)
 		}
 
 		// todo check if the agent binary has changed and perform a restart after switching
