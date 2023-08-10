@@ -7,14 +7,13 @@ import (
 )
 
 var Cmd struct {
-	NscHome string `name:"nsc-home" env:"NSC_HOME"`
-	NatsUrl string `name:"nats-url" env:"NATS_URL" default:"nats://127.0.0.1:4222" help:"NATS server url."`
-
 	Add struct {
 		Cache   addCacheCmd   `cmd:""`
 		Cluster addClusterCmd `cmd:""`
 		Agent   addAgentCmd   `cmd:""`
 	} `cmd:"" help:"Add assets such as clusters and agents"`
+
+	Deploy deployCmd `cmd:"" help:"deploy a NixOS closure to one or more agents"`
 }
 
 type shellCmd struct {

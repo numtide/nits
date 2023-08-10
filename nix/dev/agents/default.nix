@@ -132,8 +132,10 @@ in {
 
               NKEY=$(nits-agent nkey "$VM_DATA_DIR/agent-host-$ID/ssh_host_ed25519_key")
 
+              # ensures nats picks up the contexts in .data
               export XDG_CONFIG_HOME="$PRJ_DATA_DIR"
-              nats --context Numtide-Admin publish "NITS.AGENT.$NKEY.DEPLOYMENT" "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
+
+              nits deploy --context Numtide-Admin --action "$ACTION" --nkey "$NKEY" "$STORE_PATH"
 
               prefix_out "agent-logs"
 
