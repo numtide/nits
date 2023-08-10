@@ -5,20 +5,17 @@
 }: {
   perSystem = {
     self',
-    inputs',
     pkgs,
-    config,
     ...
   }: {
     checks =
       {
-        statix =
-          pkgs.runCommand "statix" {
-            nativeBuildInputs = [pkgs.statix];
+        nix-lint =
+          pkgs.runCommand "nix-lint" {
+            nativeBuildInputs = with pkgs; [deadnix];
           } ''
             cp --no-preserve=mode -r ${self} source
-            cd source
-            HOME=$TMPDIR statix check
+            HOME=$TMPDIR deadnix -f source
             touch $out
           '';
       }
@@ -28,10 +25,16 @@
     devshells.default = {
       commands = [
         {
-          category = "build";
           name = "check";
           help = "run all linters and build all packages";
+          category = "checks";
           command = "nix flake check";
+        }
+        {
+          name = "fix";
+          help = "Remove unused nix code";
+          category = "checks";
+          command = "${pkgs.deadnix}/bin/deadnix -e $PRJ_ROOT";
         }
       ];
     };

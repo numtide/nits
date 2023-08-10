@@ -1,10 +1,5 @@
-{
-  inputs,
-  lib,
-  ...
-}: {
+{lib, ...}: {
   perSystem = {
-    system,
     self',
     pkgs,
     ...
@@ -88,9 +83,7 @@
 
     config.devshells.default = {
       devshell.startup = {
-        setup-nats = let
-          nits = lib.getExe self'.packages.default;
-        in {
+        setup-nats = {
           deps = ["setup-agent-vms" "setup-server"];
           text = ''
             set -euo pipefail

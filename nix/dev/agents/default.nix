@@ -4,7 +4,7 @@
   lib,
   ...
 }: let
-  inherit (inputs) srvos nixpkgs;
+  inherit (inputs) nixpkgs;
 
   pkgs = import nixpkgs {
     system = "x86_64-linux";
@@ -22,7 +22,6 @@
       ./modules/vm.nix
       ./modules/agent.nix
     ],
-    extraModules ? [],
   }:
     lib.nixosSystem rec {
       inherit pkgs modules;
@@ -49,9 +48,7 @@ in {
     self',
     lib,
     ...
-  }: let
-    cfg = config.dev.agents;
-  in {
+  }: {
     config.devshells.default = {
       env = [
         {
@@ -144,7 +141,6 @@ in {
           };
           name = "deploy-agent";
           command = let
-            flakeRoot = lib.getExe config.flake-root.package;
             perl = lib.getExe pkgs.perl;
           in ''
             set -euo pipefail
