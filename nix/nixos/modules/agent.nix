@@ -7,6 +7,12 @@
   cfg = config.services.nits.agent;
 in {
   options.services.nits.agent = with lib; {
+    package = mkOption {
+      type = types.package;
+      default = pkgs.geth;
+      defaultText = literalExpression "pkgs.nits";
+      description = mdDoc "Package to use for nits.";
+    };
     nats = {
       url = mkOption {
         type = types.str;
@@ -62,7 +68,7 @@ in {
 
         User = "root";
         StateDirectory = "nits-agent";
-        ExecStart = "${pkgs.nits}/bin/nits-agent";
+        ExecStart = "${cfg.package}/bin/nits-agent";
       };
     };
   };
