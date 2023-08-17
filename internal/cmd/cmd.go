@@ -142,3 +142,21 @@ func Exec(cmd string, args ...string) (err error) {
 	c.Stderr = os.Stderr
 	return c.Run()
 }
+
+type CacheProxyOptions struct {
+	Subject   string `env:"NITS_CACHE_PROXY_SUBJECT" default:"NITS.CACHE"`
+	PublicKey string `env:"NITS_CACHE_PROXY_PUBLIC_KEY"`
+}
+
+func (c *CacheProxyOptions) ToCacheProxyConfig() (*config.CacheProxy, error) {
+	// todo validate format
+
+	if c.PublicKey == "" {
+		return nil, nil
+	}
+
+	return &config.CacheProxy{
+		Subject:   c.Subject,
+		PublicKey: c.PublicKey,
+	}, nil
+}

@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+type CacheProxy struct {
+	Subject   string
+	PublicKey string
+}
+
 type Nats struct {
 	Url         string
 	Jwt         string

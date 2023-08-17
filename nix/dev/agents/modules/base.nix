@@ -14,9 +14,6 @@
     ];
     settings = {
       experimental-features = "nix-command flakes";
-      trusted-public-keys = [
-        (lib.readFile ../../cache/key.pub)
-      ];
     };
   };
 

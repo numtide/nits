@@ -2,7 +2,10 @@ package deploy
 
 import (
 	"context"
+	"fmt"
 	"net"
+
+	"github.com/numtide/nits/pkg/config"
 
 	natshttp "github.com/brianmcgee/nats-http"
 	"github.com/charmbracelet/log"
@@ -16,16 +19,14 @@ import (
 
 const (
 	DefaultNixStorePath = "/nix/store"
-	DefaultCacheSubject = "NITS.CACHE"
-
-	ErrSystemUpToDate = errors.ConstError("nits: current system matches new system")
-	ErrSwitchComplete = errors.ConstError("nits: switch to configuration has completed")
+	ErrSystemUpToDate   = errors.ConstError("nits: current system matches new system")
+	ErrSwitchComplete   = errors.ConstError("nits: switch to configuration has completed")
 )
 
 type NixosHandler struct {
-	Conn         *nats.Conn
-	NixStorePath string
-	CacheSubject string
+	Conn             *nats.Conn
+	NixStorePath     string
+	CacheProxyConfig *config.CacheProxy
 }
 
 func (h *NixosHandler) init(log *log.Logger) error {
@@ -33,10 +34,6 @@ func (h *NixosHandler) init(log *log.Logger) error {
 
 	if h.NixStorePath == "" {
 		h.NixStorePath = DefaultNixStorePath
-	}
-
-	if h.CacheSubject == "" {
-		h.CacheSubject = DefaultCacheSubject
 	}
 
 	if h.Conn == nil {
@@ -71,35 +68,55 @@ func (h *NixosHandler) Apply(config *types.Deployment, ctx context.Context) (err
 		return ErrSystemUpToDate
 	}
 
+	// extra nix config to be passed when building the system closure using NIX_CONFIG env variable
+	extraNixConfig := map[string]string{}
+
 	// create a new error group with a derived context
 	eg, ctx := errgroup.WithContext(ctx)
 
-	l.Info("initialising cache proxy")
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return
-	}
+	if h.CacheProxyConfig != nil {
 
-	cacheProxy := natshttp.Proxy{
-		Subject: h.CacheSubject,
-		Transport: &natshttp.Transport{
-			Conn: h.Conn,
-		},
-		Listener: listener,
-	}
+		l.Info("initialising cache proxy", "subject", h.CacheProxyConfig.Subject)
 
-	eg.Go(func() error {
-		return cacheProxy.Listen(ctx)
-	})
+		var listener net.Listener
+		listener, err = net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			return
+		}
+
+		cacheProxy := natshttp.Proxy{
+			Subject: h.CacheProxyConfig.Subject,
+			Transport: &natshttp.Transport{
+				Conn: h.Conn,
+			},
+			Listener: listener,
+		}
+
+		eg.Go(func() error {
+			return cacheProxy.Listen(ctx)
+		})
+
+		// configure nix to use the cache proxy
+		extraNixConfig["extra-substituters"] = fmt.Sprintf("http://%s", listener.Addr())
+		extraNixConfig["extra-trusted-public-keys"] = h.CacheProxyConfig.PublicKey
+	}
 
 	eg.Go(func() (err error) {
-		l.Info("copying closure from binary cache", "listenAddr", listener.Addr())
+		l.Info("building system closure", "storePath", storePath)
 
-		err = nix.CopyFromBinaryCache(listener.Addr(), config.Closure, ctx)
-		if err != nil {
-			// for now, we don't treat this as fatal as it's possible the deployment will rely on other
-			// binary caches configured on the machine
-			l.Warn("failed to copy closure from NITS binary cache", "error", err)
+		nixConfigStr := ""
+		for k, v := range extraNixConfig {
+			nixConfigStr = nixConfigStr + fmt.Sprintf("%s = %s\n", k, v)
+		}
+
+		var env []string
+		if nixConfigStr != "" {
+			env = append(env, "NIX_CONFIG="+nixConfigStr)
+		}
+
+		if err = nix.BuildSystemClosure(storePath, env, ctx); err != nil {
+			l.Error("failed to build system closure", "error", err)
+			return err
 		}
 
 		// todo check if the agent binary has changed and perform a restart after switching

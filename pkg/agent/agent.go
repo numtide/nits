@@ -20,6 +20,7 @@ import (
 type Agent struct {
 	Deployer            deploy.Deployer
 	NatsConfig          *config.Nats
+	CacheProxyConfig    *config.CacheProxy
 	SubjectPrefixFormat string
 
 	log *log.Logger
@@ -46,7 +47,8 @@ func (a *Agent) Run(ctx context.Context, logger *log.Logger) error {
 		a.deployHandler = deploy.HandlerFunc(deploy.NoOpHandler)
 	case deploy.DeployerNixos:
 		a.deployHandler = &deploy.NixosHandler{
-			Conn: a.conn.Conn,
+			Conn:             a.conn.Conn,
+			CacheProxyConfig: a.CacheProxyConfig,
 		}
 	}
 

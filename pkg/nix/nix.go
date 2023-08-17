@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -55,10 +53,10 @@ func CurrentSystemClosure() (*nixpath.NixPath, error) {
 	return nixpath.FromString(path)
 }
 
-func runCmd(name string, args []string, ctx context.Context) error {
+func runCmd(name string, args []string, env []string, ctx context.Context) error {
 	logger := log.FromContext(ctx)
 
-	logger.Info(name, "args", strings.Join(args, " "))
+	logger.Info(name, "args", strings.Join(args, " "), "env", env)
 
 	prefix := logger.GetPrefix()
 	logger.SetPrefix(name)
@@ -67,6 +65,7 @@ func runCmd(name string, args []string, ctx context.Context) error {
 	defer logger.SetPrefix(prefix)
 
 	cmd := exec.Command(name, args...)
+	cmd.Env = env
 	cmd.Stdout = outLogger{log: logger.With("output", "stdout")}
 	cmd.Stderr = outLogger{log: logger.With("output", "stderr")}
 
@@ -74,34 +73,19 @@ func runCmd(name string, args []string, ctx context.Context) error {
 	return cmd.Run()
 }
 
+func BuildSystemClosure(path *nixpath.NixPath, env []string, ctx context.Context) error {
+	args := []string{
+		"build", path.String(),
+	}
+	return runCmd("nix", args, env, ctx)
+}
+
 func SetSystemProfile(path *nixpath.NixPath, ctx context.Context) error {
 	args := []string{
 		"--profile", "/nix/var/nix/profiles/system",
 		"--set", path.String(),
 	}
-	return runCmd("nix-env", args, ctx)
-}
-
-func CopyToBinaryCache(cacheAddr net.Addr, path string, ctx context.Context) error {
-	args := []string{
-		"copy",
-		"-v",
-		"--log-format", "raw",
-		"--to", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
-		path,
-	}
-	return runCmd("nix", args, ctx)
-}
-
-func CopyFromBinaryCache(cacheAddr net.Addr, path string, ctx context.Context) error {
-	args := []string{
-		"copy",
-		"--refresh",
-		"--log-format", "raw",
-		"--from", fmt.Sprintf("http://%s?compression=zstd", cacheAddr.String()),
-		path,
-	}
-	return runCmd("nix", args, ctx)
+	return runCmd("nix-env", args, nil, ctx)
 }
 
 func SwitchToConfiguration(config *types.Deployment, ctx context.Context) error {
@@ -113,5 +97,5 @@ func SwitchToConfiguration(config *types.Deployment, ctx context.Context) error 
 
 	args := []string{config.Action.String()}
 
-	return runCmd(binPath, args, ctx)
+	return runCmd(binPath, args, nil, ctx)
 }
