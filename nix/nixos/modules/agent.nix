@@ -39,7 +39,7 @@ in {
         description = mdDoc "Nats subject for communicating with the Nits Binary Cache";
       };
       publicKey = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
         default = null;
         example = "nits-cache:XaEVMQLJh2gx51XXQ2CaREQSwJ/b6DSNN4bO1bW9nA4=";
         description = mdDoc "Signing key for the Nits Binary Cache";
