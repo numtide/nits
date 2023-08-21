@@ -110,7 +110,7 @@ func (c *Cache) putNar() http.HandlerFunc {
 
 		_, err := state.Nar.Put(meta, r.Body)
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write(nil)
 		}
 
@@ -127,17 +127,17 @@ func (c *Cache) getNar(body bool) http.HandlerFunc {
 		obj, err := state.Nar.Get(name)
 
 		if err == nats.ErrObjectNotFound {
-			w.WriteHeader(404)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		info, err := obj.Info()
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
@@ -185,7 +185,7 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 			sig, err := c.Options.SecretKey.Sign(nil, info.Fingerprint())
 			if err != nil {
 				c.log.Error("failed to generate nar info signature", "error", err)
-				w.WriteHeader(500)
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			info.Signatures = append(info.Signatures, sig)
@@ -193,7 +193,7 @@ func (c *Cache) putNarInfo() http.HandlerFunc {
 
 		_, err = state.NarInfo.Put(hash, []byte(info.String()))
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write(nil)
 		}
 
@@ -207,11 +207,11 @@ func (c *Cache) getNarInfo(body bool) http.HandlerFunc {
 		entry, err := state.NarInfo.Get(hash)
 
 		if err == nats.ErrKeyNotFound {
-			w.WriteHeader(404)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
