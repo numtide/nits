@@ -11,7 +11,6 @@ import (
 
 const (
 	AccountKey = "account"
-	jwtKey     = "jwt"
 )
 
 func ClientInfo(next http.Handler) http.Handler {
