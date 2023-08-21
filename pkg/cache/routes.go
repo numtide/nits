@@ -36,9 +36,9 @@ func (c *Cache) createRouter() *chi.Mux {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Timeout(60 * time.Second))
-	router.Use(requestLogger(c.log))
 	router.Use(middleware.Recoverer)
-
+	router.Use(ClientInfo)
+	router.Use(requestLogger(c.log))
 	router.Get(RouteCacheInfo, c.getNixCacheInfo)
 
 	router.Head(RouteNarInfo, c.getNarInfo(false))
@@ -57,6 +57,7 @@ func requestLogger(logger *log.Logger) func(handler http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			startedAt := time.Now()
 			reqId := middleware.GetReqID(r.Context())
+			account := GetAccount(r.Context())
 
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
@@ -68,6 +69,7 @@ func requestLogger(logger *log.Logger) func(handler http.Handler) http.Handler {
 					"elapsed", time.Since(startedAt),
 					"from", r.RemoteAddr,
 					"reqId", reqId,
+					"account", account,
 				}
 
 				switch r.Method {

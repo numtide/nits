@@ -89,6 +89,9 @@ func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
 		},
 	}
 
+	msg := nats.NewMsg("")
+	msg.Header.Get(nats.ACCOUNT_AUTHENTICATION_EXPIRED_ERR)
+
 	return srv.Listen(ctx)
 }
 

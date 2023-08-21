@@ -17,7 +17,7 @@
         runtimeInputs = with pkgs; [nsc natscli];
 
         src = lib.cleanSourceAndNix ../.;
-        vendorSha256 = "sha256-y2jAASkdaDP+BzB/E+M3X12jSkFm5449eogHT1kGScs=";
+        vendorSha256 = "sha256-mlk7seYFVxbH/KZ/WD0UOEXWeynlKO7Z3FFh4Dk9z0c=";
 
         ldflags = [
           "-X 'build.Name=${pname}'"
