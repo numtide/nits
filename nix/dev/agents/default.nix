@@ -126,7 +126,7 @@ in {
 
               # ensures nats picks up the contexts in .data
               export XDG_CONFIG_HOME="$PRJ_DATA_DIR"
-              nits deploy --context Numtide-Admin --action "$ACTION" --nkey "$NKEY" "$STORE_PATH"
+              nits deploy --context Numtide-Admin --action "$ACTION" --name "agent-host-$ID" "$STORE_PATH"
 
               prefix_out "agent-logs"
               nats --context Numtide-Admin subscribe --stream agent-logs --last "NITS.AGENT.$NKEY.LOGS" --raw
