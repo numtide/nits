@@ -5,7 +5,7 @@
     ./formatter.nix
     ./nixos
     ./packages.nix
-    ./shell.nix
+    ./devshell.nix
     ./dev
   ];
 }

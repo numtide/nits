@@ -9,6 +9,7 @@
   ];
 
   config.perSystem = {
+    self',
     pkgs,
     config,
     ...
@@ -51,16 +52,14 @@
           ])
         ];
 
-      commands = let
-        category = "docs";
-      in [
+      commands = [
         {
-          inherit category;
+          category = "docs";
           package = pkgs.vhs;
           help = "generate terminal gifs";
         }
         {
-          inherit category;
+          category = "docs";
           help = "regenerate gifs for docs";
           name = "gifs";
           command = ''
@@ -70,6 +69,10 @@
                 vhs $tape -o "$PRJ_ROOT/docs/assets/$(basename $tape .tape).gif"
             done
           '';
+        }
+        {
+          category = "development";
+          package = self'.packages.nits;
         }
       ];
     };

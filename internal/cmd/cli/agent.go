@@ -56,14 +56,22 @@ func (a *addAgentCmd) Run() (err error) {
 		}
 	}
 
+	agentSubject := fmt.Sprintf("NITS.AGENT.%s.>", nkey)
+
 	return cmdSequence(
+		// create an alias
+		nsc(
+			"add", "mapping", "-a", a.Cluster,
+			"--from", fmt.Sprintf("NITS.AGENT.NAME.%s.DEPLOYMENT", a.Name),
+			"--to", fmt.Sprintf("NITS.AGENT.%s.DEPLOYMENT", nkey),
+		),
 		// create a user for the agent
 		nsc(
 			"add", "user", "-a", a.Cluster,
 			"-k", nkey,
 			"-n", a.Name,
 			"--allow-pub", "NITS.CACHE.>",
-			"--allow-pubsub", fmt.Sprintf("NITS.AGENT.%s.>", nkey),
+			"--allow-pubsub", agentSubject,
 			"--allow-pub", "$JS.ACK.agent-deployments.>",
 			"--allow-pub", "$JS.API.STREAM.NAMES",
 			"--allow-pub", "$JS.API.CONSUMER.*.agent-deployments.>",

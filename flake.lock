@@ -54,20 +54,37 @@
         "type": "github"
       }
     },
-    "nixpkgs": {
+    "nix-serve": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
       "locked": {
-        "lastModified": 1688270854,
-        "narHash": "sha256-GLH4R4BseIDNrs6TukaXgzjKgFT0mSrYwS2bc+WZ0lM=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "3454e7a9c8c78ee815bd2d5d3ff8a977f4d419f3",
+        "lastModified": 1687251388,
+        "narHash": "sha256-E9cVlgeCvzPbA/G3mCDCzz8TdRwXyGYzIjmwcvIfghg=",
+        "owner": "edolstra",
+        "repo": "nix-serve",
+        "rev": "d6df5bd8584f37e22cff627db2fc4058a4aab5ee",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable-small",
-        "repo": "nixpkgs",
+        "owner": "edolstra",
+        "repo": "nix-serve",
         "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1606086654,
+        "narHash": "sha256-VFl+3eGIMqNp7cyOMJ6TjM/+UcsLKtodKoYexrlTJMI=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "19db3e5ea2777daa874563b5986288151f502e27",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-20.09",
+        "type": "indirect"
       }
     },
     "nixpkgs-lib": {
@@ -84,6 +101,22 @@
         "dir": "lib",
         "owner": "NixOS",
         "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1688270854,
+        "narHash": "sha256-GLH4R4BseIDNrs6TukaXgzjKgFT0mSrYwS2bc+WZ0lM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "3454e7a9c8c78ee815bd2d5d3ff8a977f4d419f3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable-small",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -108,6 +141,7 @@
         "devshell": "devshell",
         "flake-parts": "flake-parts",
         "flake-root": "flake-root",
+        "nix-serve": "nix-serve",
         "nixpkgs": [
           "srvos",
           "nixpkgs"
@@ -119,7 +153,7 @@
     },
     "srvos": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs_2"
       },
       "locked": {
         "lastModified": 1688384426,

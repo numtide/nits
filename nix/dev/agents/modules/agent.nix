@@ -14,9 +14,6 @@
       url = "nats://10.0.2.2";
       jwtFile = "/mnt/shared/user.jwt";
     };
-    cacheProxy = {
-      publicKey = lib.readFile ../../cache/key.pub;
-    };
   };
 
   systemd.services.hello = {

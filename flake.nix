@@ -27,6 +27,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     process-compose-flake.url = "github:Platonic-Systems/process-compose-flake";
+    nix-serve.url = "github:edolstra/nix-serve";
   };
 
   outputs = inputs @ {

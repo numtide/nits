@@ -121,70 +121,17 @@ in {
               DRV=$(create_derivation)
               STORE_PATH=$(nix-store --realise "$DRV")
 
-              prefix_out "copy-to-cache"
-
-              copy-to-cache "$STORE_PATH"
-
               prefix_out "update-deployment"
-
               NKEY=$(nits-agent nkey "$VM_DATA_DIR/agent-host-$ID/ssh_host_ed25519_key")
 
               # ensures nats picks up the contexts in .data
               export XDG_CONFIG_HOME="$PRJ_DATA_DIR"
-
               nits deploy --context Numtide-Admin --action "$ACTION" --nkey "$NKEY" "$STORE_PATH"
 
               prefix_out "agent-logs"
-
               nats --context Numtide-Admin subscribe --stream agent-logs --last "NITS.AGENT.$NKEY.LOGS" --raw
             '';
           };
-          name = "deploy-agent";
-          command = let
-            perl = lib.getExe pkgs.perl;
-          in ''
-            set -euo pipefail
-
-            PATH=$PATH:${perl}
-
-            ID=$1
-            ACTION=$2
-            CONFIG=$3
-
-            exec 3>&1
-            exec 4>&2
-
-            prefix_out () {
-                exec 1> >( ${perl} -ne '$| = 1; print "'"[$1]"' | $_"' >&3)
-                exec 2> >( ${perl} -ne '$| = 1; print "'"[$1]"' | $_"' >&4)
-            }
-
-            prefix_out "build-closure"
-
-            create_derivation () {
-                nix-instantiate \
-                    --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."agent-host-''${id}".extendModules { modules = [mod];}).config.system.build.toplevel)' \
-                    --argstr flakeRoot $PWD \
-                    --argstr id $ID \
-                    --arg mod "$CONFIG"
-            }
-
-            DRV=$(create_derivation)
-            STORE_PATH=$(nix-store --realise $DRV)
-
-            prefix_out "copy-to-cache"
-
-            copy-to-cache $STORE_PATH
-
-            prefix_out "update-deployment"
-
-            NKEY=$(cat $VM_DATA_DIR/agent-host-$ID/nkey.pub)
-            nats --context Numtide-Admin kv put deployment $NKEY "{\"action\":\"$ACTION\",\"closure\":\"$STORE_PATH\"}"
-
-            prefix_out "agent-logs"
-
-            nats --context numtide-admin subscribe --stream agent-logs --last "NITS.AGENT.$NKEY.LOGS" --raw
-          '';
         }
       ];
     };
@@ -194,7 +141,7 @@ in {
         mkAgentProcess = id: {
           command = "run-agent ${builtins.toString id}";
           depends_on = {
-            nits-cache.condition = "process_healthy";
+            binary-cache.condition = "process_healthy";
           };
         };
         configs =

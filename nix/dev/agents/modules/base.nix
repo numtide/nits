@@ -14,6 +14,9 @@
     ];
     settings = {
       experimental-features = "nix-command flakes";
+
+      substituters = ["http://10.0.2.2:3000"];
+      trusted-public-keys = [(lib.readFile ../../binary-cache/key.pub)];
     };
   };
 

@@ -84,7 +84,7 @@
     config.devshells.default = {
       devshell.startup = {
         setup-nats = {
-          deps = ["setup-agent-vms" "setup-server"];
+          deps = ["setup-agent-vms"];
           text = ''
             set -euo pipefail
 
