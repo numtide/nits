@@ -1,4 +1,4 @@
-package nutil
+package nats
 
 import (
 	"io"

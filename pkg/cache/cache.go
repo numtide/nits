@@ -3,7 +3,7 @@ package cache
 import (
 	"context"
 
-	"github.com/numtide/nits/pkg/nutil"
+	nutil "github.com/numtide/nits/pkg/nats"
 
 	natshttp "github.com/brianmcgee/nats-http"
 	"github.com/charmbracelet/log"

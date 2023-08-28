@@ -6,13 +6,13 @@ import (
 	"os"
 
 	"github.com/nats-io/jwt/v2"
-	"github.com/numtide/nits/pkg/nutil"
+	nutil "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/numtide/nits/pkg/agent/deploy"
 
 	"github.com/charmbracelet/log"
-	nits_log "github.com/numtide/nits/pkg/log"
+	nlog "github.com/numtide/nits/pkg/log"
 
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/config"
@@ -42,7 +42,7 @@ func (a *Agent) Run(ctx context.Context, logger *log.Logger) error {
 	}
 
 	// publish logs into nats
-	writer := nits_log.NatsWriter{
+	writer := nlog.NatsWriter{
 		Conn:     a.conn,
 		Subject:  subject.AgentLogs(a.nkey),
 		Delegate: os.Stderr,

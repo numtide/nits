@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/numtide/nits/pkg/nutil"
+	nutil "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/juju/errors"

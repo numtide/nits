@@ -3,7 +3,7 @@ package agent
 import (
 	"fmt"
 
-	"github.com/numtide/nits/pkg/nutil"
+	"github.com/numtide/nits/pkg/nats"
 )
 
 type nkeyCmd struct {
@@ -11,12 +11,12 @@ type nkeyCmd struct {
 }
 
 func (a *nkeyCmd) Run() error {
-	signer, err := nutil.NewSigner(Cmd.Nkey.KeyFile)
+	signer, err := nats.NewSigner(Cmd.Nkey.KeyFile)
 	if err != nil {
 		return err
 	}
 
-	pub, err := nutil.NKeyForSigner(signer)
+	pub, err := nats.NKeyForSigner(signer)
 	if err != nil {
 		return err
 	}
