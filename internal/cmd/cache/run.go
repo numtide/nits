@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net"
 
+	"github.com/nats-io/nats.go"
+
 	natshttp "github.com/brianmcgee/nats-http"
-	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/cache"
 	"golang.org/x/sync/errgroup"
 
@@ -22,19 +24,14 @@ func (r *runCmd) Run() error {
 		return err
 	}
 
-	if Cmd.Nats.InboxFormat == "" {
-		Cmd.Nats.InboxFormat = "_INBOX.cache.%s"
-	}
+	return cmd.Run(logger, func(ctx context.Context) (err error) {
+		var opts []nats.Option
+		var conn *nats.Conn
 
-	return cmd.Run(logger, func(ctx context.Context) error {
-		natsConfig, err := Cmd.Nats.ToNatsConfig()
-		if err != nil {
-			return err
-		}
-
-		conn, nkey, err := natsConfig.Connect(logger)
-		if err != nil {
-			return errors.Annotatef(err, "nkey = "+nkey)
+		if opts, _, _, err = Cmd.Nats.ToOpts(); err != nil {
+			return
+		} else if conn, err = nats.Connect(Cmd.Nats.Url, opts...); err != nil {
+			return
 		}
 
 		cacheOptions, err := Cmd.Cache.ToCacheOptions()
@@ -74,8 +71,7 @@ func (r *runCmd) Run() error {
 			return proxy.Listen(ctx)
 		})
 
-		err = eg.Wait()
-		if err == context.Canceled {
+		if err = eg.Wait(); errors.Is(err, context.Canceled) {
 			err = nil
 		}
 

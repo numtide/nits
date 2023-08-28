@@ -2,8 +2,9 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+
+	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/nats-io/nkeys"
 
@@ -24,21 +25,18 @@ func (d *deployCmd) Run() (err error) {
 	if _, err = os.Stat(d.Closure); os.IsNotExist(err) {
 		return errors.New("store path does not exist")
 	}
-	// todo replace static strings with a util that helps build them and ensure uniformity
 
-	var subject string
+	var subj string
 	if d.Nkey != "" {
-
 		// todo use kong to parse and validate
 		if d.Nkey[0] != 'U' {
 			return errors.New("nkey must start with a 'U'")
 		} else if _, err = nkeys.FromPublicKey(d.Nkey); err != nil {
 			return errors.Annotate(err, "invalid nkey")
 		}
-
-		subject = fmt.Sprintf("NITS.AGENT.%s.DEPLOYMENT", d.Nkey)
+		subj = subject.AgentDeploymentWithNKey(d.Nkey)
 	} else if d.Name != "" {
-		subject = fmt.Sprintf("NITS.AGENT.NAME.%s.DEPLOYMENT", d.Name)
+		subj = subject.AgentDeploymentWithName(d.Name)
 	} else {
 		return errors.New("one of nkey or name must be provided")
 	}
@@ -54,6 +52,6 @@ func (d *deployCmd) Run() (err error) {
 	}
 
 	return cmdSequence(
-		nats("--context", d.Context, "publish", subject, string(b)),
+		nats("--context", d.Context, "publish", subj, string(b)),
 	)
 }

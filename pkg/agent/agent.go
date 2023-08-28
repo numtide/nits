@@ -2,32 +2,32 @@ package agent
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/nats-io/jwt/v2"
+	"github.com/numtide/nits/pkg/nutil"
+	"github.com/numtide/nits/pkg/subject"
+
 	"github.com/numtide/nits/pkg/agent/deploy"
 
-	natshttp "github.com/brianmcgee/nats-http"
 	"github.com/charmbracelet/log"
 	nits_log "github.com/numtide/nits/pkg/log"
 
-	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/config"
 )
 
 type Agent struct {
-	Deployer            deploy.Deployer
-	NatsConfig          *config.Nats
-	CacheProxyConfig    *config.CacheProxy
-	SubjectPrefixFormat string
+	Deployer         deploy.Deployer
+	NatsOptions      *nutil.NatsOptions
+	CacheProxyConfig *config.CacheProxy
 
 	log *log.Logger
 
-	nkey string
-	conn *nats.EncodedConn
-	js   nats.JetStreamContext
+	conn   *nats.Conn
+	nkey   string
+	claims *jwt.UserClaims
 
 	cacheClient   *http.Client
 	deployHandler deploy.Handler
@@ -41,68 +41,41 @@ func (a *Agent) Run(ctx context.Context, logger *log.Logger) error {
 		return err
 	}
 
+	// publish logs into nats
+	writer := nits_log.NatsWriter{
+		Conn:     a.conn,
+		Subject:  subject.AgentLogs(a.nkey),
+		Delegate: os.Stderr,
+	}
+
+	a.log.SetOutput(&writer)
+
 	// set deploy handler
 	switch a.Deployer {
 	case deploy.DeployerNoOp:
 		a.deployHandler = deploy.HandlerFunc(deploy.NoOpHandler)
 	case deploy.DeployerNixos:
 		a.deployHandler = &deploy.NixosHandler{
-			Conn:             a.conn.Conn,
-			CacheProxyConfig: a.CacheProxyConfig,
+			Conn: a.conn,
 		}
 	}
-
-	// publish logs into nats
-	writer := nits_log.NatsWriter{
-		Conn:     a.conn.Conn,
-		Subject:  fmt.Sprintf(a.SubjectPrefixFormat+".LOGS", a.nkey),
-		Delegate: os.Stderr,
-	}
-
-	a.log.SetOutput(&writer)
 
 	return a.listenForDeployment(ctx)
 }
 
 func (a *Agent) connectNats() (err error) {
-	nc := a.NatsConfig
-
-	// customise the inbox prefix, appending the agent nkey
-	if nc.InboxFormat == "" {
-		nc.InboxFormat = a.SubjectPrefixFormat + ".INBOX"
-	}
-	nc.InboxPrefixFn = func(config *config.Nats, nkey string) string {
-		return fmt.Sprintf(config.InboxFormat, nkey)
+	var opts []nats.Option
+	if opts, a.nkey, a.claims, err = a.NatsOptions.ToOpts(); err != nil {
+		return
 	}
 
-	// connect to nats
-	conn, nkey, err := nc.Connect(a.log)
-	if err != nil {
-		return errors.Annotatef(err, "nkey = "+nkey)
-	}
+	opts = append(opts, nats.CustomInboxPrefix(subject.AgentInbox(a.nkey)))
 
-	a.nkey = nkey
-
-	// get the jetstream context
-	a.js, err = conn.JetStream()
-	if err != nil {
-		return err
-	}
-
-	// convert the connection to a json encoded connection
-	a.conn, err = nats.NewEncodedConn(conn, nats.JSON_ENCODER)
-	if err != nil {
-		return err
-	}
-
-	a.cacheClient = &http.Client{
-		Transport: &natshttp.Transport{
-			Conn:              conn,
-			PendingBytesLimit: 1024 * 1024 * 512,
-		},
+	if a.conn, err = nats.Connect(a.NatsOptions.Url, opts...); err != nil {
+		return
 	}
 
 	a.log.Info("connected to nats", "nkey", a.nkey)
 
-	return nil
+	return
 }

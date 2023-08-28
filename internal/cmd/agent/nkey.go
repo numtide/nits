@@ -2,22 +2,21 @@ package agent
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/numtide/nits/pkg/util"
+	"github.com/numtide/nits/pkg/nutil"
 )
 
 type nkeyCmd struct {
-	KeyFile *os.File `arg:""`
+	KeyFile string `arg:"" type:"existingfile"`
 }
 
 func (a *nkeyCmd) Run() error {
-	signer, err := util.NewSigner(Cmd.Nkey.KeyFile)
+	signer, err := nutil.NewSigner(Cmd.Nkey.KeyFile)
 	if err != nil {
 		return err
 	}
 
-	pub, err := util.NKeyForSigner(signer)
+	pub, err := nutil.NKeyForSigner(signer)
 	if err != nil {
 		return err
 	}

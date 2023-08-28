@@ -1,4 +1,4 @@
-package util
+package nutil
 
 import (
 	"io"
@@ -9,7 +9,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func NewSigner(file *os.File) (ssh.Signer, error) {
+func NewSigner(path string) (signer ssh.Signer, err error) {
+	var file *os.File
+	if file, err = os.Open(path); err != nil {
+		return
+	}
 	b, err := io.ReadAll(file)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read key file")

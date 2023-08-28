@@ -3,8 +3,10 @@ package agent
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
+
+	"github.com/juju/errors"
+	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/charmbracelet/log"
 	"github.com/numtide/nits/pkg/types"
@@ -12,12 +14,18 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-func (a *Agent) listenForDeployment(ctx context.Context) error {
-	subject := fmt.Sprintf(a.SubjectPrefixFormat+".DEPLOYMENT", a.nkey)
+func (a *Agent) listenForDeployment(ctx context.Context) (err error) {
+	var js nats.JetStreamContext
+	var sub *nats.Subscription
+	var msg *nats.Msg
 
-	sub, err := a.js.SubscribeSync(subject, nats.DeliverLastPerSubject())
-	if err != nil {
-		return err
+	if js, err = a.conn.JetStream(); err != nil {
+		return
+	} else if sub, err = js.SubscribeSync(
+		subject.AgentDeploymentWithNKey(a.nkey),
+		nats.DeliverLastPerSubject(),
+	); err != nil {
+		return
 	}
 
 	for {
@@ -25,18 +33,12 @@ func (a *Agent) listenForDeployment(ctx context.Context) error {
 		case <-ctx.Done():
 			return sub.Unsubscribe()
 		default:
-			msg, err := sub.NextMsg(1 * time.Second)
-			if err == nats.ErrTimeout {
-				// no currently available msg
+			if msg, err = sub.NextMsg(1 * time.Second); err != nil {
+				if !errors.Is(err, nats.ErrTimeout) {
+					a.log.Error("failed to retrieve next deployment msg", "error", err)
+				}
 				continue
-			}
-
-			if err != nil {
-				a.log.Error("failed to retrieve next deployment msg", "error", err)
-				continue
-			}
-
-			if msg == nil {
+			} else if msg == nil {
 				continue
 			}
 

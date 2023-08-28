@@ -3,14 +3,14 @@ package cache
 import (
 	"context"
 
+	"github.com/numtide/nits/pkg/nutil"
+
 	natshttp "github.com/brianmcgee/nats-http"
 	"github.com/charmbracelet/log"
-	"github.com/nix-community/go-nix/pkg/narinfo/signature"
-	"github.com/numtide/nits/pkg/cache/state"
-	"github.com/numtide/nits/pkg/config"
-
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
+	"github.com/nix-community/go-nix/pkg/narinfo/signature"
+	"github.com/numtide/nits/pkg/cache/state"
 )
 
 var DefaultCacheInfo = Info{
@@ -44,9 +44,9 @@ func (o Options) Validate() error {
 }
 
 type Cache struct {
-	Conn       *nats.Conn
-	ConnConfig *config.Nats
-	Options    Options
+	Conn        *nats.Conn
+	NatsOptions *nutil.NatsOptions
+	Options     Options
 
 	log  *log.Logger
 	name string
@@ -54,8 +54,8 @@ type Cache struct {
 
 func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
 	// validate properties
-	if c.Conn == nil && c.ConnConfig == nil {
-		return errors.New("cache: one of Cache.Conn or Cache.ConnConfig must be provided")
+	if c.Conn == nil && c.NatsOptions == nil {
+		return errors.New("cache: one of Cache.Conn or Cache.NatsOptions must be provided")
 	}
 
 	if err = c.Options.Validate(); err != nil {
@@ -99,9 +99,12 @@ func (c *Cache) connectNats() (err error) {
 	if c.Conn == nil {
 		// create a connection based on the provided config
 		var nkey string
-		c.Conn, nkey, err = c.ConnConfig.Connect(c.log)
-		if err != nil {
-			return errors.Annotatef(err, "nkey = "+nkey)
+		var opts []nats.Option
+		if opts, nkey, _, err = c.NatsOptions.ToOpts(); err != nil {
+			return
+		} else if c.Conn, err = nats.Connect(c.NatsOptions.Url, opts...); err != nil {
+			err = errors.Annotate(err, "nkey = "+nkey)
+			return
 		}
 	}
 

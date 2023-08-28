@@ -2,32 +2,32 @@ package cli
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
+	"github.com/numtide/nits/pkg/nutil"
+	"github.com/numtide/nits/pkg/subject"
+
 	"github.com/juju/errors"
-	"github.com/numtide/nits/pkg/util"
 	"golang.org/x/crypto/ssh"
 )
 
 type addAgentCmd struct {
-	Cluster        string   `help:"Name of the account under which Agents will run"`
-	Name           string   `help:"A name for the agent account"`
-	PublicKey      string   `required:"" xor:"key"`
-	PublicKeyFile  *os.File `required:"" xor:"key"`
-	PrivateKeyFile *os.File `required:"" xor:"key"`
+	Cluster        string `help:"Name of the account under which Agents will run"`
+	Name           string `help:"A name for the agent account"`
+	PublicKey      string `required:"" xor:"key"`
+	PublicKeyFile  string `required:"" type:"existingfile" xor:"key"`
+	PrivateKeyFile string `required:"" type:"existingfile" xor:"key"`
 }
 
 func (a *addAgentCmd) Run() (err error) {
 	var nkey string
 
-	if a.PrivateKeyFile != nil {
+	if a.PrivateKeyFile != "" {
 		var signer ssh.Signer
-		if signer, err = util.NewSigner(a.PrivateKeyFile); err != nil {
+		if signer, err = nutil.NewSigner(a.PrivateKeyFile); err != nil {
 			return errors.Annotate(err, "failed to parse private key file")
-		}
-		if nkey, err = util.NKeyForSigner(signer); err != nil {
+		} else if nkey, err = nutil.NKeyForSigner(signer); err != nil {
 			return err
 		}
 	} else {
@@ -37,11 +37,8 @@ func (a *addAgentCmd) Run() (err error) {
 
 		if !(a.PublicKey == "" || strings.Contains(a.PublicKey, "ssh-ed25519")) {
 			keyBytes = []byte("ed25519 " + a.PublicKey)
-		}
-
-		if a.PublicKeyFile != nil {
-			keyBytes, err = io.ReadAll(a.PublicKeyFile)
-			if err != nil {
+		} else if a.PublicKeyFile != "" {
+			if keyBytes, err = os.ReadFile(a.PublicKeyFile); err != nil {
 				return errors.Annotate(err, "failed to read public key file")
 			}
 		}
@@ -50,7 +47,7 @@ func (a *addAgentCmd) Run() (err error) {
 			return errors.Annotate(err, "failed to parse public key")
 		}
 
-		nkey, err = util.NKeyForPublicKey(pk)
+		nkey, err = nutil.NKeyForPublicKey(pk)
 		if err != nil {
 			return errors.Annotate(err, "failed to determine nkey for public key")
 		}
@@ -62,8 +59,8 @@ func (a *addAgentCmd) Run() (err error) {
 		// create an alias
 		nsc(
 			"add", "mapping", "-a", a.Cluster,
-			"--from", fmt.Sprintf("NITS.AGENT.NAME.%s.DEPLOYMENT", a.Name),
-			"--to", fmt.Sprintf("NITS.AGENT.%s.DEPLOYMENT", nkey),
+			"--from", subject.AgentDeploymentWithName(a.Name),
+			"--to", subject.AgentDeploymentWithNKey(nkey),
 		),
 		// create a user for the agent
 		nsc(

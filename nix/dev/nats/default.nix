@@ -66,15 +66,8 @@
               # generate sys context
               nsc generate context -a SYS -u sys --context sys
 
-              # export credentials for cache
-              nsc export keys --account Nits --user Cache --dir "$CACHE_DATA_DIR" --include-jwts
-
-              find "$PRJ_DATA_DIR/cache" -type f \
-                  -regextype posix-extended -regex '.*\/[OA].*\.(nk|jwt)$' \
-                  -exec rm {} \;
-
-              find "$CACHE_DATA_DIR"/U*.nk -type f -regex '.*\.nk$' -exec mv {} "$CACHE_DATA_DIR/user.seed" \;
-              find "$CACHE_DATA_DIR"/U*.jwt -type f -regex '.*\.jwt$' -exec mv {} "$CACHE_DATA_DIR/user.jwt" \;
+              # push changes to nats
+              nsc push --all
             '';
           };
         };

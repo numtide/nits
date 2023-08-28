@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"os"
-	"os/exec"
 	"os/signal"
 	"syscall"
 
@@ -45,48 +44,6 @@ func (lo *LogOptions) ToLogger() (*log.Logger, error) {
 	log.SetFormatter(format)
 
 	return log.Default(), nil
-}
-
-type NatsOptions struct {
-	Url         string   `name:"url" env:"NATS_URL" default:"nats://127.0.0.1:4222" help:"NATS server url."`
-	Jwt         string   `name:"jwt" env:"NATS_JWT"`
-	JwtFile     *os.File `name:"jwt-file" env:"NATS_JWT_FILE"`
-	Seed        string   `name:"seed" env:"NATS_SEED"`
-	SeedFile    *os.File `name:"seed-file" env:"NATS_SEED_FILE"`
-	HostKeyFile *os.File `name:"host-key-file" env:"NATS_HOST_KEY_FILE"`
-	InboxFormat string   `name:"inbox-format" env:"NATS_INBOX_FORMAT"`
-}
-
-func (n *NatsOptions) ToNatsConfig() (*config.Nats, error) {
-	c := &config.Nats{
-		Url:         n.Url,
-		Jwt:         n.Jwt,
-		Seed:        n.Seed,
-		HostKeyFile: n.HostKeyFile,
-		InboxFormat: n.InboxFormat,
-	}
-
-	if c.Seed == "" && n.SeedFile != nil {
-		b, err := io.ReadAll(n.SeedFile)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to read nats seed file")
-		}
-		c.Seed = string(b)
-	}
-
-	if c.Jwt == "" && n.JwtFile != nil {
-		b, err := io.ReadAll(n.JwtFile)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to read nats jwt file")
-		}
-		c.Jwt = string(b)
-	}
-
-	if c.Seed == "" && c.HostKeyFile == nil {
-		return nil, errors.New("one of nats seed or nats host key must be set")
-	}
-
-	return c, nil
 }
 
 type CacheOptions struct {
@@ -134,13 +91,6 @@ func Run(logger *log.Logger, main func(ctx context.Context) error) (err error) {
 	}()
 
 	return main(ctx)
-}
-
-func Exec(cmd string, args ...string) (err error) {
-	c := exec.Command(cmd, args...)
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	return c.Run()
 }
 
 type CacheProxyOptions struct {
