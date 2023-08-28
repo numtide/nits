@@ -5,7 +5,9 @@ import (
 	"os"
 	"strings"
 
+	nexec "github.com/numtide/nits/pkg/exec"
 	nutil "github.com/numtide/nits/pkg/nats"
+
 	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/juju/errors"
@@ -55,15 +57,15 @@ func (a *addAgentCmd) Run() (err error) {
 
 	agentSubject := fmt.Sprintf("NITS.AGENT.%s.>", nkey)
 
-	return cmdSequence(
+	return nexec.CmdSequence(
 		// create an alias
-		nsc(
+		nexec.Nsc(
 			"add", "mapping", "-a", a.Cluster,
 			"--from", subject.AgentDeploymentWithName(a.Name),
 			"--to", subject.AgentDeploymentWithNKey(nkey),
 		),
 		// create a user for the agent
-		nsc(
+		nexec.Nsc(
 			"add", "user", "-a", a.Cluster,
 			"-k", nkey,
 			"-n", a.Name,

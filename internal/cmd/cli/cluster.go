@@ -5,6 +5,8 @@ import (
 	"os"
 	"syscall"
 
+	nexec "github.com/numtide/nits/pkg/exec"
+
 	"github.com/ztrue/shutdown"
 )
 
@@ -27,11 +29,11 @@ func (c *addClusterCmd) Run() (err error) {
 		return err
 	}
 
-	return cmdSequence(
+	return nexec.CmdSequence(
 		// default permissions is to deny all pubsub
-		nsc("add", "account", "-n", c.Name, "--deny-pubsub", ">"),
+		nexec.Nsc("add", "account", "-n", c.Name, "--deny-pubsub", ">"),
 		// enable Jetstream todo set sane default limits
-		nsc(
+		nexec.Nsc(
 			"edit", "account", "-n", c.Name,
 			"--js-mem-storage", "-1",
 			"--js-disk-storage", "-1",
@@ -39,7 +41,7 @@ func (c *addClusterCmd) Run() (err error) {
 			"--js-consumer", "-1",
 		),
 		// import binary cache service
-		nsc(
+		nexec.Nsc(
 			"add", "import", "-a", c.Name,
 			"-n", "binary-cache",
 			"--service",
@@ -48,13 +50,13 @@ func (c *addClusterCmd) Run() (err error) {
 			"--local-subject", "NITS.CACHE.>",
 		),
 		// create an admin user
-		nsc("add", "user", "-a", c.Name, "-n", "Admin", "--allow-pubsub", ">"),
+		nexec.Nsc("add", "user", "-a", c.Name, "-n", "Admin", "--allow-pubsub", ">"),
 		// create a context for the admin user
-		nsc("generate", "context", "-a", c.Name, "-u", "Admin", "--context", adminContext),
+		nexec.Nsc("generate", "context", "-a", c.Name, "-u", "Admin", "--context", adminContext),
 		// push the account changes to the NATS server
-		nsc("push", "-a", c.Name),
+		nexec.Nsc("push", "-a", c.Name),
 		// create some streams
-		nats("--context", adminContext, "stream", "add", "--config", logsConfig.Name()),
-		nats("--context", adminContext, "stream", "add", "--config", deploymentsConfig.Name()),
+		nexec.Nats("--context", adminContext, "stream", "add", "--config", logsConfig.Name()),
+		nexec.Nats("--context", adminContext, "stream", "add", "--config", deploymentsConfig.Name()),
 	)
 }

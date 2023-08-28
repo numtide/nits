@@ -45,7 +45,7 @@ func (o Options) Validate() error {
 
 type Cache struct {
 	Conn        *nats.Conn
-	NatsOptions *nutil.NatsOptions
+	NatsOptions *nutil.CliOptions
 	Options     Options
 
 	log  *log.Logger
@@ -100,7 +100,7 @@ func (c *Cache) connectNats() (err error) {
 		// create a connection based on the provided config
 		var nkey string
 		var opts []nats.Option
-		if opts, nkey, _, err = c.NatsOptions.ToOpts(); err != nil {
+		if opts, nkey, _, err = c.NatsOptions.ToNatsOptions(); err != nil {
 			return
 		} else if c.Conn, err = nats.Connect(c.NatsOptions.Url, opts...); err != nil {
 			err = errors.Annotate(err, "nkey = "+nkey)

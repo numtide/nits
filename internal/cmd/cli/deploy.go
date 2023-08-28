@@ -4,16 +4,20 @@ import (
 	"encoding/json"
 	"os"
 
+	nutil "github.com/numtide/nits/pkg/nats"
+
 	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/nats-io/nkeys"
 
 	"github.com/juju/errors"
+	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/types"
 )
 
 type deployCmd struct {
-	Context string `help:"NATS cli context to use when interacting with the NATS server"`
+	Nats nutil.CliOptions `embed:""`
+
 	Action  string `enum:"switch,boot,test,dry-activate" default:"switch" help:"action to perform on the agent" `
 	Closure string `arg:"" help:"store path of the NixOS closure to deploy"`
 
@@ -46,12 +50,26 @@ func (d *deployCmd) Run() (err error) {
 		Closure: d.Closure,
 	}
 
-	var b []byte
-	if b, err = json.Marshal(deployment); err != nil {
-		return err
+	var (
+		opts []nats.Option
+		conn *nats.Conn
+		js   nats.JetStream
+	)
+
+	if opts, _, _, err = d.Nats.ToNatsOptions(); err != nil {
+		return
+	} else if conn, err = nats.Connect(d.Nats.Url, opts...); err != nil {
+		return
+	} else if js, err = conn.JetStream(); err != nil {
+		return
 	}
 
-	return cmdSequence(
-		nats("--context", d.Context, "publish", subj, string(b)),
-	)
+	var data []byte
+	if data, err = json.Marshal(deployment); err != nil {
+		return
+	}
+
+	_, err = js.Publish(subj, data)
+
+	return
 }

@@ -21,7 +21,7 @@
 
       devshell.startup = {
         export-public-key.text = ''
-          export BINARY_CACHE_PUBLIC_KEY=$(nix key convert-secret-to-public < $PRJ_ROOT/nix/dev/binary-cache/secret-key)
+          export BINARY_CACHE_PUBLIC_KEY=$(nix key convert-secret-to-public < $PRJ_ROOT/nix/dev/binary-cache/key.sec)
         '';
       };
 

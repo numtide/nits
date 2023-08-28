@@ -20,7 +20,7 @@ import (
 
 type Agent struct {
 	Deployer         deploy.Deployer
-	NatsOptions      *nutil.NatsOptions
+	NatsOptions      *nutil.CliOptions
 	CacheProxyConfig *config.CacheProxy
 
 	log *log.Logger
@@ -65,7 +65,7 @@ func (a *Agent) Run(ctx context.Context, logger *log.Logger) error {
 
 func (a *Agent) connectNats() (err error) {
 	var opts []nats.Option
-	if opts, a.nkey, a.claims, err = a.NatsOptions.ToOpts(); err != nil {
+	if opts, a.nkey, a.claims, err = a.NatsOptions.ToNatsOptions(); err != nil {
 		return
 	}
 

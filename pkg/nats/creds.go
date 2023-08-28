@@ -1,43 +1,48 @@
 package nats
 
 import (
+	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
 
-	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
+	"github.com/nats-io/nsc/v2/cmd"
 )
 
-func ReadCredentials[T any](path string, decoder claimsDecoder[T]) (nkey nkeys.KeyPair, claims *T, err error) {
+func ReadCredentials(path string) (nkey nkeys.KeyPair, jwt string, err error) {
 	var file *os.File
 	if file, err = os.Open(path); err != nil {
 		return
 	}
 
-	return ReadCredentialsFile(file, decoder)
+	return ReadCredentialsFile(file)
 }
 
-func ReadCredentialsFile[T any](file *os.File, decoder claimsDecoder[T]) (nkey nkeys.KeyPair, claims *T, err error) {
+func ReadCredentialsFile(file *os.File) (nkey nkeys.KeyPair, jwt string, err error) {
 	var b []byte
-	var str string
 
 	if b, err = io.ReadAll(file); err != nil {
 		return
 	}
 	if nkey, err = nkeys.ParseDecoratedNKey(b); err != nil {
 		return
-	} else if str, err = nkeys.ParseDecoratedJWT(b); err != nil {
-		return
 	}
 
-	claims, err = ParseClaims(str, decoder)
+	jwt, err = nkeys.ParseDecoratedJWT(b)
 	return
 }
 
-func ReadUserCredentials(path string) (nkey nkeys.KeyPair, claims *jwt.UserClaims, err error) {
-	return ReadCredentials[jwt.UserClaims](path, jwt.DecodeUserClaims)
-}
+func ReadProfile(url string) (nkey nkeys.KeyPair, jwt string, err error) {
+	var b []byte
+	if b, err = exec.Command("nsc", "generate", "profile", url).Output(); err != nil {
+		return
+	}
 
-func ReadUserCredentialsFile(file *os.File) (nkey nkeys.KeyPair, claims *jwt.UserClaims, err error) {
-	return ReadCredentialsFile[jwt.UserClaims](file, jwt.DecodeUserClaims)
+	var profile cmd.Profile
+	if err = json.Unmarshal(b, &profile); err != nil {
+		return
+	}
+
+	return ReadCredentials(profile.UserCreds)
 }

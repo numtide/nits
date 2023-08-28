@@ -6,7 +6,7 @@ import (
 )
 
 var Cmd struct {
-	Nats    nats.NatsOptions `embed:"" prefix:"nats-"`
+	Nats    nats.CliOptions  `embed:"" prefix:"nats-"`
 	Logging cmd.LogOptions   `embed:"" prefix:"log-"`
 	Cache   cmd.CacheOptions `embed:""`
 

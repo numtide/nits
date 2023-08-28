@@ -28,7 +28,7 @@ func (r *runCmd) Run() error {
 		var opts []nats.Option
 		var conn *nats.Conn
 
-		if opts, _, _, err = Cmd.Nats.ToOpts(); err != nil {
+		if opts, _, _, err = Cmd.Nats.ToNatsOptions(); err != nil {
 			return
 		} else if conn, err = nats.Connect(Cmd.Nats.Url, opts...); err != nil {
 			return
