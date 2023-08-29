@@ -3,6 +3,9 @@ package info
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/nats-io/nats.go/micro"
 	"github.com/numtide/nits/pkg/agent/util"
@@ -14,11 +17,15 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-var agentSubject string
+var (
+	logger       *log.Logger
+	agentSubject string
+)
 
 func Init(ctx context.Context) (err error) {
 	conn := util.GetConn(ctx)
 	nkey := util.GetNKey(ctx)
+	logger = util.GetLog(ctx).With("service", "info")
 
 	agentSubject = subject.AgentWithNKey(nkey)
 
@@ -39,45 +46,76 @@ func handler(req micro.Request) {
 	var err error
 	var request Request
 
-	if err = json.Unmarshal(req.Data(), &request); err != nil {
-		// todo handle error
+	if len(req.Data()) > 0 {
+		// we accept empty request data as a default request
+		if err = json.Unmarshal(req.Data(), &request); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to unmarshal request: %s", err), req.Data())
+			return
+		}
 	}
 
 	resp := Response{
 		Subject: agentSubject,
 	}
 
-	// todo handle errors
 	if request.All || request.Cpus {
-		resp.Cpus, _ = cpu.Info()
+		if resp.Cpus, err = cpu.Info(); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve cpu info: %s", err), nil)
+			return
+		}
 	}
 
 	if request.All || request.Host {
-		resp.Host, _ = host.Info()
+		if resp.Host, err = host.Info(); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve host info: %s", err), nil)
+			return
+		}
 	}
 
 	if request.All || request.Load {
 		resp.Load = &Load{}
-		resp.Load.Avg, _ = load.Avg()
-		resp.Load.Misc, _ = load.Misc()
+		if resp.Load.Avg, err = load.Avg(); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve load avg: %s", err), nil)
+			return
+		}
+
+		if resp.Load.Misc, err = load.Misc(); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve miscellaneous load info: %s", err), nil)
+			return
+		}
 	}
 
 	if request.All || request.Disk {
 		resp.Disk = &Disk{}
-		resp.Disk.Partitions, _ = disk.Partitions(true)
+		if resp.Disk.Partitions, err = disk.Partitions(true); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve disk partitions: %s", err), nil)
+			return
+		}
 	}
 
 	if request.All || request.Memory {
 		resp.Memory = &Memory{}
-		resp.Memory.Swap, _ = mem.SwapMemory()
-		resp.Memory.SwapDevices, _ = mem.SwapDevices()
-		resp.Memory.Virtual, _ = mem.VirtualMemory()
+		if resp.Memory.Swap, err = mem.SwapMemory(); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve swap info: %s", err), nil)
+			return
+		}
+		if resp.Memory.SwapDevices, err = mem.SwapDevices(); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve swap devices: %s", err), nil)
+			return
+		}
+		if resp.Memory.Virtual, err = mem.VirtualMemory(); err != nil {
+			_ = req.Error("500", fmt.Sprintf("Failed to retrieve virtual memory: %s", err), nil)
+			return
+		}
 	}
 
 	var data []byte
 	if data, err = json.Marshal(resp); err != nil {
-		// todo
+		_ = req.Error("500", fmt.Sprintf("Failed to marshal response: %s", err), nil)
+		return
 	}
 
-	_ = req.Respond(data)
+	if err = req.Respond(data); err != nil {
+		logger.Error("failed to respond", "error", err)
+	}
 }

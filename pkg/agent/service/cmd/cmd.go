@@ -27,7 +27,7 @@ func Init(ctx context.Context) (err error) {
 	Conn = util.GetConn(ctx)
 	NKey = util.GetNKey(ctx)
 
-	logger = util.GetLog(ctx).With("service", "Cmd")
+	logger = util.GetLog(ctx).With("service", "cmd")
 
 	_, err = micro.AddService(Conn, micro.Config{
 		Name:        "AgentCmd",
