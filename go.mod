@@ -15,6 +15,7 @@ require (
 	github.com/nats-io/nkeys v0.4.4
 	github.com/nats-io/nsc/v2 v2.8.0
 	github.com/nix-community/go-nix v0.0.0-20230226174119-1f9567c0a1e5
+	github.com/shirou/gopsutil/v3 v3.23.7
 	github.com/ztrue/shutdown v0.1.1
 	golang.org/x/crypto v0.11.0
 	golang.org/x/sync v0.3.0
@@ -30,6 +31,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-github/v30 v30.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -40,6 +42,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
@@ -56,15 +59,20 @@ require (
 	github.com/nats-io/cliprompts/v2 v2.0.0-20200221130455-2737f3b8cbb9 // indirect
 	github.com/nats-io/jsm.go v0.0.35 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rhysd/go-github-selfupdate v1.2.3 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tcnksm/go-gitconfig v0.1.2 // indirect
+	github.com/tklauser/go-sysconf v0.3.11 // indirect
+	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xlab/tablewriter v0.0.0-20160610135559-80b567a11ad5 // indirect
+	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect

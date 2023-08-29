@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+
 	"github.com/charmbracelet/log"
 
 	"github.com/numtide/nits/internal/cmd"

@@ -4,6 +4,9 @@ import (
 	"context"
 	"os"
 
+	"github.com/numtide/nits/pkg/agent/service"
+	"github.com/numtide/nits/pkg/agent/util"
+
 	nutil "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 
@@ -26,7 +29,6 @@ var (
 )
 
 func Run(ctx context.Context) (err error) {
-
 	// connect to nats server
 	if err = connectNats(); err != nil {
 		return
@@ -44,6 +46,15 @@ func Run(ctx context.Context) (err error) {
 	}
 
 	Log.SetOutput(&writer)
+
+	// register services
+
+	ctx = util.SetConn(ctx, Conn)
+	ctx = util.SetNKey(ctx, NKey)
+
+	if err = service.Init(ctx); err != nil {
+		return
+	}
 
 	// set deploy handler
 	switch Deployer {

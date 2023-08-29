@@ -58,11 +58,11 @@ func (a *addAgentCmd) Run() (err error) {
 	agentSubject := fmt.Sprintf("NITS.AGENT.%s.>", nkey)
 
 	return nexec.CmdSequence(
-		// create an alias
+		// create an alias for the agent's info service
 		nexec.Nsc(
 			"add", "mapping", "-a", a.Cluster,
-			"--from", subject.AgentDeploymentWithName(a.Name),
-			"--to", subject.AgentDeploymentWithNKey(nkey),
+			"--from", subject.AgentWithName(a.Name),
+			"--to", subject.AgentService(nkey, "INFO"),
 		),
 		// create a user for the agent
 		nexec.Nsc(
@@ -74,6 +74,8 @@ func (a *addAgentCmd) Run() (err error) {
 			"--allow-pub", "$JS.ACK.agent-deployments.>",
 			"--allow-pub", "$JS.API.STREAM.NAMES",
 			"--allow-pub", "$JS.API.CONSUMER.*.agent-deployments.>",
+			"--allow-sub", "$SRV.>",
+			"--allow-pub", "_INBOX.>",
 		),
 	)
 }
