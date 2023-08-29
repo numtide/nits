@@ -2,10 +2,8 @@ package agent
 
 import (
 	"context"
-	"net/http"
 	"os"
 
-	"github.com/nats-io/jwt/v2"
 	nutil "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 
@@ -15,67 +13,64 @@ import (
 	nlog "github.com/numtide/nits/pkg/log"
 
 	"github.com/nats-io/nats.go"
-	"github.com/numtide/nits/pkg/config"
 )
 
-type Agent struct {
-	Deployer         deploy.Deployer
-	NatsOptions      *nutil.CliOptions
-	CacheProxyConfig *config.CacheProxy
+var (
+	Log         = log.Default()
+	Deployer    = deploy.DeployerNoOp
+	NatsOptions *nutil.CliOptions
+	Conn        *nats.Conn
+	NKey        string
 
-	log *log.Logger
-
-	conn   *nats.Conn
-	nkey   string
-	claims *jwt.UserClaims
-
-	cacheClient   *http.Client
 	deployHandler deploy.Handler
-}
+)
 
-func (a *Agent) Run(ctx context.Context, logger *log.Logger) error {
-	a.log = logger
+func Run(ctx context.Context) (err error) {
 
 	// connect to nats server
-	if err := a.connectNats(); err != nil {
-		return err
+	if err = connectNats(); err != nil {
+		return
 	}
 
 	// publish logs into nats
+	if Log == nil {
+		Log = log.Default()
+	}
+
 	writer := nlog.NatsWriter{
-		Conn:     a.conn,
-		Subject:  subject.AgentLogs(a.nkey),
+		Conn:     Conn,
+		Subject:  subject.AgentLogs(NKey),
 		Delegate: os.Stderr,
 	}
 
-	a.log.SetOutput(&writer)
+	Log.SetOutput(&writer)
 
 	// set deploy handler
-	switch a.Deployer {
+	switch Deployer {
 	case deploy.DeployerNoOp:
-		a.deployHandler = deploy.HandlerFunc(deploy.NoOpHandler)
+		deployHandler = deploy.HandlerFunc(deploy.NoOpHandler)
 	case deploy.DeployerNixos:
-		a.deployHandler = &deploy.NixosHandler{
-			Conn: a.conn,
+		deployHandler = &deploy.NixosHandler{
+			Conn: Conn,
 		}
 	}
 
-	return a.listenForDeployment(ctx)
+	return listenForDeployment(ctx)
 }
 
-func (a *Agent) connectNats() (err error) {
+func connectNats() (err error) {
 	var opts []nats.Option
-	if opts, a.nkey, a.claims, err = a.NatsOptions.ToNatsOptions(); err != nil {
+	if opts, NKey, _, err = NatsOptions.ToNatsOptions(); err != nil {
 		return
 	}
 
-	opts = append(opts, nats.CustomInboxPrefix(subject.AgentInbox(a.nkey)))
+	opts = append(opts, nats.CustomInboxPrefix(subject.AgentInbox(NKey)))
 
-	if a.conn, err = nats.Connect(a.NatsOptions.Url, opts...); err != nil {
+	if Conn, err = nats.Connect(NatsOptions.Url, opts...); err != nil {
 		return
 	}
 
-	a.log.Info("connected to nats", "nkey", a.nkey)
+	Log.Info("connected to nats", "nkey", NKey)
 
 	return
 }
