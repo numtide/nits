@@ -25,7 +25,7 @@ var (
 func Init(ctx context.Context) (err error) {
 	conn := util.GetConn(ctx)
 	nkey := util.GetNKey(ctx)
-	logger = util.GetLog(ctx).With("service", "info")
+	logger = log.FromContext(ctx).With("service", "info")
 
 	agentSubject = subject.AgentWithNKey(nkey)
 
