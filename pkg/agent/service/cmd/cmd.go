@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
+	"os/exec"
 
 	"github.com/charmbracelet/log"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 	"github.com/nats-io/nuid"
 	"github.com/numtide/nits/pkg/agent/util"
-	"github.com/numtide/nits/pkg/exec"
 	nlog "github.com/numtide/nits/pkg/log"
 	"github.com/numtide/nits/pkg/subject"
 )
@@ -81,24 +80,20 @@ func execute(cmd *Command) (id string, logSubject string, err error) {
 	logSubject = fmt.Sprintf("%s.CMD.%s", subject.AgentLogs(NKey), id)
 
 	writer := nlog.NatsWriter{
-		Conn:     Conn,
-		Subject:  logSubject,
-		Delegate: os.Stderr,
+		Conn:    Conn,
+		Subject: logSubject,
 	}
 
 	l := log.New(&writer)
+	c := exec.Command(cmd.Name, cmd.Args...)
 
-	shellCmd := exec.ShellCmd{
-		Name: cmd.Name,
-		Args: cmd.Args,
-	}
-
-	shellCmd.Stdout = exec.Logger{Log: l.With("output", "stdout")}
-	shellCmd.Stderr = exec.Logger{Log: l.With("output", "stderr")}
+	// forward output into NATS
+	c.Stdout = nlog.BufferedLogger{Log: l.With("out", "std")}
+	c.Stderr = nlog.BufferedLogger{Log: l.With("out", "err")}
 
 	go func() {
-		if err := shellCmd.Exec(); err != nil {
-			l.Error("failed to execute command", "error", err)
+		if err := c.Run(); err != nil {
+			l.Error("failed to run command", "error", err)
 		}
 	}()
 

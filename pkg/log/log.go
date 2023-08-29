@@ -1,4 +1,4 @@
-package exec
+package log
 
 import (
 	"bufio"
@@ -7,13 +7,13 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-type Logger struct {
+type BufferedLogger struct {
 	Log *log.Logger
 
 	buf []byte
 }
 
-func (l Logger) Write(b []byte) (n int, err error) {
+func (l BufferedLogger) Write(b []byte) (n int, err error) {
 	buf := l.buf
 
 	buf = append(buf, b...)
