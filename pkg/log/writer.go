@@ -32,8 +32,12 @@ func (w *NatsWriter) Write(p []byte) (n int, err error) {
 		go w.listen()
 	}
 
-	n, err = w.Delegate.Write(p)
-	if err != nil {
+	if w.Delegate == nil {
+		w.writeCh <- p
+		return len(p), nil
+	}
+
+	if n, err = w.Delegate.Write(p); err != nil {
 		return
 	}
 

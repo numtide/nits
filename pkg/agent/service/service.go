@@ -3,9 +3,15 @@ package service
 import (
 	"context"
 
+	"github.com/numtide/nits/pkg/agent/service/cmd"
+
 	"github.com/numtide/nits/pkg/agent/service/info"
 )
 
 func Init(ctx context.Context) (err error) {
-	return info.Init(ctx)
+	if err = info.Init(ctx); err != nil {
+		return
+	}
+
+	return cmd.Init(ctx)
 }

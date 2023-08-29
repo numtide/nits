@@ -14,6 +14,7 @@ require (
 	github.com/nats-io/nats.go v1.28.0
 	github.com/nats-io/nkeys v0.4.4
 	github.com/nats-io/nsc/v2 v2.8.0
+	github.com/nats-io/nuid v1.0.1
 	github.com/nix-community/go-nix v0.0.0-20230226174119-1f9567c0a1e5
 	github.com/shirou/gopsutil/v3 v3.23.7
 	github.com/ztrue/shutdown v0.1.1
@@ -58,7 +59,6 @@ require (
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/nats-io/cliprompts/v2 v2.0.0-20200221130455-2737f3b8cbb9 // indirect
 	github.com/nats-io/jsm.go v0.0.35 // indirect
-	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rhysd/go-github-selfupdate v1.2.3 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect

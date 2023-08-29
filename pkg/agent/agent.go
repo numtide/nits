@@ -48,7 +48,7 @@ func Run(ctx context.Context) (err error) {
 	Log.SetOutput(&writer)
 
 	// register services
-
+	ctx = util.SetLog(ctx, Log)
 	ctx = util.SetConn(ctx, Conn)
 	ctx = util.SetNKey(ctx, NKey)
 
