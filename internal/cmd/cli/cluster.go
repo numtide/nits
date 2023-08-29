@@ -29,7 +29,7 @@ func (c *addClusterCmd) Run() (err error) {
 		return err
 	}
 
-	return nexec.CmdSequence(
+	return nexec.Sequence(
 		// default permissions is to deny all pubsub
 		nexec.Nsc("add", "account", "-n", c.Name, "--deny-pubsub", ">"),
 		// enable Jetstream todo set sane default limits

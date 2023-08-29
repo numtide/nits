@@ -57,14 +57,12 @@ func (a *addAgentCmd) Run() (err error) {
 
 	agentSubject := fmt.Sprintf("NITS.AGENT.%s.>", nkey)
 
-	return nexec.CmdSequence(
-		// create an alias for the agent's info service
+	return nexec.Sequence(
 		nexec.Nsc(
 			"add", "mapping", "-a", a.Cluster,
 			"--from", subject.AgentWithName(a.Name),
 			"--to", subject.AgentService(nkey, "INFO"),
 		),
-		// create a user for the agent
 		nexec.Nsc(
 			"add", "user", "-a", a.Cluster,
 			"-k", nkey,

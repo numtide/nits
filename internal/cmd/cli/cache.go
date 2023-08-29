@@ -15,7 +15,7 @@ type addCacheCmd struct {
 func (c *addCacheCmd) Run() (err error) {
 	cacheContext := fmt.Sprintf("%s-%s", c.Account, "Cache")
 
-	return nexec.CmdSequence(
+	return nexec.Sequence(
 		// enable Jetstream for
 		// todo set sane default limits
 		nexec.Nsc(
