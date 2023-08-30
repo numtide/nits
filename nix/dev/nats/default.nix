@@ -31,7 +31,7 @@
       dev.settings.processes = {
         nats-server = {
           working_dir = "$NATS_HOME";
-          command = ''${lib.getExe pkgs.nats-server} -c ./nats.conf -sd ./'';
+          command = ''${lib.getExe pkgs.nats-server} -c ./nats.conf -DV -sd ./'';
           readiness_probe = {
             http_get = {
               host = "127.0.0.1";

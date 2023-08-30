@@ -2,33 +2,35 @@ package log
 
 import (
 	"bufio"
-	"bytes"
-
 	"github.com/charmbracelet/log"
+	"io"
 )
 
-type BufferedLogger struct {
-	Log *log.Logger
-
-	buf []byte
+type Writer struct {
+	Log    *log.Logger
+	reader *io.PipeReader
+	writer *io.PipeWriter
 }
 
-func (l BufferedLogger) Write(b []byte) (n int, err error) {
-	buf := l.buf
-
-	buf = append(buf, b...)
-	scanner := bufio.NewScanner(bytes.NewBuffer(buf))
-
-	count := 0
-
-	for scanner.Scan() {
-		msg := scanner.Text()
-		count += len(msg)
-		l.Log.Info(msg)
+func (w *Writer) Close() (err error) {
+	if w.writer != nil {
+		err = w.writer.Close()
 	}
+	return
+}
 
-	// resize based on number of bytes read
-	l.buf = buf[count:]
+func (w *Writer) Write(p []byte) (n int, err error) {
+	if w.reader == nil {
+		w.reader, w.writer = io.Pipe()
+		go w.process()
+	}
+	return w.writer.Write(p)
+}
 
-	return len(b), nil
+func (w *Writer) process() {
+	scanner := bufio.NewScanner(w.reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		w.Log.Info(line)
+	}
 }

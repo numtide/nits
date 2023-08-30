@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/numtide/nits/pkg/nix"
+	"io"
+	"os"
 	"os/exec"
 
 	"github.com/charmbracelet/log"
@@ -26,7 +29,8 @@ func Init(ctx context.Context) (err error) {
 	Conn = util.GetConn(ctx)
 	NKey = util.GetNKey(ctx)
 
-	logger = log.FromContext(ctx).With("service", "cmd")
+	logger = log.Default().With("service", "cmd")
+	logger.SetFormatter(log.LogfmtFormatter)
 
 	_, err = micro.AddService(Conn, micro.Config{
 		Name:        "AgentCmd",
@@ -78,21 +82,37 @@ func execute(cmd *Command) (id string, logSubject string, err error) {
 	id = nuid.Next()
 	logSubject = fmt.Sprintf("%s.CMD.%s", subject.AgentLogs(NKey), id)
 
-	writer := nlog.NatsWriter{
+	natsWriter := &nlog.NatsWriter{
 		Conn:    Conn,
 		Subject: logSubject,
 	}
 
-	l := log.New(&writer)
-	c := exec.Command(cmd.Name, cmd.Args...)
+	l := log.NewWithOptions(io.MultiWriter(os.Stderr, natsWriter), log.Options{
+		ReportTimestamp: true,
+		Formatter:       log.LogfmtFormatter,
+	})
 
+	stdWriter := &nlog.Writer{Log: l.With("out", "std")}
+	errWriter := &nlog.Writer{Log: l.With("out", "err")}
+
+	ctx := context.Background()
+	ctx = nix.SetStdOut(ctx, stdWriter)
+	ctx = nix.SetStdError(ctx, errWriter)
+
+	c := exec.Command(cmd.Name, cmd.Args...)
 	// forward output into NATS
-	c.Stdout = nlog.BufferedLogger{Log: l.With("out", "std")}
-	c.Stderr = nlog.BufferedLogger{Log: l.With("out", "err")}
+	c.Stdout = io.MultiWriter(os.Stdout, stdWriter)
+	c.Stderr = io.MultiWriter(os.Stderr, errWriter)
 
 	go func() {
+		defer func() {
+			_ = stdWriter.Close()
+			_ = errWriter.Close()
+			_ = natsWriter.Close()
+		}()
+
 		if err := c.Run(); err != nil {
-			l.Error("failed to run command", "error", err)
+			logger.Error("failed to run command", "error", err)
 		}
 	}()
 
