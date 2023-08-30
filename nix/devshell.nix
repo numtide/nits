@@ -74,6 +74,10 @@
           category = "development";
           package = self'.packages.nits;
         }
+        {
+          category = "development";
+          package = pkgs.enumer;
+        }
       ];
     };
   };

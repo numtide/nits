@@ -56,18 +56,14 @@ func handler(req micro.Request) {
 	response.Action = request.Action
 
 	switch request.Action {
-	case ActionExecute:
+	case Execute:
 		if response.Id, response.Logs, err = execute(request.Cmd); err != nil {
 			_ = req.Error("500", fmt.Sprintf("Failed to execute command: %s", err), nil)
 			return
 		}
 
-	case ActionCancel:
+	case Cancel:
 		// todo support cancelling a long running command
-
-	case ActionUnknown:
-		_ = req.Error("400", fmt.Sprintf("Action unknown: %s", request.Action), nil)
-		return
 	}
 
 	if err = req.RespondJSON(response); err != nil {
