@@ -23,7 +23,7 @@ func AgentLogs(nkey string) string {
 }
 
 func AgentService(nkey string, name string) string {
-	return fmt.Sprintf("%s.AGENT.%s.SVC.%s", Prefix, nkey, name)
+	return fmt.Sprintf("%s.AGENT.%s.SRV.%s", Prefix, nkey, name)
 }
 
 func AgentInbox(nkey string) string {

@@ -20,12 +20,39 @@ const (
 	ErrorMalformedClosure = errors.ConstError("closure is malformed")
 )
 
+func Config() (config map[string]string, err error) {
+	cmd := exec.Command("nix", "show-config")
+
+	config = make(map[string]string)
+
+	var b []byte
+	if b, err = cmd.Output(); err != nil {
+		return
+	}
+
+	scanner := bufio.NewScanner(bytes.NewBuffer(b))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			continue
+		}
+		components := strings.SplitN(line, " = ", 2)
+		if len(components) != 2 {
+			return nil, errors.Errorf("malformed line in output: %s", line)
+		}
+		config[components[0]] = components[1]
+	}
+
+	return
+}
+
 type outLogger struct {
 	buf []byte
 	log *log.Logger
 }
 
 func (o outLogger) Write(b []byte) (n int, err error) {
+
 	buf := o.buf
 
 	buf = append(buf, b...)
@@ -45,7 +72,7 @@ func (o outLogger) Write(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func CurrentSystemClosure() (*nixpath.NixPath, error) {
+func CurrentSystem() (*nixpath.NixPath, error) {
 	path, err := os.Readlink("/run/current-system")
 	if err != nil {
 		return nil, err

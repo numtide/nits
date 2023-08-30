@@ -63,7 +63,10 @@ func handler(req micro.Request) {
 		}
 
 	case Cancel:
-		// todo support cancelling a long running command
+	// todo support cancelling a long running command
+
+	default:
+		_ = req.Error("400", fmt.Sprintf("Unknown action: %s", request.Action.String()), nil)
 	}
 
 	if err = req.RespondJSON(response); err != nil {

@@ -58,7 +58,7 @@ func (h *NixosHandler) Apply(config *types.Deployment, ctx context.Context) (err
 	newHash := nixbase32.EncodeToString(storePath.Digest)
 	l = log.With("hash", newHash)
 
-	currentSystem, err := nix.CurrentSystemClosure()
+	currentSystem, err := nix.CurrentSystem()
 	if err != nil {
 		return err
 	}

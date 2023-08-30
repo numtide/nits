@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/numtide/nits/pkg/agent/service/nixos"
 
 	"github.com/numtide/nits/pkg/agent/service/cmd"
 
@@ -11,7 +12,9 @@ import (
 func Init(ctx context.Context) (err error) {
 	if err = info.Init(ctx); err != nil {
 		return
+	} else if err = cmd.Init(ctx); err != nil {
+		return
 	}
 
-	return cmd.Init(ctx)
+	return nixos.Init(ctx)
 }
