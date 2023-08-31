@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v0.8.0
 	github.com/brianmcgee/nats-http v0.0.0-20230703195352-06d80d2189d8
 	github.com/charmbracelet/log v0.2.3
+	github.com/ettle/strcase v0.1.1
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/juju/errors v1.0.0

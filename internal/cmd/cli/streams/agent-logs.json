@@ -1,6 +1,6 @@
 {
     "name": "agent-logs",
-    "subjects": ["NITS.AGENT.*.LOGS"],
+    "subjects": ["NITS.AGENT.*.LOGS", "NITS.AGENT.*.LOGS.>"],
     "retention": "limits",
     "max_consumers": -1,
     "max_msgs_per_subject": -1,

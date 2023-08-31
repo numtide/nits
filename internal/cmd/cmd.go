@@ -78,12 +78,11 @@ func (o *CacheOptions) ToCacheOptions() (*cache.Options, error) {
 	}, nil
 }
 
-func Run(logger *log.Logger, main func(ctx context.Context) error) (err error) {
+func Run(main func(ctx context.Context) error) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go func() {
-		logger.Debug("listening for termination signals")
 		c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c

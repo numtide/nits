@@ -4,14 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/nix-community/go-nix/pkg/nixpath"
-	"github.com/numtide/nits/pkg/types"
-
-	"github.com/charmbracelet/log"
 
 	"github.com/juju/errors"
 )
@@ -19,6 +17,22 @@ import (
 const (
 	ErrorMalformedClosure = errors.ConstError("closure is malformed")
 )
+
+func SetStdError(ctx context.Context, writer io.Writer) context.Context {
+	return context.WithValue(ctx, "stderr", writer)
+}
+
+func GetStdErr(ctx context.Context) io.Writer {
+	return ctx.Value("stderr").(io.Writer)
+}
+
+func SetStdOut(ctx context.Context, writer io.Writer) context.Context {
+	return context.WithValue(ctx, "stdout", writer)
+}
+
+func GetStdOut(ctx context.Context) io.Writer {
+	return ctx.Value("stdout").(io.Writer)
+}
 
 func Config() (config map[string]string, err error) {
 	cmd := exec.Command("nix", "show-config")
@@ -46,32 +60,6 @@ func Config() (config map[string]string, err error) {
 	return
 }
 
-type outLogger struct {
-	buf []byte
-	log *log.Logger
-}
-
-func (o outLogger) Write(b []byte) (n int, err error) {
-
-	buf := o.buf
-
-	buf = append(buf, b...)
-	scanner := bufio.NewScanner(bytes.NewBuffer(buf))
-
-	count := 0
-
-	for scanner.Scan() {
-		msg := scanner.Text()
-		count += len(msg)
-		o.log.Info(msg)
-	}
-
-	// resize based on number of bytes read
-	o.buf = buf[count:]
-
-	return len(b), nil
-}
-
 func CurrentSystem() (*nixpath.NixPath, error) {
 	path, err := os.Readlink("/run/current-system")
 	if err != nil {
@@ -81,33 +69,19 @@ func CurrentSystem() (*nixpath.NixPath, error) {
 }
 
 func runCmd(name string, args []string, env []string, ctx context.Context) error {
-	logger := log.FromContext(ctx)
-
-	logger.Info(name, "args", strings.Join(args, " "), "env", env)
-
-	prefix := logger.GetPrefix()
-	logger.SetPrefix(name)
-
-	// reset prefix afterwards
-	defer logger.SetPrefix(prefix)
-
 	cmd := exec.Command(name, args...)
 	cmd.Env = env
-	cmd.Stdout = outLogger{log: logger.With("output", "stdout")}
-	cmd.Stderr = outLogger{log: logger.With("output", "stderr")}
-
+	cmd.Stdout = GetStdOut(ctx)
+	cmd.Stderr = GetStdErr(ctx)
 	// todo be able to interrupt a command?
 	return cmd.Run()
 }
 
-func BuildSystemClosure(path *nixpath.NixPath, env []string, ctx context.Context) error {
-	args := []string{
-		"build", path.String(),
-	}
-	return runCmd("nix", args, env, ctx)
+func Build(path *nixpath.NixPath, env []string, ctx context.Context) error {
+	return runCmd("nix", []string{"build", path.String()}, env, ctx)
 }
 
-func SetSystemProfile(path *nixpath.NixPath, ctx context.Context) error {
+func SetSystem(path *nixpath.NixPath, ctx context.Context) error {
 	args := []string{
 		"--profile", "/nix/var/nix/profiles/system",
 		"--set", path.String(),
@@ -115,14 +89,14 @@ func SetSystemProfile(path *nixpath.NixPath, ctx context.Context) error {
 	return runCmd("nix-env", args, nil, ctx)
 }
 
-func SwitchToConfiguration(config *types.Deployment, ctx context.Context) error {
-	binPath := config.Closure + "/bin/switch-to-configuration"
+func Switch(closure *nixpath.NixPath, action string, ctx context.Context) error {
+	binPath := closure.String() + "/bin/switch-to-configuration"
 	_, err := os.Stat(binPath)
 	if err != nil {
 		return ErrorMalformedClosure
 	}
 
-	args := []string{config.Action.String()}
+	args := []string{action}
 
 	return runCmd(binPath, args, nil, ctx)
 }

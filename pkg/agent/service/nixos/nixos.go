@@ -20,7 +20,7 @@ func Init(ctx context.Context) (err error) {
 	Conn = util.GetConn(ctx)
 	NKey = util.GetNKey(ctx)
 
-	logger = log.FromContext(ctx).With("service", "nixos")
+	logger = log.Default().With("service", "nixos")
 
 	var srv micro.Service
 	if srv, err = micro.AddService(Conn, micro.Config{
@@ -35,7 +35,11 @@ func Init(ctx context.Context) (err error) {
 
 	if err = group.AddEndpoint("INFO", micro.HandlerFunc(onInfo)); err != nil {
 		return
+	} else if err = group.AddEndpoint("DEPLOY", micro.HandlerFunc(onDeploy)); err != nil {
+		return
 	}
+
+	deployErrGroup.SetLimit(1)
 
 	return
 }

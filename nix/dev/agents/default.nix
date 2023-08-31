@@ -122,14 +122,11 @@ in {
               STORE_PATH=$(nix-store --realise "$DRV")
 
               prefix_out "update-deployment"
-              NKEY=$(nits-agent nkey "$VM_DATA_DIR/agent-host-$ID/ssh_host_ed25519_key")
+              set -x
 
               # ensures nats picks up the contexts in .data
               export XDG_CONFIG_HOME="$PRJ_DATA_DIR"
               nits deploy --profile nsc://Nits/Numtide/Admin --action "$ACTION" --name "agent-host-$ID" "$STORE_PATH"
-
-              prefix_out "agent-logs"
-              nats --context Numtide-Admin subscribe --stream agent-logs --last "NITS.AGENT.$NKEY.LOGS" --raw
             '';
           };
         }

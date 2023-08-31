@@ -24,7 +24,7 @@ func (r *runCmd) Run() error {
 		return err
 	}
 
-	return cmd.Run(logger, func(ctx context.Context) (err error) {
+	return cmd.Run(func(ctx context.Context) (err error) {
 		var opts []nats.Option
 		var conn *nats.Conn
 

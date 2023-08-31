@@ -2,15 +2,11 @@ package agent
 
 import (
 	"context"
-	"os"
-
 	"github.com/numtide/nits/pkg/agent/service"
 	"github.com/numtide/nits/pkg/agent/util"
 
 	nutil "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
-
-	"github.com/numtide/nits/pkg/agent/deploy"
 
 	"github.com/charmbracelet/log"
 	nlog "github.com/numtide/nits/pkg/log"
@@ -19,13 +15,9 @@ import (
 )
 
 var (
-	Log         = log.Default()
-	Deployer    = deploy.DeployerNoOp
 	NatsOptions *nutil.CliOptions
 	Conn        *nats.Conn
 	NKey        string
-
-	deployHandler deploy.Handler
 )
 
 func Run(ctx context.Context) (err error) {
@@ -35,20 +27,17 @@ func Run(ctx context.Context) (err error) {
 	}
 
 	// publish logs into nats
-	if Log == nil {
-		Log = log.Default()
-	}
-
 	writer := nlog.NatsWriter{
-		Conn:     Conn,
-		Subject:  subject.AgentLogs(NKey),
-		Delegate: os.Stderr,
+		Conn:    Conn,
+		Subject: subject.AgentLogs(NKey),
 	}
+	defer func() {
+		_ = writer.Close()
+	}()
 
-	Log.SetOutput(&writer)
+	log.Default().SetOutput(&writer)
 
 	// register services
-	ctx = log.WithContext(ctx, Log)
 	ctx = util.SetConn(ctx, Conn)
 	ctx = util.SetNKey(ctx, NKey)
 
@@ -56,17 +45,8 @@ func Run(ctx context.Context) (err error) {
 		return
 	}
 
-	// set deploy handler
-	switch Deployer {
-	case deploy.DeployerNoOp:
-		deployHandler = deploy.HandlerFunc(deploy.NoOpHandler)
-	case deploy.DeployerNixos:
-		deployHandler = &deploy.NixosHandler{
-			Conn: Conn,
-		}
-	}
-
-	return listenForDeployment(ctx)
+	<-ctx.Done()
+	return nil
 }
 
 func connectNats() (err error) {
@@ -81,7 +61,7 @@ func connectNats() (err error) {
 		return
 	}
 
-	Log.Info("connected to nats", "nkey", NKey)
+	log.Info("connected to nats", "nkey", NKey)
 
 	return
 }

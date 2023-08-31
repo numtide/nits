@@ -18,23 +18,23 @@ import (
 )
 
 var (
-	logger       *log.Logger
-	agentSubject string
+	NKey string
+
+	logger *log.Logger
 )
 
 func Init(ctx context.Context) (err error) {
 	conn := util.GetConn(ctx)
-	nkey := util.GetNKey(ctx)
-	logger = log.FromContext(ctx).With("service", "info")
+	NKey = util.GetNKey(ctx)
 
-	agentSubject = subject.AgentWithNKey(nkey)
+	logger = log.Default().With("service", "info")
 
 	_, err = micro.AddService(conn, micro.Config{
 		Name:        "AgentInfo",
 		Version:     "0.0.1",
 		Description: "Information about an agent and the machine it is running on",
 		Endpoint: &micro.EndpointConfig{
-			Subject: subject.AgentService(nkey, "INFO"),
+			Subject: subject.AgentService(NKey, "INFO"),
 			Handler: micro.HandlerFunc(handler),
 		},
 	})
@@ -55,7 +55,8 @@ func handler(req micro.Request) {
 	}
 
 	resp := Response{
-		Subject: agentSubject,
+		NKey:    NKey,
+		Subject: subject.AgentWithNKey(NKey),
 	}
 
 	if request.All || request.Cpus {
