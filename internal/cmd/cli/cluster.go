@@ -11,8 +11,7 @@ import (
 )
 
 type addClusterCmd struct {
-	Name          string `help:"Name of the account under which Agents will run"`
-	NitsPublicKey string `help:"Public key of the account under which Nits services run"`
+	Name string `help:"Name of the account under which Agents will run"`
 }
 
 func (c *addClusterCmd) Run() (err error) {
@@ -39,15 +38,6 @@ func (c *addClusterCmd) Run() (err error) {
 			"--js-disk-storage", "-1",
 			"--js-streams", "-1",
 			"--js-consumer", "-1",
-		),
-		// import binary cache service
-		nexec.Nsc(
-			"add", "import", "-a", c.Name,
-			"-n", "binary-cache",
-			"--service",
-			"--src-account", c.NitsPublicKey,
-			"--remote-subject", "NITS.CACHE.>",
-			"--local-subject", "NITS.CACHE.>",
 		),
 		// create an admin user
 		nexec.Nsc("add", "user", "-a", c.Name, "-n", "Admin", "--allow-pubsub", ">"),
