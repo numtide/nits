@@ -2,6 +2,7 @@ package nixos
 
 import (
 	"context"
+
 	"github.com/charmbracelet/log"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"

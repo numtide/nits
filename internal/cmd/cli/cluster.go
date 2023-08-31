@@ -1,9 +1,14 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"syscall"
+
+	"github.com/charmbracelet/log"
+	nsccmd "github.com/nats-io/nsc/v2/cmd"
 
 	nexec "github.com/numtide/nits/pkg/exec"
 
@@ -18,35 +23,100 @@ func (c *addClusterCmd) Run() (err error) {
 	// ensure shutdown hooks are run when the process exits
 	go shutdown.Listen(syscall.SIGINT, syscall.SIGTERM)
 
-	adminContext := fmt.Sprintf("%s-%s", c.Name, "Admin")
+	var operator nsccmd.OperatorDescriber
+	if operator, err = nexec.DescribeOperator(); err != nil {
+		log.Error("failed to describe operator")
+		return
+	}
 
-	var logsConfig, deploymentsConfig *os.File
+	log.Info("detected operator",
+		"name", operator.Name,
+		"serviceUrls", operator.OperatorServiceURLs,
+		"accountServerUrl", operator.AccountServerURL,
+	)
+
+	log.Info("adding a new account", "name", c.Name)
+
+	cmd := nexec.Nsc("add", "account", "-n", c.Name, "--deny-pubsub", ">")
+	log.Debug(cmd.String())
+
+	if _, err = cmd.Output(); err != nil {
+		var exit *exec.ExitError
+		if errors.As(err, &exit) && string(exit.Stderr) == fmt.Sprintf("Error: the account \"%s\" already exists\n", c.Name) {
+			log.Warn("account already exists")
+		} else {
+			log.Error("failed to add account", "error", err)
+			return
+		}
+	}
+
+	log.Info("setting account permissions")
+
+	// todo set sane default limits
+	cmd = nexec.Nsc("edit", "account", "-n", c.Name,
+		"--js-mem-storage", "-1",
+		"--js-disk-storage", "-1",
+		"--js-streams", "-1",
+		"--js-consumer", "-1",
+	)
+	log.Debug(cmd.String())
+
+	if _, err = cmd.Output(); err != nil {
+		log.Error("failed to set account permissions", "error", err)
+		return
+	}
+
+	log.Info("Creating an admin user", "name", "Admin")
+
+	cmd = nexec.Nsc("add", "user", "-a", c.Name, "-n", "Admin", "--allow-pubsub", ">")
+	log.Debug(cmd.String())
+
+	if _, err = cmd.Output(); err != nil {
+		var exit *exec.ExitError
+		if errors.As(err, &exit) && string(exit.Stderr) == "Error: the user \"Admin\" already exists\n" {
+			log.Warn("user already exists")
+		} else {
+			log.Error("failed to add admin user", "error", err)
+			return
+		}
+	}
+
+	adminContext := fmt.Sprintf("%s-%s", c.Name, "Admin")
+	log.Info("generating an admin context", "name", adminContext)
+
+	cmd = nexec.Nsc("generate", "context", "-a", c.Name, "-u", "Admin", "--context", adminContext)
+	log.Debug(cmd.String())
+
+	if _, err = cmd.Output(); err != nil {
+		log.Error("failed to add an admin context", "error", err)
+		return
+	}
+
+	log.Info("pushing account to server", "name", c.Name)
+	cmd = nexec.Nsc("push", "-a", c.Name)
+	log.Debug(cmd.String())
+
+	if _, err = cmd.Output(); err != nil {
+		log.Error("failed to push account to server", "error", err)
+		return
+	}
+
+	var logsConfig *os.File
 	if logsConfig, err = openResourceLocally(streamConfig, "streams/agent-logs.json"); err != nil {
 		return err
 	}
-	if deploymentsConfig, err = openResourceLocally(streamConfig, "streams/agent-deployments.json"); err != nil {
-		return err
+
+	log.Info("adding streams")
+
+	cmd = nexec.Nats("--context", adminContext, "stream", "add", "--config", logsConfig.Name())
+	log.Debug(cmd.String())
+
+	if _, err = cmd.Output(); err != nil {
+		log.Error("failed to add logs stream", "error", err)
+		return
 	}
 
-	return nexec.Sequence(
-		// default permissions is to deny all pubsub
-		nexec.Nsc("add", "account", "-n", c.Name, "--deny-pubsub", ">"),
-		// enable Jetstream todo set sane default limits
-		nexec.Nsc(
-			"edit", "account", "-n", c.Name,
-			"--js-mem-storage", "-1",
-			"--js-disk-storage", "-1",
-			"--js-streams", "-1",
-			"--js-consumer", "-1",
-		),
-		// create an admin user
-		nexec.Nsc("add", "user", "-a", c.Name, "-n", "Admin", "--allow-pubsub", ">"),
-		// create a context for the admin user
-		nexec.Nsc("generate", "context", "-a", c.Name, "-u", "Admin", "--context", adminContext),
-		// push the account changes to the NATS server
-		nexec.Nsc("push", "-a", c.Name),
-		// create some streams
-		nexec.Nats("--context", adminContext, "stream", "add", "--config", logsConfig.Name()),
-		nexec.Nats("--context", adminContext, "stream", "add", "--config", deploymentsConfig.Name()),
-	)
+	log.Info("setup complete")
+
+	return nil
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/numtide/nits/pkg/agent/service/nixos"
 
 	"github.com/numtide/nits/pkg/agent/service/cmd"
