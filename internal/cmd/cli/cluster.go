@@ -66,7 +66,7 @@ func (c *addClusterCmd) Run() (err error) {
 		return
 	}
 
-	log.Info("Creating an admin user", "name", "Admin")
+	log.Info("creating an admin user", "name", "Admin")
 
 	cmd = nexec.Nsc("add", "user", "-a", c.Name, "-n", "Admin", "--allow-pubsub", ">")
 	log.Debug(cmd.String())
