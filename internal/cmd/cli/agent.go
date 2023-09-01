@@ -2,8 +2,12 @@ package cli
 
 import (
 	"fmt"
+	"github.com/charmbracelet/log"
+	nsccmd "github.com/nats-io/nsc/v2/cmd"
 	"os"
 	"strings"
+
+	"github.com/numtide/nits/internal/cmd"
 
 	nexec "github.com/numtide/nits/pkg/exec"
 	nutil "github.com/numtide/nits/pkg/nats"
@@ -25,6 +29,7 @@ type addAgentCmd struct {
 func (a *addAgentCmd) Run() (err error) {
 	var nkey string
 
+	// todo move this logic somewhere shared
 	if a.PrivateKeyFile != "" {
 		var signer ssh.Signer
 		if signer, err = nutil.NewSigner(a.PrivateKeyFile); err != nil {
@@ -55,14 +60,32 @@ func (a *addAgentCmd) Run() (err error) {
 		}
 	}
 
-	agentSubject := fmt.Sprintf("NITS.AGENT.%s.>", nkey)
+	var op nsccmd.OperatorDescriber
+	if op, err = cmd.DetectOperator(); err != nil {
+		return
+	}
 
-	return nexec.Sequence(
-		nexec.Nsc(
-			"add", "mapping", "-a", a.Cluster,
-			"--from", subject.AgentWithName(a.Name),
-			"--to", subject.AgentService(nkey, "INFO"),
+	agentSubject := fmt.Sprintf("NITS.AGENT.%s.>", nkey)
+	agentByName := subject.AgentWithName(a.Name)
+	agentInfoService := subject.AgentService(nkey, "INFO")
+
+	log.Info("adding a subject mapping", "from", agentByName, "to", agentInfoService)
+
+	nsc := cmd.LogExec(
+		nexec.Nsc("add", "mapping", "-a", a.Cluster,
+			"--from", agentByName,
+			"--to", agentInfoService,
 		),
+	)
+
+	if _, err = nsc.Output(); err != nil {
+		nexec.LogError("failed to add subject mapping", err)
+		return
+	}
+
+	log.Info("adding an agent user", "operator", op.Name, "account", a.Cluster, "name", a.Name)
+
+	nsc = cmd.LogExec(
 		nexec.Nsc(
 			"add", "user", "-a", a.Cluster,
 			"-k", nkey,
@@ -76,4 +99,11 @@ func (a *addAgentCmd) Run() (err error) {
 			"--allow-pub", "_INBOX.>",
 		),
 	)
+
+	if _, err = nsc.Output(); err != nil {
+		nexec.LogError("failed to add agent user", err)
+		return
+	}
+
+	return
 }

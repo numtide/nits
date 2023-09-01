@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/numtide/nits/pkg/nix"
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/numtide/nits/pkg/nix"
 
 	"github.com/charmbracelet/log"
 	"github.com/nats-io/nats.go"

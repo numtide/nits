@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"time"
+
 	"github.com/charmbracelet/log"
 	"github.com/ettle/strcase"
 	"github.com/nats-io/nats.go"
@@ -15,9 +19,6 @@ import (
 	"github.com/numtide/nits/pkg/nix"
 	"github.com/numtide/nits/pkg/subject"
 	"golang.org/x/sync/errgroup"
-	"io"
-	"os"
-	"time"
 )
 
 type DeployAction int
@@ -62,7 +63,6 @@ func onDeploy(req micro.Request) {
 	logSubject := fmt.Sprintf("%s.NIXOS.DEPLOY.%s", subject.AgentLogs(NKey), id)
 
 	scheduled := deployErrGroup.TryGo(func() (err error) {
-
 		natsWriter := &nlog.NatsWriter{
 			Conn:    Conn,
 			Subject: logSubject,

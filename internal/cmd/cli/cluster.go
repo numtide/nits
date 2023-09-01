@@ -3,11 +3,12 @@ package cli
 import (
 	"errors"
 	"fmt"
-	nsccmd "github.com/nats-io/nsc/v2/cmd"
-	"github.com/numtide/nits/internal/cmd"
 	"os"
 	"os/exec"
 	"syscall"
+
+	nsccmd "github.com/nats-io/nsc/v2/cmd"
+	"github.com/numtide/nits/internal/cmd"
 
 	"github.com/charmbracelet/log"
 	nexec "github.com/numtide/nits/pkg/exec"

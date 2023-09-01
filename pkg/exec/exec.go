@@ -1,10 +1,11 @@
 package exec
 
 import (
-	"github.com/charmbracelet/log"
-	"github.com/juju/errors"
 	"io"
 	"os/exec"
+
+	"github.com/charmbracelet/log"
+	"github.com/juju/errors"
 )
 
 type Command func() error

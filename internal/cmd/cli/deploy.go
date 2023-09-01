@@ -3,12 +3,13 @@ package cli
 import (
 	"bytes"
 	"context"
+	"os"
+	"time"
+
 	"github.com/charmbracelet/log"
 	"github.com/go-logfmt/logfmt"
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/agent/service/nixos"
-	"os"
-	"time"
 
 	nutil "github.com/numtide/nits/pkg/nats"
 
@@ -141,5 +142,4 @@ func (d *deployCmd) Run() error {
 			}
 		}
 	})
-
 }

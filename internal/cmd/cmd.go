@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"context"
-	nsccmd "github.com/nats-io/nsc/v2/cmd"
-	nexec "github.com/numtide/nits/pkg/exec"
 	"io"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
+
+	nsccmd "github.com/nats-io/nsc/v2/cmd"
+	nexec "github.com/numtide/nits/pkg/exec"
 
 	"github.com/numtide/nits/pkg/cache"
 

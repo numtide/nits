@@ -2,8 +2,9 @@ package log
 
 import (
 	"bufio"
-	"github.com/charmbracelet/log"
 	"io"
+
+	"github.com/charmbracelet/log"
 )
 
 type Writer struct {

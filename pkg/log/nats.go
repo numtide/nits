@@ -2,8 +2,9 @@ package log
 
 import (
 	"bufio"
-	"github.com/nats-io/nats.go"
 	"io"
+
+	"github.com/nats-io/nats.go"
 )
 
 type NatsWriter struct {
