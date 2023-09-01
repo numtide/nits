@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/nats-io/jwt/v2"
+
 	"github.com/charmbracelet/log"
 
 	"github.com/nats-io/nats.go/micro"
@@ -18,14 +20,15 @@ import (
 )
 
 var (
-	NKey string
-
+	NKey   string
+	Claims *jwt.UserClaims
 	logger *log.Logger
 )
 
 func Init(ctx context.Context) (err error) {
-	conn := util.GetConn(ctx)
 	NKey = util.GetNKey(ctx)
+	Claims = util.GetClaims(ctx)
+	conn := util.GetConn(ctx)
 
 	logger = log.Default().With("service", "info")
 
@@ -56,6 +59,7 @@ func handler(req micro.Request) {
 
 	resp := Response{
 		NKey:    NKey,
+		Name:    Claims.Name,
 		Subject: subject.AgentWithNKey(NKey),
 	}
 

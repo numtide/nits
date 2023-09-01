@@ -19,6 +19,7 @@ type Request struct {
 
 type Response struct {
 	NKey    string         `json:"nkey"`
+	Name    string         `json:"name"`
 	Subject string         `json:"subject"`
 	Host    *host.InfoStat `json:"host,omitempty"`
 	Cpus    []cpu.InfoStat `json:"cpus,omitempty"`

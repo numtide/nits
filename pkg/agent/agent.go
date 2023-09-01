@@ -3,6 +3,8 @@ package agent
 import (
 	"context"
 
+	"github.com/nats-io/jwt/v2"
+
 	"github.com/numtide/nits/pkg/agent/service"
 	"github.com/numtide/nits/pkg/agent/util"
 
@@ -19,6 +21,7 @@ var (
 	NatsOptions *nutil.CliOptions
 	Conn        *nats.Conn
 	NKey        string
+	Claims      *jwt.UserClaims
 )
 
 func Run(ctx context.Context) (err error) {
@@ -41,6 +44,7 @@ func Run(ctx context.Context) (err error) {
 	// register services
 	ctx = util.SetConn(ctx, Conn)
 	ctx = util.SetNKey(ctx, NKey)
+	ctx = util.SetClaims(ctx, Claims)
 
 	if err = service.Init(ctx); err != nil {
 		return
@@ -52,16 +56,15 @@ func Run(ctx context.Context) (err error) {
 
 func connectNats() (err error) {
 	var opts []nats.Option
-	if opts, NKey, _, err = NatsOptions.ToNatsOptions(); err != nil {
+
+	if opts, NKey, Claims, err = NatsOptions.ToNatsOptions(); err != nil {
 		return
 	}
-
 	opts = append(opts, nats.CustomInboxPrefix(subject.AgentInbox(NKey)))
 
 	if Conn, err = nats.Connect(NatsOptions.Url, opts...); err != nil {
 		return
 	}
-
 	log.Info("connected to nats", "nkey", NKey)
 
 	return
