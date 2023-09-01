@@ -61,6 +61,9 @@
                  nsc describe user -a Numtide -n "$AGENT_NAME" -R > "$AGENT_DIR/user.jwt"
               done
 
+              # push account changes
+              nsc push
+
               # generate sys context
               nsc generate context -a SYS -u sys --context sys
             '';
