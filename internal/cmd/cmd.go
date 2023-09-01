@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"context"
+	"github.com/ztrue/shutdown"
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
 	"syscall"
 
 	nsccmd "github.com/nats-io/nsc/v2/cmd"
@@ -83,15 +83,12 @@ func (o *CacheOptions) ToCacheOptions() (*cache.Options, error) {
 }
 
 func Run(main func(ctx context.Context) error) (err error) {
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go func() {
-		c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		<-c
-		cancel()
-	}()
+	shutdown.Add(cancel)
+	go shutdown.Listen(syscall.SIGINT, syscall.SIGTERM)
 
 	return main(ctx)
 }

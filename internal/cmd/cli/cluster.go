@@ -3,17 +3,13 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"syscall"
-
 	nsccmd "github.com/nats-io/nsc/v2/cmd"
 	"github.com/numtide/nits/internal/cmd"
+	"os"
+	"os/exec"
 
 	"github.com/charmbracelet/log"
 	nexec "github.com/numtide/nits/pkg/exec"
-
-	"github.com/ztrue/shutdown"
 )
 
 type addClusterCmd struct {
@@ -21,9 +17,6 @@ type addClusterCmd struct {
 }
 
 func (c *addClusterCmd) Run() (err error) {
-	// ensure shutdown hooks are run when the process exits
-	go shutdown.Listen(syscall.SIGINT, syscall.SIGTERM)
-
 	var op nsccmd.OperatorDescriber
 	if op, err = cmd.DetectOperator(); err != nil {
 		return
