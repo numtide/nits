@@ -45,7 +45,7 @@ func (c *addClusterCmd) Run() (err error) {
 		if errors.As(err, &exit) && string(exit.Stderr) == fmt.Sprintf("Error: the account \"%s\" already exists\n", c.Name) {
 			log.Warn("account already exists")
 		} else {
-			log.Error("failed to add account", "error", err)
+			nexec.LogError("failed to add account", err)
 			return
 		}
 	}
@@ -62,7 +62,7 @@ func (c *addClusterCmd) Run() (err error) {
 	log.Debug(cmd.String())
 
 	if _, err = cmd.Output(); err != nil {
-		log.Error("failed to set account permissions", "error", err)
+		nexec.LogError("failed to set account permissions", err)
 		return
 	}
 
@@ -76,7 +76,7 @@ func (c *addClusterCmd) Run() (err error) {
 		if errors.As(err, &exit) && string(exit.Stderr) == "Error: the user \"Admin\" already exists\n" {
 			log.Warn("user already exists")
 		} else {
-			log.Error("failed to add admin user", "error", err)
+			nexec.LogError("failed to add admin user", err)
 			return
 		}
 	}
@@ -88,7 +88,7 @@ func (c *addClusterCmd) Run() (err error) {
 	log.Debug(cmd.String())
 
 	if _, err = cmd.Output(); err != nil {
-		log.Error("failed to add an admin context", "error", err)
+		nexec.LogError("failed to add an admin context", err)
 		return
 	}
 
@@ -97,7 +97,7 @@ func (c *addClusterCmd) Run() (err error) {
 	log.Debug(cmd.String())
 
 	if _, err = cmd.Output(); err != nil {
-		log.Error("failed to push account to server", "error", err)
+		nexec.LogError("failed to push account to server", err)
 		return
 	}
 
@@ -112,7 +112,7 @@ func (c *addClusterCmd) Run() (err error) {
 	log.Debug(cmd.String())
 
 	if _, err = cmd.Output(); err != nil {
-		log.Error("failed to add logs stream", "error", err)
+		nexec.LogError("failed to add logs stream", err)
 		return
 	}
 

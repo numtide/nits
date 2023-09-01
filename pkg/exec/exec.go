@@ -1,6 +1,8 @@
 package exec
 
 import (
+	"github.com/charmbracelet/log"
+	"github.com/juju/errors"
 	"io"
 	"os/exec"
 )
@@ -20,4 +22,15 @@ func WithOutput(cmd *exec.Cmd, stdout io.Writer, stderr io.Writer) *exec.Cmd {
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	return cmd
+}
+
+func LogError(msg string, err error) {
+	var exit *exec.ExitError
+	var kv []interface{}
+	if errors.As(err, &exit) {
+		kv = append(kv, "exitCode", exit.ExitCode(), "error", string(exit.Stderr))
+	} else {
+		kv = append(kv, "error", err)
+	}
+	log.Error(msg, kv...)
 }
