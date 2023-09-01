@@ -53,9 +53,7 @@
             name = "nats-setup";
             runtimeInputs = [pkgs.jq pkgs.nsc self'.packages.nits];
             text = ''
-              NITS_PK=$(nsc describe account -n Nits --raw -J | jq -r .sub)
-              nits add cache --account Nits
-              nits add cluster --name Numtide --nits-public-key "$NITS_PK"
+              nits add cluster --name Numtide
 
               for AGENT_DIR in "$VM_DATA_DIR"/*; do
                  AGENT_NAME=$(basename "$AGENT_DIR")
@@ -65,9 +63,6 @@
 
               # generate sys context
               nsc generate context -a SYS -u sys --context sys
-
-              # push changes to nats
-              nsc push --all
             '';
           };
         };
