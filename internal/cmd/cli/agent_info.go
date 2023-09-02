@@ -84,18 +84,22 @@ func (c *agentInfoCmd) Run() error {
 }
 
 func printAgentSummary(agent *info.Response) {
-	fmt.Printf("Information for Agent %s\n\n", agent.Name)
+	println(sectionHeaderStyle.Render(fmt.Sprintf("Summary for agent %s:", agent.Name)))
+	println()
 	kvPrintln("Name:", agent.Name)
 	kvPrintln("NKey:", agent.NKey)
 	kvPrintln("Subject:", agent.Subject)
-	println()
 }
 
 func printAgentHost(host *host.InfoStat) {
 	if host == nil {
 		return
 	}
-	println("Host:\n")
+
+	println()
+	println(sectionHeaderStyle.Render("Host:"))
+	println()
+
 	kvPrintln("Hostname:", host.Hostname)
 	kvPrintln("Uptime:", (time.Duration(int64(host.Uptime)) * time.Second).String())
 	kvPrintln("BootTime:", time.Unix(int64(host.BootTime), 0).Format(time.RFC1123Z))
@@ -109,7 +113,6 @@ func printAgentHost(host *host.InfoStat) {
 	kvPrintln("Virtualization System:", host.VirtualizationSystem)
 	kvPrintln("Virtualization Role:", host.VirtualizationRole)
 	kvPrintln("Host ID:", host.HostID)
-	println()
 }
 
 func printAgentLoad(load *info.Load) {
@@ -117,7 +120,9 @@ func printAgentLoad(load *info.Load) {
 		return
 	}
 
-	print("Load:\n\n")
+	println()
+	println(sectionHeaderStyle.Render("Load:"))
+	println()
 
 	if load.Avg != nil {
 		kvPrintln("Avg:", fmt.Sprintf("(1m) %.2f (5m) %.2f (15m) %.2f", load.Avg.Load1, load.Avg.Load5, load.Avg.Load15))
@@ -126,6 +131,5 @@ func printAgentLoad(load *info.Load) {
 		kvPrintln("Procs Running:", strconv.Itoa(load.Misc.ProcsRunning))
 		kvPrintln("Procs Blocked:", strconv.Itoa(load.Misc.ProcsBlocked))
 		kvPrintln("Ctxt:", strconv.Itoa(load.Misc.Ctxt)) // todo what does this measure?
-		println()
 	}
 }

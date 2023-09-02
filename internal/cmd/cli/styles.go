@@ -15,12 +15,13 @@ var (
 	}
 
 	keyStyle = lipgloss.NewStyle().
-			Bold(true).
 			Width(32).
 			AlignHorizontal(lipgloss.Right).
 			MarginRight(2)
 
 	valueStyle = lipgloss.NewStyle()
+
+	sectionHeaderStyle = lipgloss.NewStyle()
 )
 
 func kvPrintln(key string, value string) {
