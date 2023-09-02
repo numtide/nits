@@ -17,7 +17,6 @@ import (
 	"github.com/nix-community/go-nix/pkg/narinfo/signature"
 
 	"github.com/charmbracelet/log"
-	"github.com/juju/errors"
 	"github.com/numtide/nits/pkg/config"
 )
 
@@ -27,28 +26,11 @@ type (
 )
 
 type LogOptions struct {
-	Level  string `enum:"debug,info,warn,error,fatal" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
-	Format string `enum:"text,json,logfmt" env:"LOG_FORMAT" default:"text" help:"Configure logging format."`
+	Level string `enum:"debug,info,warn,error,fatal" env:"LOG_LEVEL" default:"info" help:"Configure logging level."`
 }
 
-func (lo *LogOptions) ToLogger() (*log.Logger, error) {
+func (lo *LogOptions) ConfigureLog() {
 	log.SetLevel(log.ParseLevel(lo.Level))
-
-	var format log.Formatter
-	switch lo.Format {
-	case "text":
-		format = log.TextFormatter
-	case "json":
-		format = log.JSONFormatter
-	case "logfmt":
-		format = log.LogfmtFormatter
-	default:
-		return nil, errors.Errorf("nits: unexpected logfmt '%s', must be one of text, json or logfmt", lo.Format)
-	}
-
-	log.SetFormatter(format)
-
-	return log.Default(), nil
 }
 
 type CacheOptions struct {

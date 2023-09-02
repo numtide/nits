@@ -1,6 +1,10 @@
 package cli
 
+import "github.com/numtide/nits/internal/cmd"
+
 var Cmd struct {
+	Log cmd.LogOptions `embed:"" prefix:"log-"`
+
 	List struct {
 		Agents listAgentsCmd `cmd:""`
 	} `cmd:"" help:"List assets such as agents"`

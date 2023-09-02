@@ -28,6 +28,8 @@ type addAgentCmd struct {
 }
 
 func (a *addAgentCmd) Run() (err error) {
+	Cmd.Log.ConfigureLog()
+
 	var nkey string
 
 	// todo move this logic somewhere shared

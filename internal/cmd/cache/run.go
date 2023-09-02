@@ -19,10 +19,7 @@ type runCmd struct {
 }
 
 func (r *runCmd) Run() error {
-	logger, err := Cmd.Logging.ToLogger()
-	if err != nil {
-		return err
-	}
+	Cmd.Logging.ConfigureLog()
 
 	return cmd.Run(func(ctx context.Context) (err error) {
 		var opts []nats.Option
@@ -64,7 +61,7 @@ func (r *runCmd) Run() error {
 		eg := errgroup.Group{}
 
 		eg.Go(func() error {
-			return c.Listen(ctx, logger)
+			return c.Listen(ctx)
 		})
 
 		eg.Go(func() error {

@@ -13,6 +13,8 @@ type addCacheCmd struct {
 }
 
 func (c *addCacheCmd) Run() (err error) {
+	Cmd.Log.ConfigureLog()
+
 	cacheContext := fmt.Sprintf("%s-%s", c.Account, "Cache")
 
 	return nexec.Sequence(

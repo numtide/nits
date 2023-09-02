@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"sort"
-	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/juju/errors"
@@ -12,12 +11,6 @@ import (
 	"github.com/numtide/nits/pkg/agent/info"
 	"github.com/numtide/nits/pkg/subject"
 )
-
-func List(conn *nats.Conn, timeout time.Duration) (agents []*info.Response, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	return ListWithContext(ctx, conn)
-}
 
 func ListWithContext(ctx context.Context, conn *nats.Conn) (agents []*info.Response, err error) {
 	var (

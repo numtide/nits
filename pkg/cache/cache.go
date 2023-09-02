@@ -52,7 +52,7 @@ type Cache struct {
 	name string
 }
 
-func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
+func (c *Cache) Listen(ctx context.Context) (err error) {
 	// validate properties
 	if c.Conn == nil && c.NatsOptions == nil {
 		return errors.New("cache: one of Cache.Conn or Cache.NatsOptions must be provided")
@@ -71,7 +71,7 @@ func (c *Cache) Listen(ctx context.Context, logger *log.Logger) (err error) {
 		logOpts = append(logOpts, "group", c.Options.Group)
 	}
 
-	c.log = logger.With(logOpts...)
+	c.log = log.With(logOpts...)
 
 	// connect to nats
 	if err = c.connectNats(); err != nil {

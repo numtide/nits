@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"os"
 
+	"github.com/charmbracelet/log"
+
 	"github.com/nats-io/jwt/v2"
 
 	"github.com/juju/errors"
@@ -23,8 +25,18 @@ type CliOptions struct {
 func (c *CliOptions) Connect() (conn *nats.Conn, err error) {
 	var opts []nats.Option
 	if opts, _, _, err = c.ToNatsOptions(); err != nil {
+		log.Error("failed to generate nats options", "error", err)
 		return
 	}
+
+	log.Debug("connecting to nats", "url", c.Url)
+	defer func() {
+		if err == nil {
+			log.Info("connected to nats", "url", c.Url)
+		} else {
+			log.Error("failed to connect to nats", "error", err)
+		}
+	}()
 	return nats.Connect(c.Url, opts...)
 }
 

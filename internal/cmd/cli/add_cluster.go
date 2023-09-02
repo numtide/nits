@@ -18,6 +18,8 @@ type addClusterCmd struct {
 }
 
 func (c *addClusterCmd) Run() (err error) {
+	Cmd.Log.ConfigureLog()
+
 	var op nsccmd.OperatorDescriber
 	if op, err = cmd.DetectOperator(); err != nil {
 		return

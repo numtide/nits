@@ -31,6 +31,8 @@ type deployCmd struct {
 }
 
 func (d *deployCmd) Run() error {
+	Cmd.Log.ConfigureLog()
+
 	return cmd.Run(func(ctx context.Context) (err error) {
 		if _, err = os.Stat(d.Closure); os.IsNotExist(err) {
 			return errors.New("store path does not exist")
