@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+
 	"github.com/numtide/nits/pkg/agent/cmd"
 	"github.com/numtide/nits/pkg/agent/info"
 	"github.com/numtide/nits/pkg/agent/nixos"

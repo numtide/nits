@@ -20,12 +20,20 @@ type CliOptions struct {
 	CredentialsFile string `type:"existingfile" env:"NATS_CREDENTIALS_FILE" required:"" xor:"jwt,host,creds"`
 }
 
-func (n *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *jwt.UserClaims, err error) {
-	if n.Profile != "" {
+func (c *CliOptions) Connect() (conn *nats.Conn, err error) {
+	var opts []nats.Option
+	if opts, _, _, err = c.ToNatsOptions(); err != nil {
+		return
+	}
+	return nats.Connect(c.Url, opts...)
+}
+
+func (c *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *jwt.UserClaims, err error) {
+	if c.Profile != "" {
 		var kp nkeys.KeyPair
 		var encodedJwt string
 
-		if kp, encodedJwt, err = ReadProfile(n.Profile); err != nil {
+		if kp, encodedJwt, err = ReadProfile(c.Profile); err != nil {
 			return
 		}
 
@@ -39,32 +47,32 @@ func (n *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *j
 			}))
 
 		return
-	} else if n.CredentialsFile != "" {
+	} else if c.CredentialsFile != "" {
 		var kp nkeys.KeyPair
 		var encodedJwt string
-		if kp, encodedJwt, err = ReadCredentials(n.CredentialsFile); err != nil {
+		if kp, encodedJwt, err = ReadCredentials(c.CredentialsFile); err != nil {
 			return
 		}
 		defer kp.Wipe()
 
 		nkey, err = kp.PublicKey()
-		opts = append(opts, nats.UserCredentials(n.CredentialsFile))
+		opts = append(opts, nats.UserCredentials(c.CredentialsFile))
 
 		claims, err = DecodeUserClaims(encodedJwt)
 		return
-	} else if n.JwtFile != "" {
+	} else if c.JwtFile != "" {
 
-		if claims, err = ReadUserClaims(n.JwtFile); err != nil {
+		if claims, err = ReadUserClaims(c.JwtFile); err != nil {
 			return
 		}
 
-		if n.HostKeyFile == "" {
+		if c.HostKeyFile == "" {
 			// we will authenticate with just a bearer JWT
-			opts = append(opts, nats.UserCredentials(n.JwtFile))
+			opts = append(opts, nats.UserCredentials(c.JwtFile))
 		} else {
 			// we will authenticate with a JWT and using the host's key file as the NKey
 			var signer ssh.Signer
-			if signer, err = NewSigner(n.HostKeyFile); err != nil {
+			if signer, err = NewSigner(c.HostKeyFile); err != nil {
 				return
 			} else if nkey, err = NKeyForSigner(signer); err != nil {
 				return
@@ -73,7 +81,7 @@ func (n *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *j
 			opts = append(opts, nats.UserJWT(
 				func() (jwt string, err error) {
 					var b []byte
-					if b, err = os.ReadFile(n.JwtFile); err != nil {
+					if b, err = os.ReadFile(c.JwtFile); err != nil {
 						return
 					}
 					return string(b), nil

@@ -2,10 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"github.com/charmbracelet/log"
-	nsccmd "github.com/nats-io/nsc/v2/cmd"
 	"os"
 	"strings"
+
+	"github.com/charmbracelet/log"
+	nsccmd "github.com/nats-io/nsc/v2/cmd"
 
 	"github.com/numtide/nits/internal/cmd"
 

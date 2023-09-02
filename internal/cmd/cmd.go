@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"context"
-	"github.com/ztrue/shutdown"
 	"io"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/ztrue/shutdown"
 
 	nsccmd "github.com/nats-io/nsc/v2/cmd"
 	nexec "github.com/numtide/nits/pkg/exec"
@@ -83,7 +84,6 @@ func (o *CacheOptions) ToCacheOptions() (*cache.Options, error) {
 }
 
 func Run(main func(ctx context.Context) error) (err error) {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

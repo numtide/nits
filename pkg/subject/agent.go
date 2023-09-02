@@ -26,8 +26,12 @@ func AgentService(nkey string, name string) string {
 	return fmt.Sprintf("%s.AGENT.%s.SRV.%s", Prefix, nkey, name)
 }
 
+func AgentRegistry() string {
+	return fmt.Sprintf("%s.AGENT_REGISTRY", Prefix)
+}
+
 func AgentRegistration(nkey string) string {
-	return fmt.Sprintf("%s.AGENT_REGISTRY.%s", Prefix, nkey)
+	return fmt.Sprintf("%s.%s", AgentRegistry(), nkey)
 }
 
 func AgentInbox(nkey string) string {

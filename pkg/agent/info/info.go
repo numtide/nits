@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
-	"time"
 
 	"github.com/nats-io/jwt/v2"
 

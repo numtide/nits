@@ -5,10 +5,13 @@ go 1.20
 require (
 	github.com/alecthomas/kong v0.8.0
 	github.com/brianmcgee/nats-http v0.0.0-20230703195352-06d80d2189d8
+	github.com/charmbracelet/bubbles v0.16.1
+	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/charmbracelet/log v0.2.3
 	github.com/ettle/strcase v0.1.1
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
+	github.com/go-logfmt/logfmt v0.6.0
 	github.com/juju/errors v1.0.0
 	github.com/nats-io/jwt/v2 v2.4.1
 	github.com/nats-io/nats-server/v2 v2.9.19
@@ -18,6 +21,7 @@ require (
 	github.com/nats-io/nuid v1.0.1
 	github.com/nix-community/go-nix v0.0.0-20230226174119-1f9567c0a1e5
 	github.com/shirou/gopsutil/v3 v3.23.7
+	github.com/xeonx/timeago v1.0.0-rc5
 	github.com/ztrue/shutdown v0.1.1
 	golang.org/x/crypto v0.11.0
 	golang.org/x/sync v0.3.0
@@ -28,11 +32,11 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/briandowns/spinner v1.23.0 // indirect
-	github.com/charmbracelet/lipgloss v0.7.1 // indirect
+	github.com/charmbracelet/bubbletea v0.24.1 // indirect
+	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.15.0 // indirect
-	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-github/v30 v30.1.0 // indirect
@@ -47,6 +51,7 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
@@ -54,6 +59,8 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
+	github.com/muesli/ansi v0.0.0-20211018074035-2e021307bc4b // indirect
+	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/multiformats/go-multihash v0.2.3 // indirect

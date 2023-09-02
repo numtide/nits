@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/numtide/nits/pkg/agent/info"
 	"io"
 	"os"
 	"time"
+
+	"github.com/numtide/nits/pkg/agent/info"
 
 	"github.com/charmbracelet/log"
 	"github.com/ettle/strcase"

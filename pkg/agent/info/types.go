@@ -1,6 +1,8 @@
 package info
 
 import (
+	"time"
+
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -26,6 +28,8 @@ type Response struct {
 	Load    *Load          `json:"load,omitempty"`
 	Memory  *Memory        `json:"memory,omitempty"`
 	Disk    *Disk          `json:"disk,omitempty"`
+
+	LastSeen time.Time
 }
 
 type Load struct {

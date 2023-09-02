@@ -3,9 +3,10 @@ package cli
 import (
 	"bytes"
 	"context"
-	"github.com/numtide/nits/pkg/agent/nixos"
 	"os"
 	"time"
+
+	"github.com/numtide/nits/pkg/agent/nixos"
 
 	"github.com/charmbracelet/log"
 	"github.com/go-logfmt/logfmt"
