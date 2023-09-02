@@ -22,6 +22,10 @@ func AgentLogs(nkey string) string {
 	return fmt.Sprintf("%s.AGENT.%s.LOGS", Prefix, nkey)
 }
 
+func AgentLogsAll() string {
+	return fmt.Sprintf("%s.AGENT.*.LOGS.>", Prefix)
+}
+
 func AgentService(nkey string, name string) string {
 	return fmt.Sprintf("%s.AGENT.%s.SRV.%s", Prefix, nkey, name)
 }

@@ -2,6 +2,9 @@ package log
 
 import (
 	"bufio"
+	"bytes"
+	"github.com/go-logfmt/logfmt"
+	"github.com/nats-io/nats.go"
 	"io"
 
 	"github.com/charmbracelet/log"
@@ -33,5 +36,45 @@ func (w *Writer) process() {
 	for scanner.Scan() {
 		line := scanner.Text()
 		w.Log.Info(line)
+	}
+}
+
+func MsgToLog(logger *log.Logger, msg *nats.Msg) {
+	if msg == nil {
+		return
+	}
+	dec := logfmt.NewDecoder(bytes.NewReader(msg.Data))
+	for dec.ScanRecord() {
+
+		var message, lvl string
+		var kvs []interface{}
+
+		for dec.ScanKeyval() {
+			key := string(dec.Key())
+			value := string(dec.Value())
+			switch key {
+			case "msg":
+				message = value
+			case "lvl":
+				lvl = value
+			default:
+				kvs = append(kvs, key)
+				kvs = append(kvs, string(dec.Value()))
+			}
+		}
+
+		switch lvl {
+		case "warn":
+			logger.Warn(message, kvs...)
+		case "info":
+			logger.Info(message, kvs...)
+		case "debug":
+			logger.Debug(message, kvs...)
+		case "error", "fatal":
+			logger.Error(message, kvs...)
+			logger.Error(message, kvs...)
+		default:
+			logger.Info(message, kvs...)
+		}
 	}
 }

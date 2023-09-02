@@ -12,7 +12,27 @@ import (
 	"github.com/numtide/nits/pkg/subject"
 )
 
-func ListWithContext(ctx context.Context, conn *nats.Conn) (agents []*info.Response, err error) {
+func ResolveNKey(ctx context.Context, conn *nats.Conn, name string) (nkey string, err error) {
+	var agents []*info.Response
+	if agents, err = List(ctx, conn); err != nil {
+		return
+	}
+
+	for _, a := range agents {
+		if a.Name == name {
+			nkey = a.NKey
+			break
+		}
+	}
+
+	if nkey == "" {
+		return nkey, errors.Errorf("no agent found with name: %s", name)
+	}
+
+	return
+}
+
+func List(ctx context.Context, conn *nats.Conn) (agents []*info.Response, err error) {
 	var (
 		js   nats.JetStreamContext
 		sub  *nats.Subscription

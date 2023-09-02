@@ -31,7 +31,7 @@ func (l *listAgentsCmd) Run() error {
 		defer cancel()
 
 		var agents []*info.Response
-		if agents, err = agent.ListWithContext(ctx, conn); err != nil {
+		if agents, err = agent.List(ctx, conn); err != nil {
 			return err
 		}
 

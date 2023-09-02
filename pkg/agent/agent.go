@@ -2,12 +2,12 @@ package agent
 
 import (
 	"context"
-
+	"github.com/nats-io/jwt/v2"
 	"github.com/numtide/nits/pkg/agent/cmd"
 	"github.com/numtide/nits/pkg/agent/info"
 	"github.com/numtide/nits/pkg/agent/nixos"
-
-	"github.com/nats-io/jwt/v2"
+	"io"
+	"os"
 
 	"github.com/numtide/nits/pkg/agent/util"
 
@@ -36,26 +36,31 @@ func Run(ctx context.Context) (err error) {
 	// publish logs into nats
 	writer := nlog.NatsWriter{
 		Conn:    Conn,
-		Subject: subject.AgentLogs(NKey),
+		Subject: subject.AgentLogs(NKey) + ".SYSTEM",
 	}
 	defer func() {
 		_ = writer.Close()
 	}()
 
-	log.Default().SetOutput(&writer)
+	log.SetOutput(io.MultiWriter(os.Stderr, &writer))
 
 	// register services
 	ctx = util.SetConn(ctx, Conn)
 	ctx = util.SetNKey(ctx, NKey)
 	ctx = util.SetClaims(ctx, Claims)
 
+	log.Info("initialising services")
 	if err = info.Init(ctx); err != nil {
+		log.Errorf("failed to initialise info service", "error", err)
 		return
 	} else if err = cmd.Init(ctx); err != nil {
+		log.Errorf("failed to initialise cmd service", "error", err)
 		return
 	} else if err = nixos.Init(ctx); err != nil {
+		log.Errorf("failed to initialise nixos service", "error", err)
 		return
 	}
+	log.Info("services initialised")
 
 	<-ctx.Done()
 	return nil
