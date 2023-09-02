@@ -92,6 +92,7 @@ func (a *addAgentCmd) Run() (err error) {
 			"-n", a.Name,
 			"--allow-pub", "NITS.CACHE.>",
 			"--allow-pubsub", agentSubject,
+			"--allow-pub", subject.AgentRegistration(nkey),
 			"--allow-pub", "$JS.ACK.agent-deployments.>",
 			"--allow-pub", "$JS.API.STREAM.NAMES",
 			"--allow-pub", "$JS.API.CONSUMER.*.agent-deployments.>",

@@ -83,14 +83,24 @@ func (c *addClusterCmd) Run() (err error) {
 		return
 	}
 
-	var logsConfig *os.File
+	var logsConfig, registryConfig *os.File
 	if logsConfig, err = openResourceLocally(streamConfig, "streams/agent-logs.json"); err != nil {
+		return err
+	}
+	if registryConfig, err = openResourceLocally(streamConfig, "streams/agent-registry.json"); err != nil {
 		return err
 	}
 
 	log.Info("adding streams")
 
 	nats := cmd.LogExec(nexec.Nats("--context", adminContext, "stream", "add", "--config", logsConfig.Name()))
+
+	if _, err = nats.Output(); err != nil {
+		nexec.LogError("failed to add logs stream", err)
+		return
+	}
+
+	nats = cmd.LogExec(nexec.Nats("--context", adminContext, "stream", "add", "--config", registryConfig.Name()))
 
 	if _, err = nats.Output(); err != nil {
 		nexec.LogError("failed to add logs stream", err)
