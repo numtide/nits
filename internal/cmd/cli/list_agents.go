@@ -52,7 +52,7 @@ func (l *listAgentsCmd) Run() error {
 			table.WithColumns(columns),
 			table.WithRows(rows),
 			table.WithFocused(false),
-			table.WithHeight(7),
+			table.WithHeight(len(rows)),
 		)
 
 		t.SetStyles(tableStyle)
