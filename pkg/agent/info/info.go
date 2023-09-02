@@ -47,39 +47,31 @@ func Init(ctx context.Context) (err error) {
 
 	// send a basic info package every second to the registry subject
 
+	info := Response{NKey: NKey, Name: Claims.Name, Subject: subject.AgentWithNKey(NKey)}
+
+	var heartbeat []byte
+	if heartbeat, err = json.Marshal(info); err != nil {
+		return err
+	}
+
 	go func() {
-		var (
-			err  error
-			msg  *nats.Msg
-			b    []byte
-			resp *Response
-		)
-
 		ticker := time.Tick(1 * time.Second)
-
 		subj := subject.AgentRegistration(NKey)
-		req := Request{Load: true, Memory: true}
+
+		var (
+			err error
+			msg *nats.Msg
+		)
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-ticker:
-				if resp, err = info(&req); err != nil {
-					log.Error("failed to get agent info for registry heartbeat", "error", err)
-					continue
-				}
-
 				msg = nats.NewMsg(subj)
+				msg.Data = heartbeat
 				// conflate updates
 				msg.Header.Set(nats.MsgRollup, nats.MsgRollupSubject)
-
-				if b, err = json.Marshal(resp); err != nil {
-					log.Error("failed to marshal registry heartbeat", "error", err)
-					continue
-				}
-
-				msg.Data = b
 
 				if err = conn.PublishMsg(msg); err != nil {
 					log.Error("failed to publish registry heartbeat", "error", err)
