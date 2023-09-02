@@ -167,3 +167,8 @@ func info(req *Request) (resp *Response, err error) {
 
 	return
 }
+
+func GetWithContext(ctx context.Context, conn *nats.EncodedConn, nkey string, req Request) (resp *Response, err error) {
+	err = conn.RequestWithContext(ctx, subject.AgentService(nkey, "INFO"), req, &resp)
+	return
+}
