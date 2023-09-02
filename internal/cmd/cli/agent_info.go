@@ -49,8 +49,9 @@ func (c *agentInfoCmd) Run() error {
 		var nkey string
 		for _, a := range agents {
 			if a.Name == c.Name {
-				if time.Now().Sub(a.LastSeen) > 10*time.Second {
-					return errors.New("agent has not been seen in a while'")
+				elapsed := time.Now().Sub(a.LastSeen)
+				if elapsed > 10*time.Second {
+					return errors.Errorf("agent has not been seen in %v", elapsed)
 				}
 				nkey = a.NKey
 				break
