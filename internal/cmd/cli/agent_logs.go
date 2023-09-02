@@ -2,6 +2,8 @@ package cli
 
 import (
 	"context"
+	"time"
+
 	"github.com/charmbracelet/log"
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
@@ -10,7 +12,6 @@ import (
 	nlog "github.com/numtide/nits/pkg/log"
 	nutil "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
-	"time"
 )
 
 type agentLogsCmd struct {

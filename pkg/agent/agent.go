@@ -2,12 +2,13 @@ package agent
 
 import (
 	"context"
+	"io"
+	"os"
+
 	"github.com/nats-io/jwt/v2"
 	"github.com/numtide/nits/pkg/agent/cmd"
 	"github.com/numtide/nits/pkg/agent/info"
 	"github.com/numtide/nits/pkg/agent/nixos"
-	"io"
-	"os"
 
 	"github.com/numtide/nits/pkg/agent/util"
 

@@ -3,9 +3,10 @@ package log
 import (
 	"bufio"
 	"bytes"
+	"io"
+
 	"github.com/go-logfmt/logfmt"
 	"github.com/nats-io/nats.go"
-	"io"
 
 	"github.com/charmbracelet/log"
 )

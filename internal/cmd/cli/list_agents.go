@@ -38,13 +38,12 @@ func (l *listAgentsCmd) Run() error {
 		columns := []table.Column{
 			{Title: "Name", Width: 32},
 			{Title: "NKey", Width: 57},
-			{Title: "Subject", Width: 68},
 			{Title: "Last Seen", Width: 24},
 		}
 
 		var rows []table.Row
 		for _, v := range agents {
-			row := table.Row{v.Name, v.NKey, v.Subject, timeago.English.Format(v.LastSeen)}
+			row := table.Row{v.Name, v.NKey, timeago.English.Format(v.LastSeen)}
 			rows = append(rows, row)
 		}
 
