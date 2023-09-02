@@ -2,10 +2,12 @@ package agent
 
 import (
 	"context"
+	"github.com/numtide/nits/pkg/agent/cmd"
+	"github.com/numtide/nits/pkg/agent/info"
+	"github.com/numtide/nits/pkg/agent/nixos"
 
 	"github.com/nats-io/jwt/v2"
 
-	"github.com/numtide/nits/pkg/agent/service"
 	"github.com/numtide/nits/pkg/agent/util"
 
 	nutil "github.com/numtide/nits/pkg/nats"
@@ -46,7 +48,11 @@ func Run(ctx context.Context) (err error) {
 	ctx = util.SetNKey(ctx, NKey)
 	ctx = util.SetClaims(ctx, Claims)
 
-	if err = service.Init(ctx); err != nil {
+	if err = info.Init(ctx); err != nil {
+		return
+	} else if err = cmd.Init(ctx); err != nil {
+		return
+	} else if err = nixos.Init(ctx); err != nil {
 		return
 	}
 
