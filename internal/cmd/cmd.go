@@ -26,7 +26,7 @@ type (
 )
 
 type LogOptions struct {
-	Level string `enum:"debug,info,warn,error,fatal" env:"LOG_LEVEL" default:"info" help:"Configure logging level."`
+	Level string `enum:"debug,info,warn,error,fatal" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
 }
 
 func (lo *LogOptions) ConfigureLog() {
