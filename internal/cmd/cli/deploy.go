@@ -21,7 +21,7 @@ import (
 )
 
 type deployCmd struct {
-	Nats nutil.CliOptions `embed:""`
+	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
 
 	Action  string `enum:"switch,boot,test,dry-activate" default:"switch" help:"action to perform on the agent" `
 	Closure string `arg:"" help:"store path of the NixOS closure to deploy"`

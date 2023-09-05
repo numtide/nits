@@ -14,7 +14,7 @@ import (
 )
 
 type listAgentsCmd struct {
-	Nats nutil.CliOptions `embed:"nats-"`
+	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
 }
 
 func (l *listAgentsCmd) Run() error {

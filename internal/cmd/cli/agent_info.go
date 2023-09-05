@@ -16,7 +16,7 @@ import (
 )
 
 type agentInfoCmd struct {
-	Nats nutil.CliOptions `embed:"nats-"`
+	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
 	Name string           `arg:""`
 
 	All  bool `help:"Include all available agent info"`
