@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"time"
 
 	"github.com/charmbracelet/log"
 
@@ -14,6 +15,8 @@ type runCmd struct{}
 func (a *runCmd) Run() (err error) {
 	log.SetLevel(log.ParseLevel(Cmd.LogLevel))
 	log.SetFormatter(log.LogfmtFormatter)
+	log.SetTimeFormat(time.RFC3339)
+
 	return cmd.Run(func(ctx context.Context) (err error) {
 		agent.NatsOptions = &Cmd.Nats
 		return agent.Run(ctx)

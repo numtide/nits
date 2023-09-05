@@ -85,3 +85,49 @@ func List(ctx context.Context, conn *nats.Conn) (agents []*info.Response, err er
 		}
 	}
 }
+
+func IndexByFunc(agents []*info.Response, keyFn func(*info.Response) (string, error)) (indexed map[string]*info.Response, err error) {
+	var key string
+	indexed = make(map[string]*info.Response, len(agents))
+	for _, agent := range agents {
+		if key, err = keyFn(agent); err != nil {
+			return
+		}
+		indexed[key] = agent
+	}
+	return
+}
+
+func IndexByName(agents []*info.Response) (indexed map[string]*info.Response, err error) {
+	return IndexByFunc(agents, func(response *info.Response) (string, error) {
+		return response.Name, nil
+	})
+}
+
+func IndexBySubject(agents []*info.Response) (indexed map[string]*info.Response, err error) {
+	return IndexByFunc(agents, func(response *info.Response) (string, error) {
+		return response.Subject, nil
+	})
+}
+
+func ListByFunc(ctx context.Context, conn *nats.Conn, keyFn func(*info.Response) string) (agents map[string]*info.Response, err error) {
+	var list []*info.Response
+	if list, err = List(ctx, conn); err != nil {
+		return
+	}
+
+	agents = make(map[string]*info.Response)
+	for _, agent := range list {
+		if _, ok := agents[agent.Name]; ok {
+			return nil, errors.Errorf("more than one agent shares this name: %s", agent.Name)
+		}
+		agents[keyFn(agent)] = agent
+	}
+	return
+}
+
+func ListBySubject(ctx context.Context, conn *nats.Conn) (agents map[string]*info.Response, err error) {
+	return ListByFunc(ctx, conn, func(agent *info.Response) string {
+		return agent.Subject
+	})
+}

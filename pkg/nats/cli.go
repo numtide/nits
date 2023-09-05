@@ -2,8 +2,9 @@ package nats
 
 import (
 	"crypto/rand"
-	"github.com/nats-io/nsc/v2/cmd"
 	"os"
+
+	"github.com/nats-io/nsc/v2/cmd"
 
 	"github.com/charmbracelet/log"
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 
 	"github.com/ztrue/shutdown"
 
@@ -31,6 +32,7 @@ type LogOptions struct {
 
 func (lo *LogOptions) ConfigureLog() {
 	log.SetLevel(log.ParseLevel(lo.Level))
+	log.SetTimeFormat(time.RFC3339)
 }
 
 type CacheOptions struct {

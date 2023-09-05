@@ -1,6 +1,13 @@
 package subject
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+)
+
+func AgentSubjectRegex() *regexp.Regexp {
+	return regexp.MustCompile("^(" + AgentPrefix() + ".\\w{56}).*")
+}
 
 func AgentWithNKey(nkey string) string {
 	return fmt.Sprintf("%s.AGENT.%s", Prefix, nkey)
@@ -16,6 +23,10 @@ func AgentWithName(name string) string {
 
 func AgentDeploymentWithName(name string) string {
 	return fmt.Sprintf("%s.AGENT.NAME.%s.DEPLOYMENT", Prefix, name)
+}
+
+func AgentPrefix() string {
+	return fmt.Sprintf("%s.AGENT", Prefix)
 }
 
 func AgentLogs(nkey string) string {

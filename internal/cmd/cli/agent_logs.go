@@ -2,9 +2,12 @@ package cli
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/charmbracelet/log"
+	"github.com/numtide/nits/pkg/agent/info"
+
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/internal/cmd"
@@ -30,7 +33,6 @@ func (c *agentLogsCmd) Run() error {
 		var (
 			conn *nats.Conn
 			js   nats.JetStreamContext
-			nkey string
 			subj string
 			sub  *nats.Subscription
 			msg  *nats.Msg
@@ -53,12 +55,28 @@ func (c *agentLogsCmd) Run() error {
 			return
 		}
 
+		listCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var agents []*info.Response
+		if agents, err = agent.List(listCtx, conn); err != nil {
+			return
+		}
+
+		var byName, bySubject map[string]*info.Response
+
+		if byName, err = agent.IndexByName(agents); err != nil {
+			return err
+		} else if bySubject, err = agent.IndexBySubject(agents); err != nil {
+			return err
+		}
+
 		if c.Name != "" {
-			nkey, err = agent.ResolveNKey(ctx, conn, c.Name)
-			if err != nil {
-				return
+			if agentInfo, ok := byName[c.Name]; ok {
+				subj = subject.AgentLogs(agentInfo.NKey) + ".>"
+			} else {
+				return errors.Errorf("could not find an agent with name = %s")
 			}
-			subj = subject.AgentLogs(nkey) + ".>"
 		} else {
 			subj = subject.AgentLogsAll()
 		}
@@ -66,6 +84,8 @@ func (c *agentLogsCmd) Run() error {
 		if sub, err = js.SubscribeSync(subj, subOpts...); err != nil {
 			return
 		}
+
+		record := nlog.Record{}
 
 		for {
 			select {
@@ -75,8 +95,22 @@ func (c *agentLogsCmd) Run() error {
 			default:
 				if msg, err = sub.NextMsg(1 * time.Second); !(err == nil || errors.Is(err, nats.ErrTimeout)) {
 					return
+				} else if msg == nil {
+					continue
 				}
-				nlog.MsgToLog(log.Default(), msg)
+
+				if err = nlog.Unmarshal(msg, &record); err != nil {
+					return
+				}
+
+				// lookup agent info
+				if agentInfo, ok := bySubject[record.AgentSubject()]; ok {
+					record.AgentInfo = agentInfo
+				}
+
+				if _, err = record.Write(os.Stderr); err != nil {
+					log.Errorf("failed to write log record", err)
+				}
 			}
 		}
 	})
