@@ -20,11 +20,12 @@ import (
 )
 
 type addAgentCmd struct {
-	Cluster        string `help:"Name of the account under which Agents will run"`
-	Name           string `help:"A name for the agent account"`
+	Cluster        string `required:"" help:"Name of the account under which Agents will run"`
 	PublicKey      string `required:"" xor:"key"`
 	PublicKeyFile  string `required:"" type:"existingfile" xor:"key"`
 	PrivateKeyFile string `required:"" type:"existingfile" xor:"key"`
+
+	Name string `arg:"" help:"A name for the agent account"`
 }
 
 func (a *addAgentCmd) Run() (err error) {
