@@ -14,7 +14,7 @@ import (
 )
 
 type addClusterCmd struct {
-	Name string `help:"Name of the account under which Agents will run"`
+	Name string `arg:"" help:"Name of the account under which Agents will run"`
 }
 
 func (c *addClusterCmd) Run() (err error) {
