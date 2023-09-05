@@ -33,16 +33,16 @@ func ReadCredentialsFile(file *os.File) (nkey nkeys.KeyPair, jwt string, err err
 	return
 }
 
-func ReadProfile(url string) (nkey nkeys.KeyPair, jwt string, err error) {
+func ReadProfile(url string) (profile cmd.Profile, nkey nkeys.KeyPair, jwt string, err error) {
 	var b []byte
 	if b, err = exec.Command("nsc", "generate", "profile", url).Output(); err != nil {
 		return
 	}
 
-	var profile cmd.Profile
 	if err = json.Unmarshal(b, &profile); err != nil {
 		return
 	}
 
-	return ReadCredentials(profile.UserCreds)
+	nkey, jwt, err = ReadCredentials(profile.UserCreds)
+	return
 }

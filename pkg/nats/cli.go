@@ -2,6 +2,7 @@ package nats
 
 import (
 	"crypto/rand"
+	"github.com/nats-io/nsc/v2/cmd"
 	"os"
 
 	"github.com/charmbracelet/log"
@@ -41,13 +42,23 @@ func (c *CliOptions) Connect() (conn *nats.Conn, err error) {
 }
 
 func (c *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *jwt.UserClaims, err error) {
-	if c.Profile != "" {
-		var kp nkeys.KeyPair
-		var encodedJwt string
+	log.Debug("processing nats cli options")
 
-		if kp, encodedJwt, err = ReadProfile(c.Profile); err != nil {
+	if c.Profile != "" {
+		log.Debug("using profile", "profile", c.Profile)
+
+		var (
+			kp         nkeys.KeyPair
+			profile    cmd.Profile
+			encodedJwt string
+		)
+
+		if profile, kp, encodedJwt, err = ReadProfile(c.Profile); err != nil {
 			return
 		}
+
+		// override the server url using the first entry in the service urls list
+		c.Url = profile.Operator.Service[0]
 
 		opts = append(opts, nats.UserJWT(
 			func() (string, error) {
@@ -60,6 +71,7 @@ func (c *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *j
 
 		return
 	} else if c.CredentialsFile != "" {
+		log.Debug("using credentials file", "path", c.CredentialsFile)
 		var kp nkeys.KeyPair
 		var encodedJwt string
 		if kp, encodedJwt, err = ReadCredentials(c.CredentialsFile); err != nil {
@@ -73,7 +85,7 @@ func (c *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *j
 		claims, err = DecodeUserClaims(encodedJwt)
 		return
 	} else if c.JwtFile != "" {
-
+		log.Debug("using JWT file", "path", c.JwtFile)
 		if claims, err = ReadUserClaims(c.JwtFile); err != nil {
 			return
 		}
