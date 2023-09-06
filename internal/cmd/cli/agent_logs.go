@@ -20,7 +20,7 @@ import (
 type agentLogsCmd struct {
 	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
 
-	Since     *time.Duration `help:"Time ago from which to start replaying logs." default:"30s" xor:"start"`
+	Since     *time.Duration `help:"Time ago from which to start replaying logs." default:"5m" xor:"start"`
 	StartTime *time.Time     `help:"Time from which to start replaying logs." xor:"start"`
 
 	Name string `arg:"" optional:""`
