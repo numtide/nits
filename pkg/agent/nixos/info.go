@@ -2,7 +2,6 @@ package nixos
 
 import (
 	"github.com/nats-io/nats.go/micro"
-	"github.com/nix-community/go-nix/pkg/nixpath"
 	"github.com/numtide/nits/pkg/nix"
 )
 
@@ -14,11 +13,11 @@ type InfoResponse struct {
 func onInfo(req micro.Request) {
 	var (
 		err    error
-		system *nixpath.NixPath
+		system string
 		config map[string]string
 	)
 
-	if system, err = nix.CurrentSystem(); err != nil {
+	if system, err = nix.GetSystem(); err != nil {
 		_ = req.Error("500", err.Error(), nil)
 		return
 	}
@@ -29,7 +28,7 @@ func onInfo(req micro.Request) {
 	}
 
 	response := InfoResponse{
-		System: system.String(),
+		System: system,
 		Config: config,
 	}
 

@@ -19,9 +19,11 @@ type agentInfoCmd struct {
 	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
 	Name string           `arg:""`
 
-	All  bool `help:"Include all available agent info"`
-	Host bool `help:"Include information about the host machine"`
-	Load bool `help:"Include load information about the host machine"`
+	All   bool `help:"Include all available agent info"`
+	Host  bool `help:"Include information about the host machine"`
+	Nix   bool `help:"Include information about the version of Nix installed on the host machine"`
+	NixOS bool `name:"nixos" help:"Include information about the host machine's NixOS config'"`
+	Load  bool `help:"Include load information about the host machine"`
 }
 
 func (c *agentInfoCmd) Run() error {
@@ -64,22 +66,23 @@ func (c *agentInfoCmd) Run() error {
 			return errors.Errorf("no agent with the name '%s' has ever reported in", c.Name)
 		}
 
-		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-
 		req := info.Request{
-			Host: c.All || c.Host,
-			Load: c.All || c.Load,
+			Host:  c.All || c.Host,
+			Load:  c.All || c.Load,
+			Nix:   c.All || c.Nix,
+			NixOS: c.All || c.NixOS,
 		}
 
-		var a *info.Response
-		if a, err = info.GetWithContext(ctx, encoded, nkey, req); err != nil {
+		var resp info.Response
+		if err = info.Get(encoded, nkey, req, &resp, 10*time.Second); err != nil {
 			return err
 		}
 
-		printAgentSummary(a)
-		printAgentHost(a.Host)
-		printAgentLoad(a.Load)
+		printAgentSummary(&resp)
+		printNix(resp.Nix)
+		printNixos(resp.NixOS)
+		printAgentHost(resp.Host)
+		printAgentLoad(resp.Load)
 
 		return
 	})
@@ -115,6 +118,41 @@ func printAgentHost(host *host.InfoStat) {
 	kvPrintln("Virtualization System:", host.VirtualizationSystem)
 	kvPrintln("Virtualization Role:", host.VirtualizationRole)
 	kvPrintln("Host ID:", host.HostID)
+}
+
+func printNix(nix *info.Nix) {
+	if nix == nil {
+		return
+	}
+
+	println()
+	println(sectionHeaderStyle.Render("Nix Summary:"))
+	println()
+	kvPrintln("System:", nix.Info.System)
+	kvPrintln("Version:", nix.Info.Version)
+	kvPrintln("Multi-user:", strconv.FormatBool(nix.Info.MultiUser))
+	kvPrintln("Nixpkgs:", nix.Info.Nixpkgs)
+
+	println()
+	println(sectionHeaderStyle.Render("Nix Config:"))
+	println()
+
+	for k, v := range nix.Config {
+		kvPrintln(k+":", v)
+	}
+}
+
+func printNixos(nixos *info.NixOS) {
+	if nixos == nil {
+		return
+	}
+
+	println()
+	println(sectionHeaderStyle.Render("NixOS Summary:"))
+	println()
+
+	kvPrintln("Version:", nixos.Version)
+	kvPrintln("Current system:", nixos.CurrentSystem)
 }
 
 func printAgentLoad(load *info.Load) {

@@ -3,6 +3,8 @@ package info
 import (
 	"time"
 
+	"github.com/numtide/nits/pkg/nix"
+
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -13,6 +15,8 @@ import (
 type Request struct {
 	All    bool `json:"all"`
 	Host   bool `json:"host"`
+	Nix    bool `json:"nix"`
+	NixOS  bool `json:"nixos"`
 	Cpus   bool `json:"cpus"`
 	Load   bool `json:"load"`
 	Memory bool `json:"memory"`
@@ -24,12 +28,24 @@ type Response struct {
 	Name    string         `json:"name"`
 	Subject string         `json:"subject"`
 	Host    *host.InfoStat `json:"host,omitempty"`
+	Nix     *Nix           `json:"nix,omitempty"`
+	NixOS   *NixOS         `json:"nixos,omitempty"`
 	Cpus    []cpu.InfoStat `json:"cpus,omitempty"`
 	Load    *Load          `json:"load,omitempty"`
 	Memory  *Memory        `json:"memory,omitempty"`
 	Disk    *Disk          `json:"disk,omitempty"`
 
 	LastSeen time.Time
+}
+
+type NixOS struct {
+	Version       string `json:"version"`
+	CurrentSystem string `json:"current-system"`
+}
+
+type Nix struct {
+	Info   *nix.Info         `json:"info"`
+	Config map[string]string `json:"nix-config"`
 }
 
 type Load struct {

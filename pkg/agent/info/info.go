@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/numtide/nits/pkg/nix"
+
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 
@@ -15,6 +17,7 @@ import (
 
 	"github.com/nats-io/nats.go/micro"
 	"github.com/numtide/nits/pkg/agent/util"
+	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -134,6 +137,29 @@ func info(req *Request) (resp *Response, err error) {
 		}
 	}
 
+	if req.All || req.Nix {
+		resp.Nix = &Nix{}
+		if resp.Nix.Config, err = nix.Config(); err != nil {
+			return nil, errors.Annotate(err, "failed to retrieve nix config")
+		} else if resp.Nix.Info, err = nix.GetInfo(); err != nil {
+			return nil, errors.Annotate(err, "failed to retrieve nix info")
+		}
+	}
+
+	if req.All || req.NixOS {
+		var isNixos bool
+		if isNixos, err = nix.IsHostNixOS(); err != nil {
+			return nil, errors.Annotate(err, "failed to determine if host is NixOS")
+		} else if isNixos {
+			resp.NixOS = &NixOS{}
+			if resp.NixOS.CurrentSystem, err = nix.GetSystem(); err != nil {
+				return nil, errors.Annotate(err, "failed to retrieve nixos system")
+			} else if resp.NixOS.Version, err = nix.GetNixOSVersion(); err != nil {
+				return nil, errors.Annotate(err, "failed to retrieve nixos version")
+			}
+		}
+	}
+
 	if req.All || req.Load {
 		resp.Load = &Load{}
 		if resp.Load.Avg, err = load.Avg(); err != nil {
@@ -168,7 +194,12 @@ func info(req *Request) (resp *Response, err error) {
 	return
 }
 
-func GetWithContext(ctx context.Context, conn *nats.EncodedConn, nkey string, req Request) (resp *Response, err error) {
-	err = conn.RequestWithContext(ctx, subject.AgentService(nkey, "INFO"), req, &resp)
-	return
+func Get(conn *nats.EncodedConn, nkey string, req Request, resp *Response, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return GetWithContext(ctx, conn, nkey, req, resp)
+}
+
+func GetWithContext(ctx context.Context, conn *nats.EncodedConn, nkey string, req Request, resp *Response) error {
+	return nnats.RequestWithContext(ctx, conn, subject.AgentService(nkey, "INFO"), req, resp)
 }
