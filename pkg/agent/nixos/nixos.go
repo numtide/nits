@@ -34,13 +34,7 @@ func Init(ctx context.Context) (err error) {
 
 	group := srv.AddGroup(subject.AgentService(NKey, "NIXOS"))
 
-	if err = group.AddEndpoint("INFO", micro.HandlerFunc(onInfo)); err != nil {
-		return
-	} else if err = group.AddEndpoint("DEPLOY", micro.HandlerFunc(onDeploy)); err != nil {
-		return
-	}
+	currentDeployId.Store("")
 
-	deployErrGroup.SetLimit(1)
-
-	return
+	return group.AddEndpoint("DEPLOY", micro.HandlerFunc(onDeploy))
 }

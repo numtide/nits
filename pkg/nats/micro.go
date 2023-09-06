@@ -35,7 +35,12 @@ func RequestWithContext[Req any, Resp any](ctx context.Context, conn *nats.Encod
 
 	if sub, err = conn.Conn.SubscribeSync(inbox); err != nil {
 		return
-	} else if err = conn.PublishRequest(subject, inbox, req); err != nil {
+	}
+	defer func() {
+		_ = sub.Unsubscribe()
+	}()
+
+	if err = conn.PublishRequest(subject, inbox, req); err != nil {
 		return
 	} else if msg, err = sub.NextMsgWithContext(ctx); err != nil {
 		return

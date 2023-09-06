@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync/atomic"
 	"time"
-
-	"github.com/numtide/nits/pkg/agent/info"
 
 	"github.com/charmbracelet/log"
 	"github.com/ettle/strcase"
@@ -17,9 +16,9 @@ import (
 	"github.com/nats-io/nuid"
 	"github.com/nix-community/go-nix/pkg/nixpath"
 	nlog "github.com/numtide/nits/pkg/log"
+	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/nix"
 	"github.com/numtide/nits/pkg/subject"
-	"golang.org/x/sync/errgroup"
 )
 
 type DeployAction int
@@ -31,7 +30,8 @@ const (
 	DryActivate
 )
 
-var deployErrGroup = errgroup.Group{}
+// the id of the deployment currently in progress
+var currentDeployId = atomic.Value{}
 
 type DeployRequest struct {
 	Action  DeployAction `json:"action"`
@@ -41,6 +41,10 @@ type DeployRequest struct {
 type DeployResponse struct {
 	Id   string `json:"id"`
 	Logs string `json:"logs"`
+}
+
+type DeployResult struct {
+	Success bool `json:"success"`
 }
 
 func onDeploy(req micro.Request) {
@@ -63,38 +67,60 @@ func onDeploy(req micro.Request) {
 	id := nuid.Next()
 	logSubject := fmt.Sprintf("%s.NIXOS.DEPLOY.%s", subject.AgentLogs(NKey), id)
 
-	scheduled := deployErrGroup.TryGo(func() (err error) {
-		natsWriter := &nlog.NatsWriter{
+	if !currentDeployId.CompareAndSwap("", id) {
+		_ = req.Error("417", "A deployment is in progress.", nil)
+		return
+	}
+
+	go func() {
+		currentDeployId.Store(id)
+		defer currentDeployId.Store("")
+
+		logWriter := &nlog.NatsWriter{
 			Conn:    Conn,
 			Subject: logSubject,
+			Headers: nats.Header{
+				nlog.HeaderFormat: []string{nlog.HeaderFormatLogFmt},
+			},
 		}
 
-		l := log.NewWithOptions(io.MultiWriter(os.Stderr, natsWriter), log.Options{
-			ReportTimestamp: true,
-			Formatter:       log.LogfmtFormatter,
-		})
+		outWriter := &nlog.NatsWriter{
+			Conn:    Conn,
+			Subject: logSubject + ".OUTPUT",
+			Headers: nats.Header{
+				nlog.HeaderFormat: []string{nlog.HeaderFormatTerminal},
+			},
+		}
 
-		stdWriter := &nlog.Writer{Log: l.With("out", "std")}
-		errWriter := &nlog.Writer{Log: l.With("out", "err")}
+		l := log.New(io.MultiWriter(os.Stdout, logWriter))
+		l.SetTimeFormat(time.RFC3339)
+		l.SetLevel(log.DebugLevel)
+		l.SetFormatter(log.LogfmtFormatter)
+		l.SetReportTimestamp(true)
 
 		ctx := context.Background()
-		ctx = nix.SetStdOut(ctx, stdWriter)
-		ctx = nix.SetStdError(ctx, errWriter)
+		ctx = nix.SetStdOut(ctx, outWriter)
+		ctx = nix.SetStdError(ctx, outWriter)
 
 		defer func() {
-			_ = stdWriter.Close()
-			_ = errWriter.Close()
-			_ = natsWriter.Close()
+			if err := logWriter.Close(); err != nil {
+				log.Error("failed to close nats logWriter", "error", err)
+			} else if err := outWriter.Close(); err != nil {
+				log.Error("failed to close nats outWriter", "error", err)
+			}
 		}()
 
 		action := strcase.ToKebab(request.Action.String())
-		l.Info("starting deployment", "action", action, "closure", closure)
 
+		l.Info("starting deployment")
+
+		l.Info("building closure", "closure", closure)
 		if err = nix.Build(closure, nil, ctx); err != nil {
 			l.Error("failed to build closure", "error", err)
 			return
 		}
 
+		l.Info("switching configuration")
 		if err = nix.Switch(closure, action, ctx); err != nil {
 			l.Error("failed to switch configuration", "error", err)
 			return
@@ -102,6 +128,7 @@ func onDeploy(req micro.Request) {
 
 		switch request.Action {
 		case Boot, Switch:
+			l.Info("setting system")
 			if err = nix.SetSystem(closure, ctx); err != nil {
 				l.Error("failed to set system", "error", err)
 				return
@@ -110,15 +137,10 @@ func onDeploy(req micro.Request) {
 			// do nothing
 		}
 
-		l.Info("deployment complete", "action", action, "closure", closure)
+		l.Info("deployment complete")
 
 		return
-	})
-
-	if !scheduled {
-		_ = req.Error("417", "A deployment is in progress.", nil)
-		return
-	}
+	}()
 
 	response := DeployResponse{
 		Id:   id,
@@ -131,15 +153,7 @@ func onDeploy(req micro.Request) {
 	return
 }
 
-func Deploy(conn *nats.EncodedConn, nkey string, req DeployRequest) (resp *DeployResponse, err error) {
-	err = conn.Request(subject.AgentService(nkey, "NIXOS.DEPLOY"), req, &resp, 10*time.Second)
+func DeployWithContext(ctx context.Context, conn *nats.EncodedConn, nkey string, req DeployRequest) (resp DeployResponse, err error) {
+	err = nnats.RequestWithContext(ctx, conn, subject.AgentService(nkey, "NIXOS.DEPLOY"), req, &resp)
 	return
-}
-
-func DeployWithName(conn *nats.EncodedConn, name string, req DeployRequest) (resp *DeployResponse, err error) {
-	var agentInfo info.Response
-	if err = conn.Request(subject.AgentWithName(name), nil, &agentInfo, 10*time.Second); err != nil {
-		return
-	}
-	return Deploy(conn, agentInfo.NKey, req)
 }

@@ -2,10 +2,10 @@ package cli
 
 import (
 	"context"
+	"io"
 	"os"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/numtide/nits/pkg/agent/info"
 
 	"github.com/juju/errors"
@@ -35,7 +35,6 @@ func (c *agentLogsCmd) Run() error {
 			js   nats.JetStreamContext
 			subj string
 			sub  *nats.Subscription
-			msg  *nats.Msg
 		)
 
 		subOpts := []nats.SubOpt{
@@ -85,33 +84,25 @@ func (c *agentLogsCmd) Run() error {
 			return
 		}
 
-		record := nlog.Record{}
+		reader := nlog.FmtReader{Sub: sub}
+
+		var record *nlog.FmtRecord
 
 		for {
-			select {
-			case <-ctx.Done():
+			record, err = reader.Read()
+			if errors.Is(err, io.EOF) || errors.Is(err, nlog.ErrUnexpectedFormat) {
 				err = nil
+				continue
+			} else if err != nil {
 				return
-			default:
-				if msg, err = sub.NextMsg(1 * time.Second); !(err == nil || errors.Is(err, nats.ErrTimeout)) {
-					return
-				} else if msg == nil {
-					continue
-				}
-
-				if err = nlog.Unmarshal(msg, &record); err != nil {
-					return
-				}
-
-				// lookup agent info
-				if agentInfo, ok := bySubject[record.AgentSubject()]; ok {
-					record.AgentInfo = agentInfo
-				}
-
-				if _, err = record.Write(os.Stderr); err != nil {
-					log.Errorf("failed to write log record", err)
-				}
 			}
+
+			prefix := record.AgentSubject()
+			if target, ok := bySubject[record.AgentSubject()]; ok {
+				prefix = target.Name
+			}
+
+			_, _ = record.Write(prefix, os.Stderr)
 		}
 	})
 }

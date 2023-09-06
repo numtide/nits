@@ -104,6 +104,12 @@ func IndexByName(agents []*info.Response) (indexed map[string]*info.Response, er
 	})
 }
 
+func IndexByNKey(agents []*info.Response) (indexed map[string]*info.Response, err error) {
+	return IndexByFunc(agents, func(response *info.Response) (string, error) {
+		return response.NKey, nil
+	})
+}
+
 func IndexBySubject(agents []*info.Response) (indexed map[string]*info.Response, err error) {
 	return IndexByFunc(agents, func(response *info.Response) (string, error) {
 		return response.Subject, nil
