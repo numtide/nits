@@ -118,6 +118,10 @@
           name = "NATS_JWT_DIR";
           eval = "$PRJ_DATA_DIR/nats/jwt";
         }
+        {
+          name = "NATS_PROFILE";
+          eval = "nsc://Nits/Numtide/Admin";
+        }
       ];
 
       packages = [
