@@ -94,7 +94,7 @@ func (d *deployCmd) Run() error {
 		}
 
 		log.Debug("listening for logs", "subject", resp.Logs)
-		reader := nlog.FmtReader{Sub: sub}
+		reader := nlog.FmtReader{Sub: sub, Timeout: 60 * time.Second}
 
 		var record *nlog.FmtRecord
 
