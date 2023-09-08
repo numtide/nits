@@ -34,7 +34,6 @@ func (lo *LogOptions) ConfigureLog() {
 	log.SetReportTimestamp(true)
 	log.SetTimeFormat(time.RFC3339)
 	log.SetLevel(log.ParseLevel(lo.Level))
-	log.SetTimeFormat(time.RFC3339)
 }
 
 type CacheOptions struct {

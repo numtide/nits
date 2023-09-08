@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"io"
 	"os"
 	"time"
 
@@ -27,7 +26,8 @@ type deployCmd struct {
 	Action  string `enum:"switch,boot,test,dry-activate" default:"switch" help:"action to perform on the agent" `
 	Closure string `arg:"" help:"store path of the NixOS closure to deploy"`
 
-	Name string `required:"" help:"the name given to the agent"`
+	Output bool   `help:"output agent's stdout and stderr"`
+	Name   string `required:"" help:"the name given to the agent"`
 }
 
 func (d *deployCmd) Run() error {
@@ -71,46 +71,71 @@ func (d *deployCmd) Run() error {
 		defer cancel()
 
 		var (
-			ok     bool
-			target *info.Response
-			agents map[string]*info.Response
+			ok                bool
+			target            *info.Response
+			byName, bySubject map[string]*info.Response
 		)
 
-		if agents, err = agent.ListByFunc(listCtx, conn, func(response *info.Response) string {
+		if byName, err = agent.ListByFunc(listCtx, conn, func(response *info.Response) string {
 			return response.Name
 		}); err != nil {
 			return
-		} else if target, ok = agents[d.Name]; ok {
+		} else if target, ok = byName[d.Name]; ok {
 			log.Info("agent found", "name", d.Name, "nkey", target.NKey)
 		} else {
 			return errors.Errorf("could not find an agent named %s", d.Name)
 		}
 
+		bySubject = make(map[string]*info.Response)
+		for _, v := range byName {
+			bySubject[v.Subject] = v
+		}
+
 		var resp nixos.DeployResponse
 		if resp, err = nixos.DeployWithContext(ctx, encoded, target.NKey, req); err != nil {
 			return
-		} else if sub, err = js.SubscribeSync(resp.Logs, nats.DeliverAll(), nats.AckNone()); err != nil {
+		} else if sub, err = js.SubscribeSync(resp.Logs+".>", nats.DeliverAll(), nats.AckNone()); err != nil {
 			return
 		}
 
 		log.Debug("listening for logs", "subject", resp.Logs)
-		reader := nlog.FmtReader{Sub: sub, Timeout: 60 * time.Second}
+		reader := nlog.RecordReader{Sub: sub}
 
-		var record *nlog.FmtRecord
+		nameResolver := nlog.ResolveAgentName(bySubject)
 
+		var record nlog.Record
 		for {
-			record, err = reader.Read()
-			if errors.Is(err, io.EOF) {
-				err = nil
+			select {
+			case <-ctx.Done():
 				return
-			} else if errors.Is(err, nlog.ErrUnexpectedFormat) {
-				// skip this record as it's likely a terminal output
-				continue
-			} else if err != nil {
-				return
-			}
+			default:
+				record, err = reader.Read()
+				if errors.Is(err, nats.ErrTimeout) {
+					err = nil
+					continue
+				} else if nlog.IsEOS(err) {
+					var eos nlog.EOS
+					errors.As(err, &eos)
+					if eos.Subject == resp.Logs+".SYS" {
+						err = nil
+						return
+					} else {
+						continue
+					}
+				} else if err != nil {
+					return
+				}
 
-			_, _ = record.Write(target.Name, os.Stderr)
+				if !d.Output && record.Type() == nlog.RecordTypeTerminal {
+					continue
+				}
+
+				if err = nlog.ProcessMsg(record.Msg(), nameResolver); err != nil {
+					log.Error("failed to apply processors to msg", "error", err)
+				}
+
+				_, _ = record.Write(os.Stderr)
+			}
 		}
 	})
 }

@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"io"
+	"github.com/charmbracelet/log"
 	"os"
 	"time"
 
@@ -23,7 +23,8 @@ type agentLogsCmd struct {
 	Since     *time.Duration `help:"Time ago from which to start replaying logs." default:"5m" xor:"start"`
 	StartTime *time.Time     `help:"Time from which to start replaying logs." xor:"start"`
 
-	Name string `arg:"" optional:""`
+	Output bool   `help:"output agent's stdout and stderr"`
+	Name   string `arg:"" optional:""`
 }
 
 func (c *agentLogsCmd) Run() error {
@@ -65,9 +66,9 @@ func (c *agentLogsCmd) Run() error {
 		var byName, bySubject map[string]*info.Response
 
 		if byName, err = agent.IndexByName(agents); err != nil {
-			return err
+			return
 		} else if bySubject, err = agent.IndexBySubject(agents); err != nil {
-			return err
+			return
 		}
 
 		if c.Name != "" {
@@ -84,25 +85,37 @@ func (c *agentLogsCmd) Run() error {
 			return
 		}
 
-		reader := nlog.FmtReader{Sub: sub}
+		log.Debug("listening for logs", "subject", subj)
+		reader := nlog.RecordReader{Sub: sub}
 
-		var record *nlog.FmtRecord
+		nameResolver := nlog.ResolveAgentName(bySubject)
+
+		var record nlog.Record
 
 		for {
-			record, err = reader.Read()
-			if errors.Is(err, io.EOF) || errors.Is(err, nlog.ErrUnexpectedFormat) {
-				err = nil
-				continue
-			} else if err != nil {
+			select {
+			case <-ctx.Done():
 				return
+			default:
+				record, err = reader.Read()
+				if nlog.IsEOS(err) || errors.Is(err, nats.ErrTimeout) {
+					err = nil
+					continue
+				} else if err != nil {
+					return
+				}
+
+				if err = nlog.ProcessMsg(record.Msg(), nameResolver); err != nil {
+					log.Error("failed to apply processors to msg", "error", err)
+				}
+
+				if !c.Output && record.Type() == nlog.RecordTypeTerminal {
+					continue
+				}
+
+				_, _ = record.Write(os.Stderr)
 			}
 
-			prefix := record.AgentSubject()
-			if target, ok := bySubject[record.AgentSubject()]; ok {
-				prefix = target.Name
-			}
-
-			_, _ = record.Write(prefix, os.Stderr)
 		}
 	})
 }

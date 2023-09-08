@@ -36,7 +36,10 @@ func Run(ctx context.Context) (err error) {
 	// publish logs into nats
 	writer := nlog.NatsWriter{
 		Conn:    Conn,
-		Subject: subject.AgentLogs(NKey) + ".SYSTEM",
+		Subject: subject.AgentLogs(NKey) + ".SYS",
+		Headers: nats.Header{
+			nlog.HeaderFormat: []string{nlog.HeaderFormatLogFmt},
+		},
 	}
 	defer func() {
 		_ = writer.Close()

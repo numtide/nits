@@ -131,7 +131,6 @@ func printNix(nix *info.Nix) {
 	kvPrintln("System:", nix.Info.System)
 	kvPrintln("Version:", nix.Info.Version)
 	kvPrintln("Multi-user:", strconv.FormatBool(nix.Info.MultiUser))
-	kvPrintln("Nixpkgs:", nix.Info.Nixpkgs)
 
 	println()
 	println(sectionHeaderStyle.Render("Nix Config:"))
