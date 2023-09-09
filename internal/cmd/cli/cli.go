@@ -16,9 +16,8 @@ var Cmd struct {
 	} `cmd:"" help:"Add assets such as clusters and agents"`
 
 	Agent struct {
-		Info agentInfoCmd `cmd:""`
-		Logs agentLogsCmd `cmd:""`
+		Info   agentInfoCmd   `cmd:""`
+		Logs   agentLogsCmd   `cmd:""`
+		Deploy agentDeployCmd `cmd:""`
 	} `cmd:"" help:"Agent related functions"`
-
-	Deploy deployCmd `cmd:"" help:"deploy a NixOS closure to one or more agents"`
 }

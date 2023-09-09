@@ -20,7 +20,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-type deployCmd struct {
+type agentDeployCmd struct {
 	Nats nnats.CliOptions `embed:"" prefix:"nats-"`
 
 	Action  string `enum:"switch,boot,test,dry-activate" default:"switch" help:"action to perform on the agent" `
@@ -30,7 +30,7 @@ type deployCmd struct {
 	Name   string `required:"" help:"the name given to the agent"`
 }
 
-func (d *deployCmd) Run() error {
+func (d *agentDeployCmd) Run() error {
 	Cmd.Log.ConfigureLog()
 
 	return cmd.Run(func(ctx context.Context) (err error) {

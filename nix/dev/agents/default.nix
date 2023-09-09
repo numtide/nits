@@ -126,7 +126,7 @@ in {
 
               # ensures nats picks up the contexts in .data
               export XDG_CONFIG_HOME="$PRJ_DATA_DIR"
-              nits deploy --nats-profile nsc://Nits/Numtide/Admin --action "$ACTION" --name "agent-host-$ID" "$STORE_PATH"
+              nits agent deploy --nats-profile nsc://Nits/Numtide/Admin --action "$ACTION" --name "agent-host-$ID" "$STORE_PATH"
             '';
           };
         }
