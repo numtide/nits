@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -41,7 +42,13 @@ func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
 		prefix = name
 	}
 
-	b.WriteString(log.PrefixStyle.Render(prefix + " | OUT"))
+	if strings.HasSuffix(t.msg.Subject, ".STDOUT") {
+		prefix = prefix + " | STDOUT"
+	} else if strings.HasSuffix(t.msg.Subject, ".STDERR") {
+		prefix = prefix + " | STDERR"
+	}
+
+	b.WriteString(log.PrefixStyle.Render(prefix))
 	b.WriteString("\n")
 	b.WriteString(log.MessageStyle.Render(string(t.msg.Data)))
 	b.WriteByte(' ')
