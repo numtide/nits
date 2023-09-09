@@ -21,7 +21,7 @@ const (
 	ErrorMalformedClosure = errors.ConstError("closure is malformed")
 )
 
-var infoRegex = regexp.MustCompile(`^system: "(.*?)", multi-user\?: (.*?), version: (.*?).*$`)
+var infoRegex = regexp.MustCompile(`^system: "(.*?)", multi-user\?: (.*?), version: (.*?),.*$`)
 
 func SetStdError(ctx context.Context, writer io.Writer) context.Context {
 	return context.WithValue(ctx, "stderr", writer)
