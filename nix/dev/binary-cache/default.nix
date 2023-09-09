@@ -2,7 +2,6 @@
   perSystem = {
     inputs',
     pkgs,
-    lib,
     ...
   }: let
     secretKey = ./key.sec;

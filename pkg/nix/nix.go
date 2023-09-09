@@ -21,7 +21,7 @@ const (
 	ErrorMalformedClosure = errors.ConstError("closure is malformed")
 )
 
-var infoRegex = regexp.MustCompile(`^system: "(.*?)", multi-user\?: (.*?), version: (.*?), .*, nixpkgs: (.*)$`)
+var infoRegex = regexp.MustCompile(`^system: "(.*?)", multi-user\?: (.*?), version: (.*?),.*$`)
 
 func SetStdError(ctx context.Context, writer io.Writer) context.Context {
 	return context.WithValue(ctx, "stderr", writer)
@@ -71,15 +71,11 @@ func Config() (config map[string]string, err error) {
 }
 
 func GetSystem() (path string, err error) {
-	var link string
-	if link, err = os.Readlink("/nix/var/nix/profiles/system"); err != nil {
-		return
-	}
-	return os.Readlink("/nix/var/nix/profiles/" + link)
+	return os.Readlink("/run/current-system")
 }
 
 func GetInfo() (info *Info, err error) {
-	cmd := exec.Command("nix-info")
+	cmd := exec.Command("/run/current-system/sw/bin/nix-info")
 	var b []byte
 	if b, err = cmd.Output(); err != nil {
 		return
@@ -87,15 +83,14 @@ func GetInfo() (info *Info, err error) {
 
 	// we need to strip a newline from the end
 	matches := infoRegex.FindStringSubmatch(string(b[:len(b)-1]))
-	if len(matches) != 5 {
-		return nil, errors.New("failed to parse nix-info output")
+	if len(matches) != 4 {
+		return nil, errors.Errorf("failed to parse nix-info output: %s", string(b))
 	}
 
 	info = &Info{
 		System:    matches[1],
 		MultiUser: "yes" == matches[2],
 		Version:   matches[3],
-		Nixpkgs:   matches[4],
 	}
 
 	return
@@ -111,13 +106,17 @@ func GetNixOSVersion() (string, error) {
 	}
 }
 
-func runCmd(name string, args []string, env []string, ctx context.Context) error {
+func runCmd(name string, args []string, env []string, ctx context.Context) (err error) {
 	cmd := exec.Command(name, args...)
 	cmd.Env = env
 	cmd.Stdout = GetStdOut(ctx)
 	cmd.Stderr = GetStdErr(ctx)
-	// todo be able to interrupt a command?
-	return cmd.Run()
+
+	if _, err = cmd.Stderr.Write([]byte(cmd.String() + "\n")); err != nil {
+		return
+	} else {
+		return cmd.Run()
+	}
 }
 
 func Build(path *nixpath.NixPath, env []string, ctx context.Context) error {

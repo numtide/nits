@@ -18,10 +18,10 @@ import (
 
 type CliOptions struct {
 	Url             string `env:"NATS_URL" default:"nats://127.0.0.1:4222" help:"NATS server url."`
-	JwtFile         string `type:"existingfile" env:"NATS_JWT_FILE" xor:"jwt"`
-	Profile         string `env:"NATS_PROFILE" xor:"jwt,host,creds" help:"profile url in the form nsc://<OPERATOR>/<ACCOUNT>/<USER> e.g. nsc://Nits/Numtide/Admin"`
-	HostKeyFile     string `type:"existingfile" env:"NATS_HOST_KEY_FILE" xor:"host"`
-	CredentialsFile string `type:"existingfile" env:"NATS_CREDENTIALS_FILE" required:"" xor:"jwt,host,creds"`
+	Profile         string `env:"NATS_PROFILE" help:"profile url in the form nsc://<OPERATOR>/<ACCOUNT>/<USER> e.g. nsc://Nits/Numtide/Admin"`
+	JwtFile         string `type:"existingfile" env:"NATS_JWT_FILE"`
+	HostKeyFile     string `type:"existingfile" env:"NATS_HOST_KEY_FILE"`
+	CredentialsFile string `type:"existingfile" env:"NATS_CREDENTIALS_FILE"`
 }
 
 func (c *CliOptions) Connect() (conn *nats.Conn, err error) {
@@ -120,7 +120,7 @@ func (c *CliOptions) ToNatsOptions() (opts []nats.Option, nkey string, claims *j
 		}
 	} else {
 		// this shouldn't be able to happen
-		err = errors.New("unexpected state")
+		err = errors.New("no credentials were provided. ")
 	}
 
 	return

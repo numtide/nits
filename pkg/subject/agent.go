@@ -30,11 +30,15 @@ func AgentPrefix() string {
 }
 
 func AgentLogs(nkey string) string {
-	return fmt.Sprintf("%s.AGENT.%s.LOGS", Prefix, nkey)
+	return fmt.Sprintf("%s.AGENT.%s.LOG", Prefix, nkey)
+}
+
+func AgentOutput(nkey string) string {
+	return fmt.Sprintf("%s.AGENT.%s.OUT", Prefix, nkey)
 }
 
 func AgentLogsAll() string {
-	return fmt.Sprintf("%s.AGENT.*.LOGS.>", Prefix)
+	return fmt.Sprintf("%s.AGENT.*.LOG.>", Prefix)
 }
 
 func AgentService(nkey string, name string) string {

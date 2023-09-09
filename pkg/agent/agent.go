@@ -11,7 +11,7 @@ import (
 
 	"github.com/numtide/nits/pkg/agent/util"
 
-	nutil "github.com/numtide/nits/pkg/nats"
+	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/charmbracelet/log"
@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	NatsOptions *nutil.CliOptions
+	NatsOptions *nnats.CliOptions
 	Conn        *nats.Conn
 	NKey        string
 	Claims      *jwt.UserClaims
@@ -34,9 +34,12 @@ func Run(ctx context.Context) (err error) {
 	}
 
 	// publish logs into nats
-	writer := nlog.NatsWriter{
+	writer := nnats.Writer{
 		Conn:    Conn,
-		Subject: subject.AgentLogs(NKey) + ".SYSTEM",
+		Subject: subject.AgentLogs(NKey) + ".SYS",
+		Headers: nats.Header{
+			nlog.HeaderFormat: []string{nlog.HeaderFormatLogFmt},
+		},
 	}
 	defer func() {
 		_ = writer.Close()

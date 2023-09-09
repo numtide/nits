@@ -2,9 +2,10 @@ package cli
 
 import (
 	"context"
-	"io"
 	"os"
 	"time"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/numtide/nits/pkg/agent/info"
 
@@ -13,17 +14,18 @@ import (
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/agent"
 	nlog "github.com/numtide/nits/pkg/log"
-	nutil "github.com/numtide/nits/pkg/nats"
+	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 )
 
 type agentLogsCmd struct {
-	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
+	Nats nnats.CliOptions `embed:"" prefix:"nats-"`
 
 	Since     *time.Duration `help:"Time ago from which to start replaying logs." default:"5m" xor:"start"`
 	StartTime *time.Time     `help:"Time from which to start replaying logs." xor:"start"`
 
-	Name string `arg:"" optional:""`
+	Output bool   `help:"output agent's stdout and stderr"`
+	Name   string `arg:"" optional:""`
 }
 
 func (c *agentLogsCmd) Run() error {
@@ -65,16 +67,16 @@ func (c *agentLogsCmd) Run() error {
 		var byName, bySubject map[string]*info.Response
 
 		if byName, err = agent.IndexByName(agents); err != nil {
-			return err
+			return
 		} else if bySubject, err = agent.IndexBySubject(agents); err != nil {
-			return err
+			return
 		}
 
 		if c.Name != "" {
 			if agentInfo, ok := byName[c.Name]; ok {
 				subj = subject.AgentLogs(agentInfo.NKey) + ".>"
 			} else {
-				return errors.Errorf("could not find an agent with name = %s")
+				return errors.Errorf("could not find an agent with name = %s", c.Name)
 			}
 		} else {
 			subj = subject.AgentLogsAll()
@@ -84,25 +86,36 @@ func (c *agentLogsCmd) Run() error {
 			return
 		}
 
-		reader := nlog.FmtReader{Sub: sub}
+		log.Debug("listening for logs", "subject", subj)
+		reader := nlog.RecordReader{Sub: sub, Context: ctx}
 
-		var record *nlog.FmtRecord
+		nameResolver := nlog.ResolveAgentName(bySubject)
+
+		var record nlog.Record
 
 		for {
-			record, err = reader.Read()
-			if errors.Is(err, io.EOF) || errors.Is(err, nlog.ErrUnexpectedFormat) {
-				err = nil
-				continue
-			} else if err != nil {
+			select {
+			case <-ctx.Done():
 				return
-			}
+			default:
+				record, err = reader.Read()
+				if nnats.IsEndOfStreamErr(err) || errors.Is(err, nats.ErrTimeout) {
+					err = nil
+					continue
+				} else if err != nil {
+					return
+				}
 
-			prefix := record.AgentSubject()
-			if target, ok := bySubject[record.AgentSubject()]; ok {
-				prefix = target.Name
-			}
+				if err = nlog.ProcessMsg(record.Msg(), nameResolver); err != nil {
+					log.Error("failed to apply processors to msg", "error", err)
+				}
 
-			_, _ = record.Write(prefix, os.Stderr)
+				if !c.Output && record.Type() == nlog.RecordTypeTerminal {
+					continue
+				}
+
+				_, _ = record.Write(os.Stderr)
+			}
 		}
 	})
 }
