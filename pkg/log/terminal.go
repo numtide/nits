@@ -23,10 +23,6 @@ func (t *TerminalRecord) Msg() *nats.Msg {
 }
 
 func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
-	if log.GetLevel() > log.InfoLevel {
-		return
-	}
-
 	b := bytes.NewBuffer(nil)
 
 	var meta *nats.MsgMetadata
