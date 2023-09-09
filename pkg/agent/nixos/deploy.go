@@ -86,7 +86,15 @@ func onDeploy(req micro.Request) {
 
 		outWriter := &nnats.Writer{
 			Conn:    Conn,
-			Subject: logSubject + ".OUT",
+			Subject: logSubject + ".STDOUT",
+			Headers: nats.Header{
+				nlog.HeaderFormat: []string{nlog.HeaderFormatTerminal},
+			},
+		}
+
+		errWriter := &nnats.Writer{
+			Conn:    Conn,
+			Subject: logSubject + ".STDERR",
 			Headers: nats.Header{
 				nlog.HeaderFormat: []string{nlog.HeaderFormatTerminal},
 			},
@@ -103,7 +111,9 @@ func onDeploy(req micro.Request) {
 		ctx = nix.SetStdError(ctx, outWriter)
 
 		defer func() {
-			if err := outWriter.Close(); err != nil {
+			if err := errWriter.Close(); err != nil {
+				log.Error("failed to close nats outWriter", "error", err)
+			} else if err := outWriter.Close(); err != nil {
 				log.Error("failed to close nats outWriter", "error", err)
 			} else if err := logWriter.Close(); err != nil {
 				log.Error("failed to close nats logWriter", "error", err)
