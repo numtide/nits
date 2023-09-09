@@ -14,14 +14,14 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/numtide/nits/internal/cmd"
 
-	nutil "github.com/numtide/nits/pkg/nats"
+	nnats "github.com/numtide/nits/pkg/nats"
 
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 )
 
 type deployCmd struct {
-	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
+	Nats nnats.CliOptions `embed:"" prefix:"nats-"`
 
 	Action  string `enum:"switch,boot,test,dry-activate" default:"switch" help:"action to perform on the agent" `
 	Closure string `arg:"" help:"store path of the NixOS closure to deploy"`
@@ -99,7 +99,7 @@ func (d *deployCmd) Run() error {
 		}
 
 		log.Debug("listening for logs", "subject", resp.Logs)
-		reader := nlog.RecordReader{Sub: sub}
+		reader := nlog.RecordReader{Sub: sub, Context: ctx}
 
 		nameResolver := nlog.ResolveAgentName(bySubject)
 
@@ -113,8 +113,8 @@ func (d *deployCmd) Run() error {
 				if errors.Is(err, nats.ErrTimeout) {
 					err = nil
 					continue
-				} else if nlog.IsEOS(err) {
-					var eos nlog.EOS
+				} else if nnats.IsEndOfStreamErr(err) {
+					var eos nnats.EndOfStreamErr
 					errors.As(err, &eos)
 					if eos.Subject == resp.Logs+".SYS" {
 						err = nil

@@ -76,7 +76,7 @@ func onDeploy(req micro.Request) {
 		currentDeployId.Store(id)
 		defer currentDeployId.Store("")
 
-		logWriter := &nlog.NatsWriter{
+		logWriter := &nnats.Writer{
 			Conn:    Conn,
 			Subject: logSubject + ".SYS",
 			Headers: nats.Header{
@@ -84,7 +84,7 @@ func onDeploy(req micro.Request) {
 			},
 		}
 
-		outWriter := &nlog.NatsWriter{
+		outWriter := &nnats.Writer{
 			Conn:    Conn,
 			Subject: logSubject + ".OUT",
 			Headers: nats.Header{

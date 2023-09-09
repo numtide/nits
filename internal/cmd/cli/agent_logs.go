@@ -2,9 +2,10 @@ package cli
 
 import (
 	"context"
-	"github.com/charmbracelet/log"
 	"os"
 	"time"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/numtide/nits/pkg/agent/info"
 
@@ -13,12 +14,12 @@ import (
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/agent"
 	nlog "github.com/numtide/nits/pkg/log"
-	nutil "github.com/numtide/nits/pkg/nats"
+	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 )
 
 type agentLogsCmd struct {
-	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
+	Nats nnats.CliOptions `embed:"" prefix:"nats-"`
 
 	Since     *time.Duration `help:"Time ago from which to start replaying logs." default:"5m" xor:"start"`
 	StartTime *time.Time     `help:"Time from which to start replaying logs." xor:"start"`
@@ -75,7 +76,7 @@ func (c *agentLogsCmd) Run() error {
 			if agentInfo, ok := byName[c.Name]; ok {
 				subj = subject.AgentLogs(agentInfo.NKey) + ".>"
 			} else {
-				return errors.Errorf("could not find an agent with name = %s")
+				return errors.Errorf("could not find an agent with name = %s", c.Name)
 			}
 		} else {
 			subj = subject.AgentLogsAll()
@@ -86,7 +87,7 @@ func (c *agentLogsCmd) Run() error {
 		}
 
 		log.Debug("listening for logs", "subject", subj)
-		reader := nlog.RecordReader{Sub: sub}
+		reader := nlog.RecordReader{Sub: sub, Context: ctx}
 
 		nameResolver := nlog.ResolveAgentName(bySubject)
 
@@ -98,7 +99,7 @@ func (c *agentLogsCmd) Run() error {
 				return
 			default:
 				record, err = reader.Read()
-				if nlog.IsEOS(err) || errors.Is(err, nats.ErrTimeout) {
+				if nnats.IsEndOfStreamErr(err) || errors.Is(err, nats.ErrTimeout) {
 					err = nil
 					continue
 				} else if err != nil {
@@ -115,7 +116,6 @@ func (c *agentLogsCmd) Run() error {
 
 				_, _ = record.Write(os.Stderr)
 			}
-
 		}
 	})
 }

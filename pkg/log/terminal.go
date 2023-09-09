@@ -2,10 +2,11 @@ package log
 
 import (
 	"bytes"
-	"github.com/charmbracelet/log"
-	"github.com/nats-io/nats.go"
 	"os"
 	"time"
+
+	"github.com/charmbracelet/log"
+	"github.com/nats-io/nats.go"
 )
 
 type TerminalRecord struct {

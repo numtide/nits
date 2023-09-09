@@ -2,7 +2,6 @@ package log
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"time"
 
@@ -12,10 +11,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/pkg/agent/info"
-)
-
-const (
-	ErrUnexpectedFormat = errors.ConstError("unexpected format")
 )
 
 type LogFmtRecord struct {
@@ -92,33 +87,6 @@ func levelStyle(level log.Level) lipgloss.Style {
 	default:
 		return lipgloss.NewStyle()
 	}
-}
-
-type FmtReader struct {
-	Sub     *nats.Subscription
-	Timeout time.Duration
-}
-
-func (r *FmtReader) Read() (record *LogFmtRecord, err error) {
-	if r.Timeout == 0 {
-		r.Timeout = DefaultReadTimeout
-	}
-	var msg *nats.Msg
-	if msg, err = r.Sub.NextMsg(r.Timeout); err != nil {
-		return
-	}
-
-	if msg.Header.Get(HeaderEOF) == HeaderEOFValue {
-		return nil, io.EOF
-	} else if msg.Header.Get(HeaderFormat) != HeaderFormatLogFmt {
-		// skip this message
-		return nil, ErrUnexpectedFormat
-	}
-
-	record = &LogFmtRecord{}
-	err = UnmarshalLogFmtRecord(msg, record)
-
-	return
 }
 
 func UnmarshalLogFmtRecord(msg *nats.Msg, record *LogFmtRecord) (err error) {
