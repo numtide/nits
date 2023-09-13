@@ -8,9 +8,6 @@ import (
 
 	"github.com/ztrue/shutdown"
 
-	nsccmd "github.com/nats-io/nsc/v2/cmd"
-	nexec "github.com/numtide/nits/pkg/exec"
-
 	"github.com/charmbracelet/log"
 )
 
@@ -37,20 +34,6 @@ func Run(main func(ctx context.Context) error) (err error) {
 	go shutdown.Listen(syscall.SIGINT, syscall.SIGTERM)
 
 	return main(ctx)
-}
-
-func DetectOperator() (operator nsccmd.OperatorDescriber, err error) {
-	if operator, err = nexec.DescribeOperator(); err != nil {
-		log.Error("failed to describe operator")
-		return
-	}
-
-	log.Info("detected operator",
-		"name", operator.Name,
-		"serviceUrls", operator.OperatorServiceURLs,
-		"accountServerUrl", operator.AccountServerURL,
-	)
-	return
 }
 
 func LogExec(cmd *exec.Cmd) *exec.Cmd {

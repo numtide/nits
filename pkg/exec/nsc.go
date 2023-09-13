@@ -2,6 +2,7 @@ package exec
 
 import (
 	"encoding/json"
+	"github.com/charmbracelet/log"
 	"os/exec"
 
 	"github.com/nats-io/nsc/v2/cmd"
@@ -11,20 +12,20 @@ func Nsc(args ...string) *exec.Cmd {
 	return exec.Command("nsc", args...)
 }
 
-func DescribeOperator() (operator cmd.OperatorDescriber, err error) {
+func DescribeOperator() (operator *cmd.OperatorDescriber, err error) {
 	var b []byte
 	if b, err = Nsc("describe", "operator", "-J").Output(); err != nil {
 		return
 	}
-	err = json.Unmarshal(b, &operator)
-	return
-}
+	err = json.Unmarshal(b, operator)
 
-func GenerateProfile(url string) (profile cmd.Profile, err error) {
-	var b []byte
-	if b, err = Nsc("generate", "profile", url).Output(); err != nil {
-		return
+	if err == nil {
+		log.Debug("detected operator",
+			"name", operator.Name,
+			"serviceUrls", operator.OperatorServiceURLs,
+			"accountServerUrl", operator.AccountServerURL,
+		)
 	}
-	err = json.Unmarshal(b, &profile)
+
 	return
 }
