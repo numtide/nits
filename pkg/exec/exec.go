@@ -1,7 +1,6 @@
 package exec
 
 import (
-	"io"
 	"os/exec"
 
 	"github.com/charmbracelet/log"
@@ -17,12 +16,6 @@ func Sequence(commands ...*exec.Cmd) (err error) {
 		}
 	}
 	return nil
-}
-
-func WithOutput(cmd *exec.Cmd, stdout io.Writer, stderr io.Writer) *exec.Cmd {
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-	return cmd
 }
 
 func LogError(msg string, err error) {
