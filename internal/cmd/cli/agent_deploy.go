@@ -7,7 +7,7 @@ import (
 
 	"github.com/numtide/nits/pkg/agent"
 	"github.com/numtide/nits/pkg/agent/info"
-	nlog "github.com/numtide/nits/pkg/log"
+	nlog "github.com/numtide/nits/pkg/logging"
 
 	"github.com/numtide/nits/pkg/agent/nixos"
 

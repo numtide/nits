@@ -15,7 +15,7 @@ import (
 	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/charmbracelet/log"
-	nlog "github.com/numtide/nits/pkg/log"
+	nlog "github.com/numtide/nits/pkg/logging"
 
 	"github.com/nats-io/nats.go"
 )

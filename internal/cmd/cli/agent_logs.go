@@ -13,7 +13,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/numtide/nits/internal/cmd"
 	"github.com/numtide/nits/pkg/agent"
-	nlog "github.com/numtide/nits/pkg/log"
+	nlog "github.com/numtide/nits/pkg/logging"
 	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/subject"
 )

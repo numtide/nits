@@ -15,7 +15,7 @@ import (
 	"github.com/nats-io/nats.go/micro"
 	"github.com/nats-io/nuid"
 	"github.com/nix-community/go-nix/pkg/nixpath"
-	nlog "github.com/numtide/nits/pkg/log"
+	nlog "github.com/numtide/nits/pkg/logging"
 	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/nix"
 	"github.com/numtide/nits/pkg/subject"
