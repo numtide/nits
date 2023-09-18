@@ -10,6 +10,10 @@ import (
 
 const (
 	ErrUnexpectedFormat = errors.ConstError("unexpected format")
+
+	HeaderFormat = "Fmt"
+	HeaderLogFmt = "LogFmt"
+	HeaderTerm   = "Term"
 )
 
 type RecordReader struct {

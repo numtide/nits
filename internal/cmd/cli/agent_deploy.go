@@ -101,8 +101,6 @@ func (d *agentDeployCmd) Run() error {
 		log.Debug("listening for logs", "subject", resp.Logs)
 		reader := nlog.RecordReader{Sub: sub, Context: ctx}
 
-		nameResolver := nlog.ResolveAgentName(bySubject)
-
 		var record nlog.Record
 		for {
 			select {
@@ -126,12 +124,8 @@ func (d *agentDeployCmd) Run() error {
 					return
 				}
 
-				if !d.Output && record.Type() == nlog.Term {
+				if !d.Output && record.Type() == nlog.RecordTerm {
 					continue
-				}
-
-				if err = nlog.ProcessMsg(record.Msg(), nameResolver); err != nil {
-					log.Error("failed to apply processors to msg", "error", err)
 				}
 
 				_, _ = record.Write(os.Stderr)

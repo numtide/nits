@@ -64,11 +64,9 @@ func (c *agentLogsCmd) Run() error {
 			return
 		}
 
-		var byName, bySubject map[string]*info.Response
+		var byName map[string]*info.Response
 
 		if byName, err = agent.IndexByName(agents); err != nil {
-			return
-		} else if bySubject, err = agent.IndexBySubject(agents); err != nil {
 			return
 		}
 
@@ -89,8 +87,6 @@ func (c *agentLogsCmd) Run() error {
 		log.Debug("listening for logs", "subject", subj)
 		reader := nlog.RecordReader{Sub: sub, Context: ctx}
 
-		nameResolver := nlog.ResolveAgentName(bySubject)
-
 		var record nlog.Record
 
 		for {
@@ -106,11 +102,7 @@ func (c *agentLogsCmd) Run() error {
 					return
 				}
 
-				if err = nlog.ProcessMsg(record.Msg(), nameResolver); err != nil {
-					log.Error("failed to apply processors to msg", "error", err)
-				}
-
-				if !c.Output && record.Type() == nlog.Term {
+				if !c.Output && record.Type() == nlog.RecordTerm {
 					continue
 				}
 

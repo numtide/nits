@@ -26,7 +26,7 @@ type LogFmtRecord struct {
 }
 
 func (r *LogFmtRecord) Type() RecordType {
-	return LogFmt
+	return RecordLogFmt
 }
 
 func (r *LogFmtRecord) Msg() *nats.Msg {
@@ -43,12 +43,7 @@ func (r *LogFmtRecord) Write(file *os.File) (n int, err error) {
 	b.WriteString(levelStyle(r.Level).Render(r.Level.String()))
 	b.WriteByte(' ')
 
-	prefix := r.msg.Subject
-	if name := GetAgentName(r.msg); name != "" {
-		prefix = name
-	}
-
-	b.WriteString(log.PrefixStyle.Render(prefix))
+	b.WriteString(log.PrefixStyle.Render(r.msg.Subject))
 
 	b.WriteByte(' ')
 	b.WriteString(log.MessageStyle.Render(r.Text))

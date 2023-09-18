@@ -9,8 +9,8 @@ import (
 type RecordType int
 
 const (
-	Term   = iota
-	LogFmt = 1
+	RecordTerm   = iota
+	RecordLogFmt = 1
 )
 
 type Record interface {

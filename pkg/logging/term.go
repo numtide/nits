@@ -15,7 +15,7 @@ type TerminalRecord struct {
 }
 
 func (t *TerminalRecord) Type() RecordType {
-	return Term
+	return RecordTerm
 }
 
 func (t *TerminalRecord) Msg() *nats.Msg {
@@ -34,9 +34,6 @@ func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
 	b.WriteByte(' ')
 
 	prefix := t.msg.Subject
-	if name := GetAgentName(t.msg); name != "" {
-		prefix = name
-	}
 
 	if strings.HasSuffix(t.msg.Subject, ".STDOUT") {
 		prefix = prefix + " | STDOUT"
