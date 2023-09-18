@@ -26,7 +26,7 @@ type LogFmtRecord struct {
 }
 
 func (r *LogFmtRecord) Type() RecordType {
-	return RecordTypeLogFmt
+	return LogFmt
 }
 
 func (r *LogFmtRecord) Msg() *nats.Msg {

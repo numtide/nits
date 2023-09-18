@@ -1,8 +1,6 @@
 package logging
 
 import (
-	"time"
-
 	"github.com/numtide/nits/pkg/agent/info"
 	"github.com/numtide/nits/pkg/subject"
 
@@ -10,13 +8,10 @@ import (
 )
 
 const (
-	HeaderEOF            = "EOF"
-	HeaderEOFValue       = "End-Of-Stream"
-	HeaderFormat         = "Format"
-	HeaderFormatLogFmt   = "LogFmt"
-	HeaderFormatTerminal = "Terminal"
-	HeaderAgentName      = "AgentName"
-	DefaultReadTimeout   = 1 * time.Second
+	HeaderFormat    = "Format"
+	HeaderLogFmt    = "LogFmt"
+	HeaderTerm      = "Term"
+	HeaderAgentName = "AgentName"
 )
 
 type MsgProcessor func(msg *nats.Msg) error

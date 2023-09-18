@@ -80,7 +80,7 @@ func onDeploy(req micro.Request) {
 			Conn:    Conn,
 			Subject: logSubject + ".SYS",
 			Headers: nats.Header{
-				nlog.HeaderFormat: []string{nlog.HeaderFormatLogFmt},
+				nlog.HeaderFormat: []string{nlog.HeaderLogFmt},
 			},
 		}
 
@@ -88,7 +88,7 @@ func onDeploy(req micro.Request) {
 			Conn:    Conn,
 			Subject: logSubject + ".STDOUT",
 			Headers: nats.Header{
-				nlog.HeaderFormat: []string{nlog.HeaderFormatTerminal},
+				nlog.HeaderFormat: []string{nlog.HeaderTerm},
 			},
 		}
 
@@ -96,7 +96,7 @@ func onDeploy(req micro.Request) {
 			Conn:    Conn,
 			Subject: logSubject + ".STDERR",
 			Headers: nats.Header{
-				nlog.HeaderFormat: []string{nlog.HeaderFormatTerminal},
+				nlog.HeaderFormat: []string{nlog.HeaderTerm},
 			},
 		}
 

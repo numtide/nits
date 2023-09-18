@@ -31,12 +31,12 @@ func (r *RecordReader) Read() (record Record, err error) {
 	}
 
 	switch msg.Header.Get(HeaderFormat) {
-	case HeaderFormatTerminal:
+	case HeaderTerm:
 		tRecord := &TerminalRecord{}
 		if err = UnmarshalTerminalRecord(msg, tRecord); err == nil {
 			record = tRecord
 		}
-	case HeaderFormatLogFmt:
+	case HeaderLogFmt:
 		lfRecord := &LogFmtRecord{}
 		if err = UnmarshalLogFmtRecord(msg, lfRecord); err == nil {
 			record = lfRecord

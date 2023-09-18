@@ -110,7 +110,7 @@ func (c *agentLogsCmd) Run() error {
 					log.Error("failed to apply processors to msg", "error", err)
 				}
 
-				if !c.Output && record.Type() == nlog.RecordTypeTerminal {
+				if !c.Output && record.Type() == nlog.Term {
 					continue
 				}
 

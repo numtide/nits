@@ -15,7 +15,7 @@ type TerminalRecord struct {
 }
 
 func (t *TerminalRecord) Type() RecordType {
-	return RecordTypeTerminal
+	return Term
 }
 
 func (t *TerminalRecord) Msg() *nats.Msg {
@@ -54,7 +54,7 @@ func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
 }
 
 func UnmarshalTerminalRecord(msg *nats.Msg, record *TerminalRecord) (err error) {
-	if msg.Header.Get(HeaderFormat) != HeaderFormatTerminal {
+	if msg.Header.Get(HeaderFormat) != HeaderTerm {
 		return ErrUnexpectedFormat
 	}
 	record.msg = msg

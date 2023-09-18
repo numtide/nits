@@ -38,7 +38,7 @@ func Run(ctx context.Context) (err error) {
 		Conn:    Conn,
 		Subject: subject.AgentLogs(NKey) + ".SYS",
 		Headers: nats.Header{
-			nlog.HeaderFormat: []string{nlog.HeaderFormatLogFmt},
+			nlog.HeaderFormat: []string{nlog.HeaderLogFmt},
 		},
 	}
 	defer func() {

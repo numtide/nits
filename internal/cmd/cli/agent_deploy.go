@@ -126,7 +126,7 @@ func (d *agentDeployCmd) Run() error {
 					return
 				}
 
-				if !d.Output && record.Type() == nlog.RecordTypeTerminal {
+				if !d.Output && record.Type() == nlog.Term {
 					continue
 				}
 
