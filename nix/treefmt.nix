@@ -9,8 +9,8 @@
   }: {
     treefmt.config = {
       inherit (config.flake-root) projectRootFile;
-      package = pkgs.treefmt;
-
+      flakeCheck = true;
+      flakeFormatter = true;
       programs = {
         alejandra.enable = true;
         deadnix.enable = true;
@@ -21,8 +21,6 @@
 
       settings.formatter.prettier.options = ["--tab-width" "4"];
     };
-
-    formatter = config.treefmt.build.wrapper;
 
     devshells.default = {
       commands = [
