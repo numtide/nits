@@ -1,3 +1,12 @@
+# editors
 .idea
-.data
-result
+
+# nix
+result*
+repl-result-*
+
+# direnv
+/.direnv
+
+# devshell
+/.data
