@@ -32,7 +32,7 @@
       };
     };
 
-  numAgents = 5;
+  numAgents = 3;
 in {
   flake.nixosConfigurations = let
     configs =
