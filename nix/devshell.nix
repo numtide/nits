@@ -9,7 +9,6 @@
   ];
 
   config.perSystem = {
-    self',
     pkgs,
     config,
     ...
@@ -67,8 +66,9 @@
           '';
         }
         {
+          name = "nits";
           category = "development";
-          package = self'.packages.nits;
+          command = ''nix run .#nits -- "$@"'';
         }
         {
           category = "development";
