@@ -2,8 +2,9 @@ package exec
 
 import (
 	"encoding/json"
-	"github.com/charmbracelet/log"
 	"os/exec"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/nats-io/nsc/v2/cmd"
 )

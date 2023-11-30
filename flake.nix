@@ -35,7 +35,7 @@
     nixpkgs,
     ...
   }: let
-    lib = nixpkgs.lib.extend (final: _: import ./nix/lib.nix final);
+    lib = nixpkgs.lib.extend (import ./nix/lib.nix);
   in
     flake-parts.lib.mkFlake
     {

@@ -1,5 +1,5 @@
-lib: {
-  cleanSourceAndNix = with lib;
+final: _: {
+  cleanSourceAndNix = with final;
     src:
       cleanSourceWith {
         filter = cleanSourceFilter;
