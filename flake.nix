@@ -52,8 +52,6 @@
       imports = [
         {
           perSystem = {system, ...}: {
-            # make custom lib available to perSystem functions
-            _module.args.lib = lib;
             # customize nixpkgs instance
             _module.args.pkgs = import nixpkgs {
               inherit system;
