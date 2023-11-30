@@ -27,7 +27,7 @@
         meta = with lib; {
           description = "Nix & NATS";
           homepage = "https://github.com/numtide/nits";
-          license = licenses.apsl20;
+          license = licenses.mit;
           mainProgram = "nits";
         };
       };
