@@ -13,8 +13,10 @@
 
       programs = {
         alejandra.enable = true;
+        deadnix.enable = true;
         gofumpt.enable = true;
         prettier.enable = true;
+        statix.enable = true;
       };
 
       settings.formatter.prettier.options = ["--tab-width" "4"];
