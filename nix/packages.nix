@@ -10,14 +10,14 @@
     ...
   }: {
     packages = rec {
-      nits = pkgs.buildGoModule rec {
+      nits = pkgs.buildGoApplication rec {
         pname = "nits";
         version = "0.0.1+dev";
 
         runtimeInputs = with pkgs; [nsc natscli];
 
         src = lib.cleanSourceAndNix ../.;
-        vendorHash = "sha256-juSBLh4Y/1qjg+5ptCWhIKaueqDESNrpI3wXsmNRgeg=";
+        modules = ../gomod2nix.toml;
 
         ldflags = [
           "-X 'build.Name=${pname}'"

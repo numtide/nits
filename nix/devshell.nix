@@ -72,6 +72,10 @@
         }
         {
           category = "development";
+          package = pkgs.gomod2nix;
+        }
+        {
+          category = "development";
           package = pkgs.enumer;
         }
       ];

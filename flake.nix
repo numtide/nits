@@ -28,10 +28,15 @@
     };
     process-compose-flake.url = "github:Platonic-Systems/process-compose-flake";
     nix-serve.url = "github:edolstra/nix-serve";
+    gomod2nix = {
+      url = "github:nix-community/gomod2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
     flake-parts,
+    gomod2nix,
     nixpkgs,
     ...
   }: let
@@ -45,7 +50,19 @@
       };
     } {
       imports = [
-        {_module.args.lib = lib;} # make custom lib available to perSystem functions
+        {
+          perSystem = {system, ...}: {
+            # make custom lib available to perSystem functions
+            _module.args.lib = lib;
+            # customize nixpkgs instance
+            _module.args.pkgs = import nixpkgs {
+              inherit system;
+              overlays = [
+                gomod2nix.overlays.default
+              ];
+            };
+          };
+        }
         ./nix
       ];
       systems = [
