@@ -5,7 +5,7 @@
     ./nats
   ];
 
-  perSystem = {self', ...}: {
+  perSystem = _: {
     config.process-compose.dev.settings = {
       log_location = "$PRJ_DATA_DIR/dev.log";
     };
@@ -15,7 +15,8 @@
         {
           category = "development";
           help = "run local dev services";
-          package = self'.packages.dev;
+          name = "dev";
+          command = ''nix run .#dev "$@"'';
         }
         {
           category = "development";
