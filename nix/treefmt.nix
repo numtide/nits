@@ -2,11 +2,7 @@
   imports = [
     inputs.treefmt-nix.flakeModule
   ];
-  perSystem = {
-    config,
-    pkgs,
-    ...
-  }: {
+  perSystem = {config, ...}: {
     treefmt.config = {
       inherit (config.flake-root) projectRootFile;
       flakeCheck = true;
