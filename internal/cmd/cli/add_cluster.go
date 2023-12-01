@@ -20,7 +20,7 @@ type addClusterCmd struct {
 func (c *addClusterCmd) Run() (err error) {
 	Cmd.Log.ConfigureLog()
 
-	var op *nsccmd.OperatorDescriber
+	var op nsccmd.OperatorDescriber
 	if op, err = nexec.DescribeOperator(); err != nil {
 		return
 	}

@@ -64,7 +64,7 @@ func (a *addAgentCmd) Run() (err error) {
 		}
 	}
 
-	var op *nsccmd.OperatorDescriber
+	var op nsccmd.OperatorDescriber
 	if op, err = nexec.DescribeOperator(); err != nil {
 		return
 	}
