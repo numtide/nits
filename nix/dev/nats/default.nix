@@ -50,7 +50,7 @@
             XDG_CONFIG_HOME = "$PRJ_DATA_DIR";
           };
           command = pkgs.writeShellApplication {
-            name = "nats-setup";
+            name = "nits-setup";
             runtimeInputs = [pkgs.jq pkgs.nsc self'.packages.nits];
             text = ''
               nits add cluster Numtide

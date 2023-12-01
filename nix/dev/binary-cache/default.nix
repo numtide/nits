@@ -39,14 +39,19 @@
     config.process-compose = {
       dev.settings.processes = {
         binary-cache = {
-          environment = [
-            "NIX_SECRET_KEY_FILE=${secretKey}"
+          environment = let
+            config = pkgs.writeText "harmonia-config" ''
+              bind = "[::]:3000"
+              workers = 1
+              max_connection_rate = 256
+              priority = 30
+            '';
+          in [
+            "CONFIG_FILE=${config}"
+            "SIGN_KEY_PATH=${secretKey}"
           ];
           command = ''
-            ${inputs'.nix-serve.packages.nix-serve}/bin/nix-serve \
-                --host 127.0.0.1 \
-                --port "$BINARY_CACHE_PORT" \
-                --access-log /dev/stderr
+            ${inputs'.harmonia.packages.harmonia}/bin/harmonia
           '';
           readiness_probe = {
             http_get = {
