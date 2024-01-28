@@ -1,12 +1,7 @@
-{inputs, ...}: {
-  imports = [
-    inputs.flake-parts.flakeModules.easyOverlay
-  ];
-
+{self, ...}: {
   perSystem = {
     lib,
     pkgs,
-    self',
     ...
   }: {
     packages = rec {
@@ -34,7 +29,9 @@
 
       default = nits;
     };
+  };
 
-    overlayAttrs = self'.packages;
+  flake.overlays.default = final: _prev: {
+    inherit (self.packages.${final.system}) nits;
   };
 }

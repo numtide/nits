@@ -11,6 +11,7 @@
   config.perSystem = {
     pkgs,
     config,
+    inputs',
     ...
   }: let
     inherit (pkgs.stdenv) isLinux isDarwin;
@@ -48,6 +49,9 @@
         ];
 
       commands = [
+        {
+          package = inputs'.flake-linter.packages.default;
+        }
         {
           category = "docs";
           package = pkgs.vhs;

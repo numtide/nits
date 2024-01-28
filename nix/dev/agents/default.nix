@@ -1,18 +1,8 @@
 {
   self,
-  inputs,
   lib,
   ...
 }: let
-  inherit (inputs) nixpkgs;
-
-  pkgs = import nixpkgs {
-    system = "x86_64-linux";
-    overlays = [
-      self.overlays.default
-    ];
-  };
-
   mkAgentHost = {
     id,
     self,
@@ -25,7 +15,6 @@
   }:
     lib.nixosSystem rec {
       inherit pkgs modules;
-      inherit (pkgs) system;
       specialArgs = {
         inherit self id;
         hostname = "agent-host-${builtins.toString id}";
@@ -34,21 +23,16 @@
 
   numAgents = 3;
 in {
-  flake.nixosConfigurations = let
-    configs =
-      map
-      (id: lib.nameValuePair "agent-host-${builtins.toString id}" (mkAgentHost {inherit id self pkgs;}))
-      (lib.range 1 numAgents);
-  in
-    builtins.listToAttrs configs;
-
   perSystem = {
     pkgs,
+    system,
     config,
     self',
     lib,
     ...
   }: {
+    config.nixosConfigurations = with lib; (builtins.listToAttrs (map (id: nameValuePair "agent-host-${builtins.toString id}" (mkAgentHost {inherit id self pkgs;})) (range 1 numAgents)));
+
     config.devshells.default = {
       env = [
         {
@@ -78,13 +62,13 @@ in {
           category = "development";
           help = "run an agent vm";
           name = "run-agent";
-          command = "nix run .#nixosConfigurations.agent-host-$1.config.system.build.vm";
+          command = "nix run .#nixosConfigurations.${system}_agent-host-$1.config.system.build.vm";
         }
         {
           category = "development";
           help = "build an agent vm";
           name = "build-agent";
-          command = "nix build .#nixosConfigurations.agent-host-$1.config.system.build.vm";
+          command = "nix build .#nixosConfigurations.${system}_agent-host-$1.config.system.build.vm";
         }
         {
           category = "development";

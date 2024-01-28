@@ -3,43 +3,60 @@
 
   nixConfig = {
     extra-substituters = [
-      "https://cache.garnix.io"
+      "https://numtide.cachix.org"
       "https://nix-community.cachix.org"
     ];
     extra-trusted-public-keys = [
-      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+      "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };
 
   inputs = {
     srvos.url = "github:numtide/srvos";
-    # Use the version of nixpkgs that has been tested to work with SrvOS
     nixpkgs.follows = "srvos/nixpkgs";
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    flake-root.url = "github:srid/flake-root";
+    flake-parts.follows = "srvos/flake-parts";
+    flake-root.follows = "nix-lib/flake-root";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "srvos/nixpkgs";
     };
     devshell = {
       url = "github:numtide/devshell";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "srvos/nixpkgs";
     };
     process-compose-flake.url = "github:Platonic-Systems/process-compose-flake";
     harmonia = {
       url = "github:nix-community/harmonia";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "srvos/nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
     gomod2nix = {
       url = "github:nix-community/gomod2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "srvos/nixpkgs";
+        flake-utils.follows = "devshell/flake-utils";
+      };
+    };
+    flake-linter = {
+      url = "github:mic92/flake-linter";
+      inputs.flake-parts.follows = "flake-parts";
+    };
+    nix-lib = {
+      url = "github:brianmcgee/nix-lib";
+      inputs = {
+        nixpkgs.follows = "srvos/nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
   };
 
   outputs = inputs @ {
     flake-parts,
-    gomod2nix,
     nixpkgs,
     ...
   }: let
@@ -52,20 +69,7 @@
         inherit lib; # make custom lib available to top level functions
       };
     } {
-      imports = [
-        {
-          perSystem = {system, ...}: {
-            # customize nixpkgs instance
-            _module.args.pkgs = import nixpkgs {
-              inherit system;
-              overlays = [
-                gomod2nix.overlays.default
-              ];
-            };
-          };
-        }
-        ./nix
-      ];
+      imports = [./nix];
       systems = [
         "x86_64-linux"
         "aarch64-linux"
