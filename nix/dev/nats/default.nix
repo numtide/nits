@@ -1,9 +1,5 @@
 {lib, ...}: {
-  perSystem = {
-    self',
-    pkgs,
-    ...
-  }: let
+  perSystem = {pkgs, ...}: let
     config = pkgs.writeTextFile {
       name = "nats.conf";
       text = ''
@@ -51,7 +47,7 @@
           };
           command = pkgs.writeShellApplication {
             name = "nits-setup";
-            runtimeInputs = [pkgs.jq pkgs.nsc self'.packages.nits];
+            runtimeInputs = with pkgs; [jq nsc nits];
             text = ''
               nits add cluster Numtide
 

@@ -29,7 +29,9 @@ type addAgentCmd struct {
 }
 
 func (a *addAgentCmd) Run() (err error) {
-	Cmd.Log.ConfigureLog()
+	if err := Cmd.Log.ConfigureLog(); err != nil {
+		return err
+	}
 
 	var nkey string
 

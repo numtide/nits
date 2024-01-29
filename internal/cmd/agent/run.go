@@ -13,7 +13,15 @@ import (
 type runCmd struct{}
 
 func (a *runCmd) Run() (err error) {
-	log.SetLevel(log.ParseLevel(Cmd.LogLevel))
+	level, err := log.ParseLevel(Cmd.LogLevel)
+	if err != nil {
+		return err
+	}
+
+	log.SetLevel(level)
+	if err != nil {
+		return err
+	}
 	log.SetFormatter(log.LogfmtFormatter)
 	log.SetTimeFormat(time.RFC3339)
 

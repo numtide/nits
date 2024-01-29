@@ -38,28 +38,29 @@ func (r *LogFmtRecord) Write(file *os.File) (n int, err error) {
 
 	// todo handle errors
 	// todo support multiple formats
-	b.WriteString(log.TimestampStyle.Render(r.Timestamp.Format(time.RFC3339)))
+	styles := log.DefaultStyles()
+	b.WriteString(styles.Timestamp.Render(r.Timestamp.Format(time.RFC3339)))
 	b.WriteByte(' ')
 	b.WriteString(levelStyle(r.Level).Render(r.Level.String()))
 	b.WriteByte(' ')
 
-	b.WriteString(log.PrefixStyle.Render(r.msg.Subject))
+	b.WriteString(styles.Prefix.Render(r.msg.Subject))
 
 	b.WriteByte(' ')
-	b.WriteString(log.MessageStyle.Render(r.Text))
+	b.WriteString(styles.Message.Render(r.Text))
 	b.WriteByte(' ')
 
 	if r.AgentInfo != nil {
-		b.WriteString(log.KeyStyle.Render("nkey"))
+		b.WriteString(styles.Key.Render("nkey"))
 		b.WriteByte('=')
 		b.WriteString(r.AgentInfo.NKey)
 		b.WriteByte(' ')
 	}
 
 	for k, v := range r.Meta {
-		b.WriteString(log.KeyStyle.Render(k))
+		b.WriteString(styles.Key.Render(k))
 		b.WriteByte('=')
-		b.WriteString(log.ValueStyle.Render(v))
+		b.WriteString(styles.Value.Render(v))
 		b.WriteByte(' ')
 	}
 
@@ -68,20 +69,7 @@ func (r *LogFmtRecord) Write(file *os.File) (n int, err error) {
 }
 
 func levelStyle(level log.Level) lipgloss.Style {
-	switch level {
-	case log.DebugLevel:
-		return log.DebugLevelStyle
-	case log.InfoLevel:
-		return log.InfoLevelStyle
-	case log.WarnLevel:
-		return log.WarnLevelStyle
-	case log.ErrorLevel:
-		return log.ErrorLevelStyle
-	case log.FatalLevel:
-		return log.FatalLevelStyle
-	default:
-		return lipgloss.NewStyle()
-	}
+	return log.DefaultStyles().Levels[level]
 }
 
 func UnmarshalLogFmtRecord(msg *nats.Msg, record *LogFmtRecord) (err error) {
@@ -108,7 +96,10 @@ func UnmarshalLogFmtRecord(msg *nats.Msg, record *LogFmtRecord) (err error) {
 			case "msg":
 				record.Text = value
 			case "lvl":
-				record.Level = log.ParseLevel(value)
+				record.Level, err = log.ParseLevel(value)
+				if err != nil {
+					return err
+				}
 			default:
 				record.Meta[key] = value
 			}

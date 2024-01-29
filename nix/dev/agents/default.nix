@@ -27,7 +27,6 @@ in {
     pkgs,
     system,
     config,
-    self',
     lib,
     ...
   }: {
@@ -75,7 +74,7 @@ in {
           help = "deploy changes to an agent host";
           package = pkgs.writeShellApplication {
             name = "deploy-agent";
-            runtimeInputs = [pkgs.coreutils pkgs.perl self'.packages.nits pkgs.natscli];
+            runtimeInputs = with pkgs; [coreutils perl nits natscli];
             text = ''
               set -euo pipefail
 

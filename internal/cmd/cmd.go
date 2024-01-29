@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"syscall"
 	"time"
@@ -20,10 +21,17 @@ type LogOptions struct {
 	Level string `enum:"debug,info,warn,error,fatal" env:"LOG_LEVEL" default:"warn" help:"Configure logging level."`
 }
 
-func (lo *LogOptions) ConfigureLog() {
+func (lo *LogOptions) ConfigureLog() error {
 	log.SetReportTimestamp(true)
 	log.SetTimeFormat(time.RFC3339)
-	log.SetLevel(log.ParseLevel(lo.Level))
+
+	level, err := log.ParseLevel(lo.Level)
+	if err != nil {
+		return fmt.Errorf("%w: failed to parse log level %v", err, lo.Level)
+	}
+
+	log.SetLevel(level)
+	return nil
 }
 
 func Run(main func(ctx context.Context) error) (err error) {

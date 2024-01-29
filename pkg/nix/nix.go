@@ -12,7 +12,7 @@ import (
 
 	"github.com/shirou/gopsutil/v3/host"
 
-	"github.com/nix-community/go-nix/pkg/nixpath"
+	"github.com/nix-community/go-nix/pkg/storepath"
 
 	"github.com/juju/errors"
 )
@@ -119,11 +119,11 @@ func runCmd(name string, args []string, env []string, ctx context.Context) (err 
 	}
 }
 
-func Build(path *nixpath.NixPath, env []string, ctx context.Context) error {
+func Build(path *storepath.StorePath, env []string, ctx context.Context) error {
 	return runCmd("nix", []string{"build", path.String()}, env, ctx)
 }
 
-func SetSystem(path *nixpath.NixPath, ctx context.Context) error {
+func SetSystem(path *storepath.StorePath, ctx context.Context) error {
 	args := []string{
 		"--profile", "/nix/var/nix/profiles/system",
 		"--set", path.String(),
@@ -131,7 +131,7 @@ func SetSystem(path *nixpath.NixPath, ctx context.Context) error {
 	return runCmd("nix-env", args, nil, ctx)
 }
 
-func Switch(closure *nixpath.NixPath, action string, ctx context.Context) error {
+func Switch(closure *storepath.StorePath, action string, ctx context.Context) error {
 	binPath := closure.String() + "/bin/switch-to-configuration"
 	_, err := os.Stat(binPath)
 	if err != nil {

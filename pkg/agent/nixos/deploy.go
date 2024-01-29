@@ -14,7 +14,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/micro"
 	"github.com/nats-io/nuid"
-	"github.com/nix-community/go-nix/pkg/nixpath"
+	"github.com/nix-community/go-nix/pkg/storepath"
 	nlog "github.com/numtide/nits/pkg/logging"
 	nnats "github.com/numtide/nits/pkg/nats"
 	"github.com/numtide/nits/pkg/nix"
@@ -51,7 +51,7 @@ func onDeploy(req micro.Request) {
 	var (
 		err     error
 		request DeployRequest
-		closure *nixpath.NixPath
+		closure *storepath.StorePath
 	)
 
 	if err = json.Unmarshal(req.Data(), &request); err != nil {
@@ -59,7 +59,7 @@ func onDeploy(req micro.Request) {
 		return
 	}
 
-	if closure, err = nixpath.FromString(request.Closure); err != nil {
+	if closure, err = storepath.FromString(request.Closure); err != nil {
 		_ = req.Error("400", fmt.Sprintf("Malformed closure: %s", err), nil)
 		return
 	}

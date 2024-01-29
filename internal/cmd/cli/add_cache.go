@@ -13,7 +13,9 @@ type addCacheCmd struct {
 }
 
 func (c *addCacheCmd) Run() (err error) {
-	Cmd.Log.ConfigureLog()
+	if err = Cmd.Log.ConfigureLog(); err != nil {
+		return err
+	}
 
 	cacheContext := fmt.Sprintf("%s-%s", c.Account, "Cache")
 

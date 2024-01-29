@@ -27,7 +27,9 @@ type agentInfoCmd struct {
 }
 
 func (c *agentInfoCmd) Run() error {
-	Cmd.Log.ConfigureLog()
+	if err := Cmd.Log.ConfigureLog(); err != nil {
+		return err
+	}
 
 	return cmd.Run(func(ctx context.Context) (err error) {
 		var (

@@ -30,7 +30,9 @@ func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
 		return
 	}
 
-	b.WriteString(log.TimestampStyle.Render(meta.Timestamp.Format(time.RFC3339)))
+	styles := log.DefaultStyles()
+
+	b.WriteString(styles.Timestamp.Render(meta.Timestamp.Format(time.RFC3339)))
 	b.WriteByte(' ')
 
 	prefix := t.msg.Subject
@@ -41,9 +43,9 @@ func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
 		prefix = prefix + " | STDERR"
 	}
 
-	b.WriteString(log.PrefixStyle.Render(prefix))
+	b.WriteString(styles.Prefix.Render(prefix))
 	b.WriteString("\n")
-	b.WriteString(log.MessageStyle.Render(string(t.msg.Data)))
+	b.WriteString(styles.Message.Render(string(t.msg.Data)))
 	b.WriteByte(' ')
 
 	b.WriteString("\n")

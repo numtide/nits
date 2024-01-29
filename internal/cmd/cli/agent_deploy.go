@@ -31,7 +31,9 @@ type agentDeployCmd struct {
 }
 
 func (d *agentDeployCmd) Run() error {
-	Cmd.Log.ConfigureLog()
+	if err := Cmd.Log.ConfigureLog(); err != nil {
+		return err
+	}
 
 	return cmd.Run(func(ctx context.Context) (err error) {
 		if _, err = os.Stat(d.Closure); os.IsNotExist(err) {

@@ -18,7 +18,9 @@ type listAgentsCmd struct {
 }
 
 func (l *listAgentsCmd) Run() error {
-	Cmd.Log.ConfigureLog()
+	if err := Cmd.Log.ConfigureLog(); err != nil {
+		return err
+	}
 
 	return cmd.Run(func(ctx context.Context) (err error) {
 		var conn *nats.Conn
