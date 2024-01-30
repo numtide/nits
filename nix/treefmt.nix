@@ -34,6 +34,7 @@
                   ${lib.getExe pkgs.alejandra} "$file"
               done
             ''
+            "--" # bash swallows the second argument when using -c
           ];
           includes = ["*.nix"];
         };
