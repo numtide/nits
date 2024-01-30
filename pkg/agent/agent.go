@@ -54,10 +54,10 @@ func Run(ctx context.Context) (err error) {
 
 	log.Info("initialising services")
 	if err = info.Init(ctx); err != nil {
-		log.Errorf("failed to initialise info service", "error", err)
+		log.Error("failed to initialise info service", "error", err)
 		return
 	} else if err = nixos.Init(ctx); err != nil {
-		log.Errorf("failed to initialise nixos service", "error", err)
+		log.Error("failed to initialise nixos service", "error", err)
 		return
 	}
 	log.Info("services initialised")
