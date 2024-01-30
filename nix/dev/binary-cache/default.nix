@@ -5,6 +5,7 @@
     ...
   }: let
     secretKey = ./key.sec;
+    publicKey = ./key.pub;
   in {
     config.devshells.default = {
       env = [
@@ -20,20 +21,9 @@
 
       devshell.startup = {
         export-public-key.text = ''
-          export BINARY_CACHE_PUBLIC_KEY=$(nix key convert-secret-to-public < $PRJ_ROOT/nix/dev/binary-cache/key.sec)
+          export BINARY_CACHE_PUBLIC_KEY=${builtins.readFile publicKey}
         '';
       };
-
-      commands = [
-        {
-          category = "dev";
-          help = "Recursively sign a given store path with the local dev binary cache key";
-          package = pkgs.writeShellApplication {
-            name = "sign-path";
-            text = ''nix store sign --key-file ${secretKey} --recursive "$1"'';
-          };
-        }
-      ];
     };
 
     config.process-compose = {
