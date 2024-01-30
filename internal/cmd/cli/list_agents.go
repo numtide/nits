@@ -58,7 +58,7 @@ func (l *listAgentsCmd) Run() error {
 
 		t.SetStyles(tableStyle)
 
-		print(t.View())
+		println(t.View())
 
 		return
 	})
