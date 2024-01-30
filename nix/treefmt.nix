@@ -13,7 +13,6 @@
       flakeCheck = true;
       flakeFormatter = true;
       programs = {
-        alejandra.enable = true;
         gofumpt.enable = true;
         prettier.enable = true;
       };
@@ -29,9 +28,10 @@
             "-euc"
             ''
               for file in "$@"; do
-                  # we rely on defaults for both formatters
+                  # we rely on defaults for all formatters
                   ${lib.getExe pkgs.deadnix} --edit "$file"
                   ${lib.getExe pkgs.statix} fix "$file"
+                  ${lib.getExe pkgs.alejandra} "$file"
               done
             ''
           ];
