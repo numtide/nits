@@ -120,19 +120,19 @@ func runCmd(name string, args []string, env []string, ctx context.Context) (err 
 }
 
 func Build(path *storepath.StorePath, env []string, ctx context.Context) error {
-	return runCmd("nix", []string{"build", path.String()}, env, ctx)
+	return runCmd("nix", []string{"build", path.Absolute()}, env, ctx)
 }
 
 func SetSystem(path *storepath.StorePath, ctx context.Context) error {
 	args := []string{
 		"--profile", "/nix/var/nix/profiles/system",
-		"--set", path.String(),
+		"--set", path.Absolute(),
 	}
 	return runCmd("nix-env", args, nil, ctx)
 }
 
 func Switch(closure *storepath.StorePath, action string, ctx context.Context) error {
-	binPath := closure.String() + "/bin/switch-to-configuration"
+	binPath := closure.Absolute() + "/bin/switch-to-configuration"
 	_, err := os.Stat(binPath)
 	if err != nil {
 		return ErrorMalformedClosure

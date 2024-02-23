@@ -59,7 +59,7 @@ func onDeploy(req micro.Request) {
 		return
 	}
 
-	if closure, err = storepath.FromString(request.Closure); err != nil {
+	if closure, err = storepath.FromAbsolutePath(request.Closure); err != nil {
 		_ = req.Error("400", fmt.Sprintf("Malformed closure: %s", err), nil)
 		return
 	}
