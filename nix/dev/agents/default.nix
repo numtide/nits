@@ -95,7 +95,7 @@ in {
               create_derivation () {
                   # shellcheck disable=SC2016
                   nix-instantiate \
-                      --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."agent-host-''${id}".extendModules { modules = [mod];}).config.system.build.toplevel)' \
+                      --expr '({ flakeRoot, id, mod }: ((builtins.getFlake "path:''${flakeRoot}").nixosConfigurations."${system}_agent-host-''${id}".extendModules { modules = [mod];}).config.system.build.toplevel)' \
                       --argstr flakeRoot "$PWD" \
                       --argstr id "$ID" \
                       --arg mod "$CONFIG"
