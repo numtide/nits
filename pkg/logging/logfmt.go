@@ -2,8 +2,13 @@ package logging
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"os"
+	"strings"
 	"time"
+
+	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
@@ -18,11 +23,10 @@ type LogFmtRecord struct {
 	Text  string
 	Meta  map[string]string
 
-	AgentInfo *info.Response
-
 	Timestamp time.Time
 
-	msg *nats.Msg
+	msg       *nats.Msg
+	agentInfo *info.Response
 }
 
 func (r *LogFmtRecord) Type() RecordType {
@@ -39,21 +43,27 @@ func (r *LogFmtRecord) Write(file *os.File) (n int, err error) {
 	// todo handle errors
 	// todo support multiple formats
 	styles := log.DefaultStyles()
+
 	b.WriteString(styles.Timestamp.Render(r.Timestamp.Format(time.RFC3339)))
 	b.WriteByte(' ')
 	b.WriteString(levelStyle(r.Level).Render(r.Level.String()))
 	b.WriteByte(' ')
 
-	b.WriteString(styles.Prefix.Render(r.msg.Subject))
+	prefix := r.msg.Subject
+	if r.agentInfo != nil {
+		prefix = fmt.Sprintf("%s | %s", r.agentInfo.Name, strings.TrimPrefix(r.msg.Subject, subject.AgentLogs(r.agentInfo.NKey)+"."))
+	}
+
+	b.WriteString(styles.Prefix.Render(prefix))
 
 	b.WriteByte(' ')
 	b.WriteString(styles.Message.Render(r.Text))
 	b.WriteByte(' ')
 
-	if r.AgentInfo != nil {
+	if r.agentInfo != nil {
 		b.WriteString(styles.Key.Render("nkey"))
 		b.WriteByte('=')
-		b.WriteString(r.AgentInfo.NKey)
+		b.WriteString(r.agentInfo.NKey)
 		b.WriteByte(' ')
 	}
 
@@ -72,7 +82,7 @@ func levelStyle(level log.Level) lipgloss.Style {
 	return log.DefaultStyles().Levels[level]
 }
 
-func UnmarshalLogFmtRecord(msg *nats.Msg, record *LogFmtRecord) (err error) {
+func UnmarshalLogFmtRecord(ctx context.Context, msg *nats.Msg, record *LogFmtRecord) (err error) {
 	if msg == nil {
 		return errors.New("msg cannot be nil")
 	} else if record == nil {
@@ -82,6 +92,15 @@ func UnmarshalLogFmtRecord(msg *nats.Msg, record *LogFmtRecord) (err error) {
 	record.msg = msg
 	record.Meta = make(map[string]string)
 
+	// look up agent info based on the subject
+	byNKey := GetAgentsByNKey(ctx)
+	nkey := subject.AgentNKeyForSubject(msg.Subject)
+
+	agentInfo, ok := byNKey[nkey]
+	if ok {
+		record.agentInfo = agentInfo
+	}
+
 	dec := logfmt.NewDecoder(bytes.NewReader(msg.Data))
 
 	for dec.ScanRecord() {
@@ -89,13 +108,14 @@ func UnmarshalLogFmtRecord(msg *nats.Msg, record *LogFmtRecord) (err error) {
 			key := string(dec.Key())
 			value := string(dec.Value())
 			switch key {
-			case "ts":
+			case "time":
 				if record.Timestamp, err = time.Parse(time.RFC3339, value); err != nil {
+					log.Debug("Parsed timestamp", "value", value, "timestamp", record.Timestamp)
 					return
 				}
 			case "msg":
 				record.Text = value
-			case "lvl":
+			case "level":
 				record.Level, err = log.ParseLevel(value)
 				if err != nil {
 					return err

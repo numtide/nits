@@ -62,6 +62,7 @@
 
               # generate sys context
               nsc generate context -a SYS -u sys --context sys
+              nsc generate context -a Numtide -u Admin --context NumtideAdmin
             '';
           };
         };

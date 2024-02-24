@@ -61,16 +61,28 @@ func (c *agentLogs) Run() error {
 		listCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
+		// get a list of agents and index the responses
+
 		var agents []*info.Response
 		if agents, err = agent.List(listCtx, conn); err != nil {
 			return
 		}
 
 		var byName map[string]*info.Response
-
 		if byName, err = agent.IndexByName(agents); err != nil {
 			return
 		}
+
+		var byNKey map[string]*info.Response
+		if byNKey, err = agent.IndexByNKey(agents); err != nil {
+			return
+		}
+
+		// set agent indices in the context for the log writer
+		ctx = nlog.SetAgentsByName(ctx, byName)
+		ctx = nlog.SetAgentsByNKey(ctx, byNKey)
+
+		// decide whether we are listening for a specific agents logs or all agents
 
 		if c.Name != "" {
 			if agentInfo, ok := byName[c.Name]; ok {
@@ -82,14 +94,18 @@ func (c *agentLogs) Run() error {
 			subj = subject.AgentLogsAll()
 		}
 
+		// start the subscription
+
 		if sub, err = js.SubscribeSync(subj, subOpts...); err != nil {
 			return
 		}
 
 		log.Debug("listening for logs", "subject", subj)
-		reader := nlog.RecordReader{Sub: sub, Context: ctx}
+
+		// start reading the log records
 
 		var record nlog.Record
+		reader := nlog.RecordReader{Sub: sub, Context: ctx}
 
 		for {
 			select {

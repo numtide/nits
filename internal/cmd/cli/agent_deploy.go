@@ -73,25 +73,33 @@ func (d *agentDeploy) Run() error {
 		defer cancel()
 
 		var (
-			ok                bool
-			target            *info.Response
-			byName, bySubject map[string]*info.Response
+			ok             bool
+			target         *info.Response
+			byName, byNKey map[string]*info.Response
 		)
 
-		if byName, err = agent.ListByFunc(listCtx, conn, func(response *info.Response) string {
-			return response.Name
-		}); err != nil {
+		// todo make the logs command re-usable from here
+
+		// get a list of agents and index the responses
+
+		var agents []*info.Response
+		if agents, err = agent.List(listCtx, conn); err != nil {
 			return
-		} else if target, ok = byName[d.Name]; ok {
+		} else if byName, err = agent.IndexByName(agents); err != nil {
+			return
+		} else if byNKey, err = agent.IndexByNKey(agents); err != nil {
+			return
+		}
+
+		if target, ok = byName[d.Name]; ok {
 			log.Info("agent found", "name", d.Name, "nkey", target.NKey)
 		} else {
 			return errors.Errorf("could not find an agent named %s", d.Name)
 		}
 
-		bySubject = make(map[string]*info.Response)
-		for _, v := range byName {
-			bySubject[v.Subject] = v
-		}
+		// set agent indices in the context for the log writer
+		ctx = nlog.SetAgentsByName(ctx, byName)
+		ctx = nlog.SetAgentsByNKey(ctx, byNKey)
 
 		var resp nixos.DeployResponse
 		if resp, err = nixos.DeployWithContext(ctx, encoded, target.NKey, req); err != nil {

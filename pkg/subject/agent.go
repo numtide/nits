@@ -56,3 +56,9 @@ func AgentRegistration(nkey string) string {
 func AgentInbox(nkey string) string {
 	return fmt.Sprintf("%s.AGENT.%s.INBOX", Prefix, nkey)
 }
+
+func AgentNKeyForSubject(subject string) string {
+	start := len(Prefix + ".AGENT.")
+	end := start + 56 // nkey is 56 characters long
+	return subject[start:end]
+}

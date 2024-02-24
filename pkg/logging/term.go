@@ -2,16 +2,22 @@ package logging
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/numtide/nits/pkg/agent/info"
+	"github.com/numtide/nits/pkg/subject"
 
 	"github.com/charmbracelet/log"
 	"github.com/nats-io/nats.go"
 )
 
 type TerminalRecord struct {
-	msg *nats.Msg
+	msg       *nats.Msg
+	agentInfo *info.Response
 }
 
 func (t *TerminalRecord) Type() RecordType {
@@ -35,12 +41,10 @@ func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
 	b.WriteString(styles.Timestamp.Render(meta.Timestamp.Format(time.RFC3339)))
 	b.WriteByte(' ')
 
+	// by default the prefix is just the msg subject
 	prefix := t.msg.Subject
-
-	if strings.HasSuffix(t.msg.Subject, ".STDOUT") {
-		prefix = prefix + " | STDOUT"
-	} else if strings.HasSuffix(t.msg.Subject, ".STDERR") {
-		prefix = prefix + " | STDERR"
+	if t.agentInfo != nil {
+		prefix = fmt.Sprintf("%s | %s", t.agentInfo.Name, strings.TrimPrefix(t.msg.Subject, subject.AgentLogs(t.agentInfo.NKey)+"."))
 	}
 
 	b.WriteString(styles.Prefix.Render(prefix))
@@ -52,10 +56,20 @@ func (t *TerminalRecord) Write(file *os.File) (n int, err error) {
 	return file.Write(b.Bytes())
 }
 
-func UnmarshalTerminalRecord(msg *nats.Msg, record *TerminalRecord) (err error) {
+func UnmarshalTerminalRecord(ctx context.Context, msg *nats.Msg, record *TerminalRecord) (err error) {
 	if msg.Header.Get(HeaderFormat) != HeaderTerm {
 		return ErrUnexpectedFormat
 	}
 	record.msg = msg
+
+	// look up agent info based on the subject
+	byNKey := GetAgentsByNKey(ctx)
+	nkey := subject.AgentNKeyForSubject(msg.Subject)
+
+	agentInfo, ok := byNKey[nkey]
+	if ok {
+		record.agentInfo = agentInfo
+	}
+
 	return
 }
