@@ -3,7 +3,7 @@ package cli
 import "github.com/numtide/nits/internal/cmd"
 
 var Cmd struct {
-	Log cmd.LogOptions `embed:"" prefix:"log-"`
+	Log cmd.LogOptions `embed:""`
 
 	List struct {
 		Agents listAgentsCmd `cmd:""`
