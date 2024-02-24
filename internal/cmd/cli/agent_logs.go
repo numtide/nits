@@ -18,7 +18,7 @@ import (
 	"github.com/numtide/nits/pkg/subject"
 )
 
-type agentLogsCmd struct {
+type agentLogs struct {
 	Nats nnats.CliOptions `embed:"" prefix:"nats-"`
 
 	Since     *time.Duration `help:"Time ago from which to start replaying logs." default:"5m" xor:"start"`
@@ -28,7 +28,7 @@ type agentLogsCmd struct {
 	Name   string `arg:"" optional:""`
 }
 
-func (c *agentLogsCmd) Run() error {
+func (c *agentLogs) Run() error {
 	if err := Cmd.Log.ConfigureLog(); err != nil {
 		return err
 	}

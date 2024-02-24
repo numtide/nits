@@ -13,11 +13,11 @@ import (
 	"github.com/xeonx/timeago"
 )
 
-type listAgentsCmd struct {
+type agentList struct {
 	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
 }
 
-func (l *listAgentsCmd) Run() error {
+func (l *agentList) Run() error {
 	if err := Cmd.Log.ConfigureLog(); err != nil {
 		return err
 	}

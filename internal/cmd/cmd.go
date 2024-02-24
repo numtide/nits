@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"context"
-	"github.com/ztrue/shutdown"
 	"os/exec"
 	"syscall"
 	"time"
+
+	"github.com/ztrue/shutdown"
 
 	"github.com/charmbracelet/log"
 )

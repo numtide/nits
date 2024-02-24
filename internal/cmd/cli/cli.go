@@ -5,19 +5,15 @@ import "github.com/numtide/nits/internal/cmd"
 var Cmd struct {
 	Log cmd.LogOptions `embed:""`
 
-	List struct {
-		Agents listAgentsCmd `cmd:""`
-	} `cmd:"" help:"List assets such as agents"`
-
-	Add struct {
-		Cache   addCacheCmd   `cmd:""`
-		Cluster addClusterCmd `cmd:""`
-		Agent   addAgentCmd   `cmd:""`
-	} `cmd:"" help:"Add assets such as clusters and agents"`
-
 	Agent struct {
-		Info   agentInfoCmd   `cmd:""`
-		Logs   agentLogsCmd   `cmd:""`
-		Deploy agentDeployCmd `cmd:""`
+		Add    agentAdd    `cmd:"" help:"Add an agent to a cluster"`
+		List   agentList   `cmd:"" name:"ls" help:"List agents within a cluster"`
+		Info   agentInfo   `cmd:"" help:"Show info about an agent"`
+		Logs   agentLogs   `cmd:"" help:"Show logs for an agent"`
+		Deploy agentDeploy `cmd:"" help:"Deploy to an agent"`
 	} `cmd:"" help:"Agent related functions"`
+
+	Cluster struct {
+		Add clusterAdd `cmd:""`
+	} `cmd:"" help:"Cluster related functions"`
 }

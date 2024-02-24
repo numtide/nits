@@ -19,7 +19,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-type addAgentCmd struct {
+type agentAdd struct {
 	Cluster        string `required:"" help:"Name of the account under which Agents will run"`
 	PublicKey      string `required:"" xor:"key"`
 	PublicKeyFile  string `required:"" type:"existingfile" xor:"key"`
@@ -28,7 +28,7 @@ type addAgentCmd struct {
 	Name string `arg:"" help:"A name for the agent account"`
 }
 
-func (a *addAgentCmd) Run() (err error) {
+func (a *agentAdd) Run() (err error) {
 	if err := Cmd.Log.ConfigureLog(); err != nil {
 		return err
 	}

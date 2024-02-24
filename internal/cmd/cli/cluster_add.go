@@ -13,11 +13,11 @@ import (
 	nexec "github.com/numtide/nits/pkg/exec"
 )
 
-type addClusterCmd struct {
+type clusterAdd struct {
 	Name string `arg:"" help:"Name of the account under which Agents will run"`
 }
 
-func (c *addClusterCmd) Run() (err error) {
+func (c *clusterAdd) Run() (err error) {
 	if err := Cmd.Log.ConfigureLog(); err != nil {
 		return err
 	}

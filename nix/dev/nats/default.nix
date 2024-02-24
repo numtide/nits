@@ -49,11 +49,11 @@
             name = "nits-setup";
             runtimeInputs = with pkgs; [jq nsc nits];
             text = ''
-              nits add cluster Numtide
+              nits cluster add Numtide
 
               for AGENT_DIR in "$VM_DATA_DIR"/*; do
                  AGENT_NAME=$(basename "$AGENT_DIR")
-                 nits add agent --cluster Numtide --private-key-file "$AGENT_DIR/ssh_host_ed25519_key" "$AGENT_NAME"
+                 nits agent add --cluster Numtide --private-key-file "$AGENT_DIR/ssh_host_ed25519_key" "$AGENT_NAME"
                  nsc describe user -a Numtide -n "$AGENT_NAME" -R > "$AGENT_DIR/user.jwt"
               done
 

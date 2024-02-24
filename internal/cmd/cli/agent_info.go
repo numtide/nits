@@ -15,7 +15,7 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 )
 
-type agentInfoCmd struct {
+type agentInfo struct {
 	Nats nutil.CliOptions `embed:"" prefix:"nats-"`
 	Name string           `arg:""`
 
@@ -26,7 +26,7 @@ type agentInfoCmd struct {
 	Load  bool `help:"Include load information about the host machine"`
 }
 
-func (c *agentInfoCmd) Run() error {
+func (c *agentInfo) Run() error {
 	if err := Cmd.Log.ConfigureLog(); err != nil {
 		return err
 	}
