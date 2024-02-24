@@ -2,11 +2,10 @@ package cmd
 
 import (
 	"context"
+	"github.com/ztrue/shutdown"
 	"os/exec"
 	"syscall"
 	"time"
-
-	"github.com/ztrue/shutdown"
 
 	"github.com/charmbracelet/log"
 )
@@ -17,11 +16,12 @@ type (
 )
 
 type LogOptions struct {
-	Verbosity int `name:"verbose" short:"v" type:"counter" default:"0" env:"LOG_LEVEL" help:"Set the verbosity of logs e.g. -vv."`
+	Verbosity    int  `name:"verbose" short:"v" type:"counter" default:"0" env:"LOG_LEVEL" help:"Set the verbosity of logs e.g. -vv."`
+	LogTimestamp bool `default:"false" env:"LOG_TIMESTAMP" help:"Add timestamp to log output"`
 }
 
 func (lo *LogOptions) ConfigureLog() error {
-	log.SetReportTimestamp(true)
+	log.SetReportTimestamp(lo.LogTimestamp)
 	log.SetTimeFormat(time.RFC3339)
 
 	if lo.Verbosity == 0 {
