@@ -122,14 +122,8 @@ func (d *agentDeploy) Run() error {
 					err = nil
 					continue
 				} else if nnats.IsEndOfStreamErr(err) {
-					var eos nnats.EndOfStreamErr
-					errors.As(err, &eos)
-					if eos.Subject == resp.Logs+".SYS" {
-						err = nil
-						return
-					} else {
-						continue
-					}
+					err = nil
+					return
 				} else if err != nil {
 					return
 				}
