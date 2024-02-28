@@ -1,9 +1,15 @@
-{self, ...}: {
+{
+  self,
+  inputs,
+  ...
+}: {
   perSystem = {
     lib,
     pkgs,
     ...
-  }: {
+  }: let
+    filter = inputs.nix-filter.lib;
+  in {
     packages = rec {
       nits = pkgs.buildGoApplication rec {
         pname = "nits";
@@ -11,7 +17,17 @@
 
         runtimeInputs = with pkgs; [nsc natscli];
 
-        src = lib.cleanSourceAndNix ../.;
+        src = filter {
+          root = ../.;
+          include = [
+            "go.mod"
+            "go.sum"
+            "pkg"
+            "internal"
+            "cmd"
+          ];
+        };
+
         modules = ../gomod2nix.toml;
 
         ldflags = [

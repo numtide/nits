@@ -53,6 +53,7 @@
         treefmt-nix.follows = "treefmt-nix";
       };
     };
+    nix-filter.url = "github:numtide/nix-filter";
   };
 
   outputs = inputs @ {
