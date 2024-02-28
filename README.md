@@ -27,13 +27,10 @@ The project is currently in a state of rapid iteration. We will update this sect
 
 # Preview
 
-If an agent is connected, the deployment behaves much like a push-based system. If the agent is not connected, it will
-apply the changes the next time it connects.
+If an agent is connected, the deployment behaves much like a push-based system. Eventually, if the agent is not connected,
+we will schedule a deployment for later.
 
 Agent logs are streamed into NATS and captured, allowing you to observe what the agent is doing in real-time or go back
 and have a look at the logs later.
-
-When deploying, system closures are built and pushed into NATS. The agent then copies the closure from NATS into it's local
-Nix store before applying the new closure.
 
 ![](./docs/assets/deploy.gif)

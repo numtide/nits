@@ -15,4 +15,10 @@ Type "nits agent deploy --action test --name test-vm-1 .#nixosConfigurations.x86
 Sleep 500ms
 Enter
 
-Sleep 20s
+Sleep 10s
+
+Type "nits agent logs --since 10m test-vm-1"
+Sleep 500ms
+Enter
+
+Sleep 5s
