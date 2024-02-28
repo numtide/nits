@@ -132,13 +132,20 @@ func SetSystem(path *storepath.StorePath, ctx context.Context) error {
 }
 
 func Switch(closure *storepath.StorePath, action string, ctx context.Context) error {
+	if err := IsSystemClosure(closure); err != nil {
+		return err
+	}
+
+	args := []string{action}
+	binPath := closure.Absolute() + "/bin/switch-to-configuration"
+	return runCmd(binPath, args, nil, ctx)
+}
+
+func IsSystemClosure(closure *storepath.StorePath) error {
 	binPath := closure.Absolute() + "/bin/switch-to-configuration"
 	_, err := os.Stat(binPath)
 	if err != nil {
 		return ErrorMalformedClosure
 	}
-
-	args := []string{action}
-
-	return runCmd(binPath, args, nil, ctx)
+	return nil
 }

@@ -130,7 +130,7 @@ func onDeploy(req micro.Request) {
 			return
 		}
 
-		l.Info("switching configuration")
+		l.Info("switching configuration", "action", action)
 		if err = nix.Switch(closure, action, ctx); err != nil {
 			l.Error("failed to switch configuration", "error", err)
 			return

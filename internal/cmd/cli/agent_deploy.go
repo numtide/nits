@@ -2,8 +2,14 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
+
+	"github.com/nix-community/go-nix/pkg/storepath"
+	"github.com/numtide/nits/pkg/nix"
 
 	"github.com/numtide/nits/pkg/agent"
 	"github.com/numtide/nits/pkg/agent/info"
@@ -36,10 +42,31 @@ func (d *agentDeploy) Run() error {
 	}
 
 	return cmd.Run(func(ctx context.Context) (err error) {
-		if _, err = os.Stat(d.Closure); os.IsNotExist(err) {
-			return errors.New("store path does not exist")
+		// build the closure
+		log.Infof("building closure: %s", d.Closure)
+
+		build := exec.Command("nix", "build", "--print-out-paths", d.Closure)
+		out, err := build.Output()
+		if err != nil {
+			var exit *exec.ExitError
+			if errors.As(err, exit) {
+				_, _ = os.Stderr.Write(exit.Stderr)
+			}
+			return fmt.Errorf("%w: failed to build closure", err)
 		}
 
+		path := strings.Trim(string(out), "\n")
+		log.Infof("closure built successfully: %v", path)
+
+		// validate the closure
+		closure, err := storepath.FromAbsolutePath(path)
+		if err != nil {
+			return fmt.Errorf("%w: failed to parse system closure", err)
+		} else if err = nix.IsSystemClosure(closure); err != nil {
+			return fmt.Errorf("%w: invalid system closure %v", err, closure)
+		}
+
+		// deploy the closure
 		var action nixos.DeployAction
 		if action, err = nixos.DeployActionString(d.Action); err != nil {
 			return
@@ -47,7 +74,7 @@ func (d *agentDeploy) Run() error {
 
 		req := nixos.DeployRequest{
 			Action:  action,
-			Closure: d.Closure,
+			Closure: path,
 		}
 
 		var (

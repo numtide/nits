@@ -1,20 +1,18 @@
-Require deploy-agent
+Require nits
 
+Set Shell zsh
 Set FontSize 14
 
 Set Width 1440
 Set Height 800
 
-Type "# How to deploy an agent"
+Type "nits agent ls"
+Enter
+Sleep 500ms
+
+Enter
+Type "nits agent deploy --action test --name test-vm-1 .#nixosConfigurations.x86_64-linux_test-vm-1-no-hello.config.system.build.toplevel"
 Sleep 500ms
 Enter
-Enter
 
-Type "deploy-agent 1 test '{ config.systemd.services.hello.enable = false; }'"
-Sleep 500ms
-Enter
-
-Sleep 30s
-Ctrl+c
-
-Sleep 5s
+Sleep 20s

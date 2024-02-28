@@ -1,8 +1,8 @@
 {...}: {
   imports = [
-    ./agents
     ./binary-cache
     ./nats
+    ./vms
   ];
 
   perSystem = _: {
