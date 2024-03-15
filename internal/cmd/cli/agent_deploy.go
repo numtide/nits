@@ -49,7 +49,7 @@ func (d *agentDeploy) Run() error {
 		out, err := build.Output()
 		if err != nil {
 			var exit *exec.ExitError
-			if errors.As(err, exit) {
+			if errors.As(err, &exit) {
 				_, _ = os.Stderr.Write(exit.Stderr)
 			}
 			return fmt.Errorf("%w: failed to build closure", err)

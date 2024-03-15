@@ -83,13 +83,13 @@ in {
         {
           category = "development";
           help = "run an agent vm";
-          name = "run-agent";
+          name = "run-test-vm";
           command = "nix run .#nixosConfigurations.${system}_test-vm-$1.config.system.build.vm";
         }
         {
           category = "development";
           help = "build an agent vm";
-          name = "build-agent";
+          name = "build-test-vm";
           command = "nix build .#nixosConfigurations.${system}_test-vm-$1.config.system.build.vm";
         }
       ];
@@ -98,7 +98,7 @@ in {
     config.process-compose = {
       dev.settings.processes = let
         mkAgentProcess = id: {
-          command = "run-agent ${builtins.toString id}";
+          command = "run-test-vm ${builtins.toString id}";
           depends_on = {
             binary-cache.condition = "process_healthy";
           };
