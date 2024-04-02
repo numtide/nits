@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/numtide/nits/pkg/agent/dbus"
+
 	"github.com/nats-io/jwt/v2"
 	"github.com/numtide/nits/pkg/agent/info"
 	"github.com/numtide/nits/pkg/agent/nixos"
@@ -58,6 +60,9 @@ func Run(ctx context.Context) (err error) {
 		return
 	} else if err = nixos.Init(ctx); err != nil {
 		log.Error("failed to initialise nixos service", "error", err)
+		return
+	} else if err = dbus.Init(ctx); err != nil {
+		log.Error("failed to initialise dbus service", "error", err)
 		return
 	}
 	log.Info("services initialised")

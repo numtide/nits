@@ -96,6 +96,8 @@ func (a *agentAdd) Run() (err error) {
 			"add", "user", "-a", a.Cluster,
 			"-k", nkey,
 			"-n", a.Name,
+			"--allow-sub", "dbus.bus.>",
+			"--allow-pub", fmt.Sprintf("dbus.signals.%s.>", nkey),
 			"--allow-pubsub", agentSubject,
 			"--allow-pub", subject.AgentRegistration(nkey),
 			"--allow-pub", "$JS.API.STREAM.NAMES",
