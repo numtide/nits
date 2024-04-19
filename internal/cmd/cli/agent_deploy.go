@@ -45,7 +45,7 @@ func (d *agentDeploy) Run() error {
 		// build the closure
 		log.Infof("building closure: %s", d.Closure)
 
-		build := exec.Command("nix", "build", "--print-out-paths", d.Closure)
+		build := exec.Command("nix", "build", "--no-link", "--refresh", "--print-out-paths", d.Closure)
 		out, err := build.Output()
 		if err != nil {
 			var exit *exec.ExitError
