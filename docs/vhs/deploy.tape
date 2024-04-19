@@ -11,7 +11,7 @@ Enter
 Sleep 500ms
 
 Enter
-Type "nits agent deploy --action test --name test-vm-1 .#nixosConfigurations.x86_64-linux_test-vm-1-no-hello.config.system.build.toplevel"
+Type "nits agent deploy --name test-vm-1 .#nixosConfigurations.x86_64-linux_test-vm-1-no-hello.config.system.build.toplevel"
 Sleep 500ms
 Enter
 
