@@ -15,6 +15,7 @@
   inputs = {
     srvos.url = "github:numtide/srvos";
     nixpkgs.follows = "srvos/nixpkgs";
+    blueprint.url = "github:numtide/blueprint";
     flake-parts.follows = "srvos/flake-parts";
     flake-root.follows = "nix-lib/flake-root";
     treefmt-nix = {
