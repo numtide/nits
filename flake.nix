@@ -16,7 +16,6 @@
     srvos.url = "github:numtide/srvos";
     nixpkgs.follows = "srvos/nixpkgs";
     blueprint.url = "github:numtide/blueprint";
-    flake-parts.follows = "srvos/flake-parts";
     flake-root.follows = "nix-lib/flake-root";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -31,7 +30,6 @@
       url = "github:nix-community/harmonia";
       inputs = {
         nixpkgs.follows = "srvos/nixpkgs";
-        flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
       };
     };
@@ -44,37 +42,20 @@
     };
     flake-linter = {
       url = "github:mic92/flake-linter";
-      inputs.flake-parts.follows = "flake-parts";
     };
     nix-lib = {
       url = "github:brianmcgee/nix-lib";
       inputs = {
         nixpkgs.follows = "srvos/nixpkgs";
-        flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
       };
     };
     nix-filter.url = "github:numtide/nix-filter";
   };
 
-  outputs = inputs @ {
-    flake-parts,
-    nixpkgs,
-    ...
-  }: let
-    lib = nixpkgs.lib.extend (import ./nix/lib.nix);
-  in
-    flake-parts.lib.mkFlake
-    {
+  outputs = inputs:
+    inputs.blueprint {
       inherit inputs;
-      specialArgs = {
-        inherit lib; # make custom lib available to top level functions
-      };
-    } {
-      imports = [./nix];
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
+      prefix = ./nix;
     };
 }
