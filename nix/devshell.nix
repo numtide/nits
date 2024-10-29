@@ -20,6 +20,8 @@ in
         name = "VM_DATA_DIR";
         eval = "$PRJ_DATA_DIR/vms";
       }
+
+      # NATS
       {
         name = "NATS_HOME";
         eval = "$PRJ_DATA_DIR/nats";
@@ -36,6 +38,8 @@ in
         name = "NATS_JWT_DIR";
         eval = "$PRJ_DATA_DIR/nats/jwt";
       }
+
+      # BINARY_CACHE
       {
         name = "BINARY_CACHE_DATA";
         eval = "$PRJ_DATA_DIR/binary-cache";
@@ -146,6 +150,8 @@ in
       {
         package = perSystem.flake-linter.default;
       }
+
+      # DOCS
       {
         category = "docs";
         package = pkgs.vhs;
@@ -163,6 +169,8 @@ in
           done
         '';
       }
+
+      # DEVELOPMENT
       {
         name = "nits";
         category = "development";
@@ -194,6 +202,8 @@ in
         name = "run-test-vm";
         command = "nix run .#nixosConfigurations.${system}_test-vm-$1.config.system.build.vmWithBootLoader";
       }
+
+      # NATS
       {
         category = "nats";
         name = "nsc";
