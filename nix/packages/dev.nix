@@ -91,7 +91,7 @@ in
             "SIGN_KEY_PATH=${secretKey}"
           ];
           command = ''
-            ${inputs'.harmonia.packages.harmonia}/bin/harmonia
+            ${perSystem.harmonia.harmonia}/bin/harmonia
           '';
           readiness_probe = {
             http_get = {
