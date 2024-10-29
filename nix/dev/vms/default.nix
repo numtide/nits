@@ -53,21 +53,5 @@ in {
         configs;
     in
       configs // configsNoHello;
-
-    config.process-compose = {
-      dev.settings.processes = let
-        mkAgentProcess = id: {
-          command = "run-test-vm ${builtins.toString id}";
-          depends_on = {
-            binary-cache.condition = "process_healthy";
-          };
-        };
-        configs =
-          map
-          (id: lib.nameValuePair "test-vm-${builtins.toString id}" (mkAgentProcess id))
-          (lib.range 1 numAgents);
-      in
-        builtins.listToAttrs configs;
-    };
   };
 }
