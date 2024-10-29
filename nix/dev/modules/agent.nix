@@ -1,11 +1,11 @@
 {
-  self,
+  flake,
   pkgs,
   lib,
   ...
 }: {
   imports = [
-    self.nixosModules.agent
+    flake.nixosModules.agent
   ];
 
   services.nits.agent = {
