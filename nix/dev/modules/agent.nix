@@ -2,6 +2,7 @@
   flake,
   pkgs,
   lib,
+  perSystem,
   ...
 }: {
   imports = [
@@ -9,6 +10,7 @@
   ];
 
   services.nits.agent = {
+    package = perSystem.self.nits;
     logLevel = "debug";
     nats = {
       url = "nats://10.0.2.2";
