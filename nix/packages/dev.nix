@@ -73,5 +73,36 @@ in
         };
       };
     }
+
+    # BINARY_CACHE
+    {
+      settings.processes = {
+        binary-cache = {
+          environment = let
+            config = pkgs.writeText "harmonia-config" ''
+              bind = "[::]:3000"
+              workers = 1
+              max_connection_rate = 256
+              priority = 30
+            '';
+            secretKey = ../dev/binary-cache/key.sec;
+          in [
+            "CONFIG_FILE=${config}"
+            "SIGN_KEY_PATH=${secretKey}"
+          ];
+          command = ''
+            ${inputs'.harmonia.packages.harmonia}/bin/harmonia
+          '';
+          readiness_probe = {
+            http_get = {
+              host = "127.0.0.1";
+              port = 3000;
+              path = "/nix-cache-info";
+            };
+            initial_delay_seconds = 2;
+          };
+        };
+      };
+    }
   ];
 }
