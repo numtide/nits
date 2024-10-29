@@ -52,7 +52,7 @@ in
           };
           command = pkgs.writeShellApplication {
             name = "nits-setup";
-            runtimeInputs = with pkgs; [jq nsc nits];
+            runtimeInputs = with pkgs; [jq nsc perSystem.self.nits];
             text = ''
               nits cluster add Numtide
 
