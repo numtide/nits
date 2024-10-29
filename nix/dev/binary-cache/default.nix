@@ -5,27 +5,7 @@
     ...
   }: let
     secretKey = ./key.sec;
-    publicKey = ./key.pub;
   in {
-    config.devshells.default = {
-      env = [
-        {
-          name = "BINARY_CACHE_DATA";
-          eval = "$PRJ_DATA_DIR/binary-cache";
-        }
-        {
-          name = "BINARY_CACHE_PORT";
-          value = "3000";
-        }
-      ];
-
-      devshell.startup = {
-        export-public-key.text = ''
-          export BINARY_CACHE_PUBLIC_KEY=${builtins.readFile publicKey}
-        '';
-      };
-    };
-
     config.process-compose = {
       dev.settings.processes = {
         binary-cache = {

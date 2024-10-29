@@ -36,6 +36,14 @@ in
         name = "NATS_JWT_DIR";
         eval = "$PRJ_DATA_DIR/nats/jwt";
       }
+      {
+        name = "BINARY_CACHE_DATA";
+        eval = "$PRJ_DATA_DIR/binary-cache";
+      }
+      {
+        name = "BINARY_CACHE_PORT";
+        value = "3000";
+      }
     ];
 
     devshell.startup = {
@@ -101,6 +109,12 @@ in
           nsc generate config --nats-resolver --config-file "$NATS_HOME/auth.conf"
         '';
       };
+
+      export-public-key.text = let
+        publicKey = dev/binary-cache/key.pub;
+      in ''
+        export BINARY_CACHE_PUBLIC_KEY=${builtins.readFile publicKey}
+      '';
     };
 
     packages = with lib;
