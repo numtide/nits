@@ -1,6 +1,7 @@
 {
   perSystem,
   pkgs,
+  system,
   ...
 }: let
   inherit (pkgs.stdenv) isLinux isDarwin;
