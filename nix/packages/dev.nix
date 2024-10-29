@@ -21,7 +21,7 @@ in
         configs =
           map
           (id: lib.nameValuePair "test-vm-${builtins.toString id}" (mkAgentProcess id))
-          (lib.range 1 numAgents);
+          (lib.range 1 3);
       in
         builtins.listToAttrs configs;
     }

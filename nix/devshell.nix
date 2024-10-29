@@ -57,7 +57,7 @@ in
         [ -d $VM_DATA_DIR ] && exit 0
         mkdir -p $VM_DATA_DIR
 
-        for i in {1..${builtins.toString numAgents}}
+        for i in {1..3}
         do
           OUT="$VM_DATA_DIR/test-vm-$i"
           mkdir -p $OUT
