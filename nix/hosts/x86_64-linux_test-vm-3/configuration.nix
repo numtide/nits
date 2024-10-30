@@ -1,2 +1,2 @@
-{ flake, ... }:
+{flake, ...}:
 flake.lib.mkTestVM ./.
