@@ -57,5 +57,9 @@
     inputs.blueprint {
       inherit inputs;
       prefix = ./nix;
+      systems = [
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
     };
 }
