@@ -1,14 +1,16 @@
 {
-  self,
+  flake,
   pkgs,
   lib,
+  perSystem,
   ...
 }: {
   imports = [
-    self.nixosModules.agent
+    flake.nixosModules.agent
   ];
 
   services.nits.agent = {
+    package = perSystem.self.nits;
     logLevel = "debug";
     nats = {
       url = "nats://10.0.2.2";

@@ -9,7 +9,6 @@ in {
   options.services.nits.agent = with lib; {
     package = mkOption {
       type = types.package;
-      default = pkgs.nits;
       defaultText = literalExpression "pkgs.nits";
       description = mdDoc "Package to use for nits.";
     };
